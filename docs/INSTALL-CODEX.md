@@ -4,6 +4,25 @@
 
 ## 安装
 
+仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
+
+### 安装任务的最短完整路径
+
+这是安装任务，交付是“服务可用、接入可读、工作台打开”。阅读本说明和 `install.ps1`，确认已有授权与目标目录后执行安装；只有出现具体错误或与用户约束冲突时，再读相关实现。无需为了普通安装通读服务器、认知、模型和采集器全部源码，也不要把安装扩展成新产品开发或长期档案整理。
+
+| 会写入什么 | 位置与控制方式 |
+| --- | --- |
+| 服务配置、日志和恢复记录 | `-ConfigDir` 指定目录；缺省当前用户 `%LOCALAPPDATA%/AP-Vibe` |
+| 项目与活动数据库 | `-DataDir` 指定目录；不会清空旧数据 |
+| Codex Skill、MCP、hooks | 当前进程 `CODEX_HOME`，缺省当前用户 `.codex`；保留无关配置 |
+| Claude 接入 | 当前进程 `CLAUDE_CONFIG_DIR`，缺省当前用户 `.claude`；`-SkipClaude` 可跳过 |
+| 会话采集 | `-CodexSessionsRoot` 指定来源；不是把每个来源都建成项目 |
+| Windows 登录启动 | `-NoAutostart` 可关闭本次登记 |
+| 历史整理 | 仅明确授权并传 `-OrganizeRecent` 时派发 |
+| AP 外部教师 | 安装不启用 |
+
+安装命令返回后，验证实际 URL、健康接口、两个 Skill 的安装位置和 MCP 配置即可交付。MCP 尚未热加载时，用已安装 `task_client.py` 读取一次目录。不要仅为演示而启动额外模型任务、创建长期项目或重跑整套测试。
+
 1. 将仓库保存到稳定的本地目录，避免临时目录。确认根目录包含 `install.ps1`、`scripts/ap-vibe.ps1`、`src`、`skills`、`tools` 和预构建的 `apps/studio/dist/client/index.html`。
 2. 查找 Python 3.11+。优先使用本机已有 Python；Codex Desktop 可通过工作区依赖工具查找其自带运行环境。完整发布包已经包含前端，首次安装通常无需 Node。
 3. 执行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\install.ps1`。若用户允许整理最近七天活跃任务，加 `-OrganizeRecent`；没有该授权时先完成安装，展示工作台整理入口。
@@ -41,6 +60,14 @@
 安装脚本只备份与更新 AP-Vibe 的 Skill、MCP 和 hook 定义，保留其他配置。真实恢复快照存放在用户数据目录，发布仓库只含空模板。
 
 同一配置启动会复用健康实例；同时启动也不会创建两个实例。服务掉线时可运行 `start.ps1`，或桌面启动器自动恢复。不要按进程名批量停止 Python、Node 或 Codex。
+
+### 下载或首次模型连接失败
+
+`TLS connection failed`、`early EOF` 或不完整 ZIP 表示下载没有完成。先保存错误信息，确认没有可用完整包，再尝试另一种正常下载方式（Git 或仓库 ZIP）。ZIP 必须能完整解压；已下载的完整发行包无需反复联网拉取。不要将解压出一半的目录当成安装成功。
+
+AP-Vibe 沿用已有 Codex 登录与模型配置，不提供 Codex 账号。若 Codex 自身报告模型不受支持或上游连接失败，先检查它原来的连接配置。安装 AP-Vibe 不应清空或替换这些设置。
+
+如果客户端的自动审批服务临时返回 503，说明某个本地命令尚未获执行；可根据实际状态缩小为单项检查并恢复。不要把未执行当执行失败，也不要以关闭安全设置解决临时服务故障。
 
 ## 验证用命令
 
