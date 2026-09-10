@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "appearance_id": "glm-v3",
+      "display_name": "GLM · 基础动作",
+      "version": 3,
+      "atlas": "glm-atlas.png",
+      "chroma_key": [
+        0,
+        255,
+        0
+      ],
+      "chroma_tolerance": 105,
+      "opaque_pixels": true,
+      "chroma_dominance": 35,
+      "suppress_chroma_spill": true,
+      "animations": {
+        "idle": {
+          "frames": [
+            28
+          ],
+          "fps": 0,
+          "loop": false
+        },
+        "walk": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_front": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_back": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_left": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_right": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "work": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "read": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "talk": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "wait": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        },
+        "rest": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        }
+      },
+      "attribution": "AP-Vibe / generated original redesign; AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement. Original references not distributed.",
+      "production": {
+        "method": "Two reviewed image2 sources, local extraction and atlas composition",
+        "sources": [
+          {
+            "generation_id": 92,
+            "source_sha256": "186ad3d0ce5fd71e1054f23af39320da38c8c6cbd9df656655b756f76f9375cb",
+            "atlas_sha256": "2421cca7a6d41ec81743d341cef59afecb5bc87b433d5f0afe454b9df4ee58d6"
+          },
+          {
+            "generation_id": 93,
+            "source_sha256": "a7913a469dc4e47725a0fddf85ad9758e5c6bcb547faeb603dabfdb23e18967d",
+            "atlas_sha256": "d0d30763394f0fa501f42cb7c7bc7ca71977f25ff5ae7b6b1c4a38902007ef62"
+          }
+        ]
+      },
+      "alpha_threshold": 128,
+      "family_hint": "GLM",
+      "frame_width": 96,
+      "frame_height": 96,
+      "atlas_width": 384,
+      "atlas_height": 768,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "sha256": "667c2bf56b2421af329319f8d09b3d5bb9c0049651257a9b426ecc313b3d51c0",
+      "missing_animations": []
+    }
+  ]
+}

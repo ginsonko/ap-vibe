@@ -1,0 +1,25 @@
+name: 使用中遇到问题
+description: 告诉我们你想做什么、怎样操作，以及实际结果。
+body:
+  - type: markdown
+    attributes:
+      value: 请先删除密钥、Cookie、私人项目资料和完整会话。无需提供数据库。
+  - type: textarea
+    id: goal
+    attributes:
+      label: 你想完成什么？
+      placeholder: 例如：让新任务继续我的阅读记录项目。
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 操作步骤和实际结果
+      placeholder: 点击了什么、输入了什么；预期怎样，实际怎样。可以附脱敏截图。
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 使用环境
+      placeholder: Windows 版本、Codex/Claude 版本、AP-Vibe 版本；不知道可写未知。

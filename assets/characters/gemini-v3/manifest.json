@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "appearance_id": "gemini-v3",
+      "display_name": "Gemini · 基础动作",
+      "version": 3,
+      "atlas": "gemini-atlas.png",
+      "chroma_key": [
+        0,
+        255,
+        0
+      ],
+      "chroma_tolerance": 105,
+      "opaque_pixels": true,
+      "chroma_dominance": 35,
+      "suppress_chroma_spill": true,
+      "animations": {
+        "idle": {
+          "frames": [
+            28
+          ],
+          "fps": 0,
+          "loop": false
+        },
+        "walk": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_front": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_back": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_left": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_right": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "work": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "read": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "talk": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "wait": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        },
+        "rest": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        }
+      },
+      "attribution": "AP-Vibe / generated original redesign; AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement. Original references not distributed.",
+      "production": {
+        "method": "Two reviewed image2 sources, local extraction and atlas composition",
+        "sources": [
+          {
+            "generation_id": 84,
+            "source_sha256": "c92891e6d14cab0c620d37e9249ca8f985070039ddab05b5d0534fe9c3fe7760",
+            "atlas_sha256": "b0d22b4a5e1dde3a60d887f36d619146730db39c02bfa71141fd7e9c97dbc7be"
+          },
+          {
+            "generation_id": 85,
+            "source_sha256": "075b5cdedf86edde2e7df7d21cb58e9f81fa5260fdebfebc488c935dfea9e5be",
+            "atlas_sha256": "1a8526b19af8bf7eab8292927e2fafc708fc535539bca82c6349b4dc07071aae"
+          }
+        ]
+      },
+      "alpha_threshold": 128,
+      "family_hint": "Gemini",
+      "frame_width": 96,
+      "frame_height": 96,
+      "atlas_width": 384,
+      "atlas_height": 768,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "sha256": "4ec20eec591d0d71100cc0d96c6d94d2527de1692746ec6c9a4815fc9efb179d",
+      "missing_animations": []
+    }
+  ]
+}

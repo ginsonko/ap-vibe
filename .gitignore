@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# AP-Vibe local runtime data
+.ap-vibe-*/
+runtime-receipt.json
+skills/**/references/installation.json
+config.json
+logs/
+data/
+*.sqlite
+*.sqlite3
+*.db
+*.jsonl
+
+# Codex and local machine state
+/0
+.local-acceptance/
+.codex/
+sessions/
+*.pid
+*.log
+
+# Local engineering snapshots and historical acceptance receipts
+docs/acceptance-*/
+docs/[0-9][0-9]_*
+docs/ap-vibe-project-document-patch.json
+docs/ap-cognition-focused-acceptance.xml
+
+# Node and build output
+node_modules/
+.vite/
+/dist/
+apps/studio/dist/*
+!apps/studio/dist/client/
+apps/studio/.openai/*
+!apps/studio/.openai/hosting.json
+
+# Editors and OS files
+.idea/
+.vscode/
+*.swp
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,161 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "appearance_id": "claude-v3",
+      "display_name": "Claude · 基础动作",
+      "version": 3,
+      "atlas": "claude-atlas.png",
+      "chroma_key": [
+        0,
+        255,
+        0
+      ],
+      "chroma_tolerance": 105,
+      "opaque_pixels": true,
+      "chroma_dominance": 35,
+      "suppress_chroma_spill": true,
+      "animations": {
+        "idle": {
+          "frames": [
+            28
+          ],
+          "fps": 0,
+          "loop": false
+        },
+        "walk": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_front": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_back": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_left": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_right": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "work": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "read": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "talk": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 4,
+          "loop": true
+        },
+        "wait": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        },
+        "rest": {
+          "frames": [
+            28,
+            28,
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        }
+      },
+      "attribution": "AP-Vibe / generated original redesign; AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement. Original references not distributed.",
+      "production": {
+        "method": "Two reviewed image2 sources, local extraction and atlas composition",
+        "sources": [
+          {
+            "generation_id": 86,
+            "source_sha256": "206d769520b9cb6b0fb66f9599551aec849e3c76a14b4be540d0d49a3485090c",
+            "atlas_sha256": "1664d15a39bf01290add516ea4be33ce7a9f7a2919e90c856a2dfa16f6401868"
+          },
+          {
+            "generation_id": 87,
+            "source_sha256": "3acf14fe4c15463936ea89098ce8926e32c809b3df9610bda7e4a78aeca30a37",
+            "atlas_sha256": "ae2bcd949e2618cd9400bcd6e6247c5a6ecf0a631586ae08ec056052ccc08fa0"
+          }
+        ]
+      },
+      "alpha_threshold": 128,
+      "family_hint": "Claude",
+      "frame_width": 96,
+      "frame_height": 96,
+      "atlas_width": 384,
+      "atlas_height": 768,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "sha256": "23539baf0d3906858dee614224ac8b4d439e71470c0fb9952d155f778f6b3693",
+      "missing_animations": []
+    }
+  ]
+}

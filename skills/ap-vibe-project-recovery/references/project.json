@@ -1,0 +1,9 @@
+{
+  "protocol_version": "ap-vibe.project-recovery-manifest.v1",
+  "project_id": "ap-vibe-local",
+  "endpoint": "http://127.0.0.1:8765",
+  "default_goal": "恢复 AP-Vibe 当前进度并从下一原子动作继续",
+  "default_max_chars": 8000,
+  "default_timeout_seconds": 5.0,
+  "portable_snapshot": "portable-recovery.json"
+}

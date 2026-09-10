@@ -1,0 +1,5 @@
+{
+  "protocol_version": "ap-vibe.portable-recovery.v1",
+  "template_only": true,
+  "note": "发布包不携带本机项目历史。在线恢复后，快照自动保存到当前用户AP-Vibe数据目录。"
+}

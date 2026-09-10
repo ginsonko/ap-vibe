@@ -1,0 +1,1 @@
+{"schema_version":1,"display_name":"我的像素伙伴","frame_width":96,"frame_height":96,"anchor":{"x":48,"y":94},"animations":{"idle":{"frames":[0],"fps":0,"loop":false},"walk":{"frames":[0,1,2,3],"fps":6,"loop":true}},"attribution":"请填写作者和来源；本示例需要一张384x96的四帧PNG图集。"}

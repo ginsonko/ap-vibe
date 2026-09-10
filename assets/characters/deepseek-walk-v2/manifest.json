@@ -1,0 +1,102 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "appearance_id": "deepseek-walk-v2",
+      "archived": true,
+      "superseded_by": "deepseek-v3",
+      "version": 2,
+      "display_name": "DeepSeek · 行走动作",
+      "family_hint": "DeepSeek",
+      "atlas": "deepseek-walk.png",
+      "production": {
+        "method": "gpt-image-2 reference-backed sheet, local chroma removal and foot alignment",
+        "generation_id": 74
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      },
+      "animations": {
+        "idle": {
+          "frames": [
+            1
+          ],
+          "fps": 0,
+          "loop": false
+        },
+        "walk": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_front": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true,
+          "direction": "front"
+        },
+        "walk_back": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 6,
+          "loop": true,
+          "direction": "back"
+        },
+        "walk_left": {
+          "frames": [
+            8,
+            9,
+            10,
+            11
+          ],
+          "fps": 6,
+          "loop": true,
+          "direction": "left"
+        },
+        "walk_right": {
+          "frames": [
+            12,
+            13,
+            14,
+            15
+          ],
+          "fps": 6,
+          "loop": true,
+          "direction": "right"
+        }
+      },
+      "frame_width": 96,
+      "frame_height": 96,
+      "atlas_width": 384,
+      "atlas_height": 384,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "sha256": "6f1bce4510397e80429f30a5202ca28da89b80b5b3ce8b4005fb2fad969f4411",
+      "source_sha256": "52be1567c44357df04639b58bb32b0bd709b1bab30ddcd1a6142aee868e123dc",
+      "missing_animations": [
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ]
+    }
+  ]
+}

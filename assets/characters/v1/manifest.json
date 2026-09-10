@@ -1,0 +1,463 @@
+{
+  "schema_version": 1,
+  "status": "static_preview",
+  "source_sha256": "1bf430359ee42119bbf0b0bd0a64851fcc43648a4251dfcf899d493086a3cd68",
+  "production": {
+    "method": "gpt-image-2 via Yinzi media workflow, then local extraction",
+    "source_generation_id": 41,
+    "source_task_id": "536b51ea-3fa5-4e3a-b405-e8322265887b",
+    "original_reference_images_distributed": false
+  },
+  "characters": [
+    {
+      "appearance_id": "deepseek-v1",
+      "archived": true,
+      "superseded_by": "deepseek-v3",
+      "version": 1,
+      "display_name": "DeepSeek",
+      "family_hint": "DeepSeek",
+      "executor_hint": null,
+      "atlas": "deepseek-idle.png",
+      "sha256": "37a78364dbca8087f4c6ebf7f0fd071b8acfdd0d8d36171bd2c9544bec05ce42",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 0,
+      "background_rgb": [
+        201,
+        249,
+        253
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 4784,
+        "opaque_pixels": 4432
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "kimi-v1",
+      "archived": true,
+      "superseded_by": "kimi-v3",
+      "version": 1,
+      "display_name": "Kimi",
+      "family_hint": "Kimi",
+      "executor_hint": null,
+      "atlas": "kimi-idle.png",
+      "sha256": "a4c981b122219c7c3d6fe893580433a40b3fecca925738243780d0f19b31c525",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 1,
+      "background_rgb": [
+        201,
+        249,
+        254
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 4965,
+        "opaque_pixels": 4251
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "glm-v1",
+      "archived": true,
+      "superseded_by": "glm-v3",
+      "version": 1,
+      "display_name": "GLM",
+      "family_hint": "GLM",
+      "executor_hint": null,
+      "atlas": "glm-idle.png",
+      "sha256": "c86ddcc03a767f8eafc92707750a98eaf49003622a69dfc55e75f49898f0f1f6",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 2,
+      "background_rgb": [
+        200,
+        250,
+        253
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5989,
+        "opaque_pixels": 3227
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "qwen-v1",
+      "archived": true,
+      "superseded_by": "qwen-v3",
+      "version": 1,
+      "display_name": "Qwen",
+      "family_hint": "Qwen",
+      "executor_hint": null,
+      "atlas": "qwen-idle.png",
+      "sha256": "d3999eaa1b337eacd0a82a2ff23a08110ca0b5c300d5390c2be182e1803f3bc4",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 3,
+      "background_rgb": [
+        201,
+        249,
+        253
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5673,
+        "opaque_pixels": 3543
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "gemini-v1",
+      "archived": true,
+      "superseded_by": "gemini-v3",
+      "version": 1,
+      "display_name": "Gemini",
+      "family_hint": "Gemini",
+      "executor_hint": null,
+      "atlas": "gemini-idle.png",
+      "sha256": "675d3bf799cf14f4175b698d8d9e5fc4915c6fc2c96950fb4f93411aeb53abda",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 4,
+      "background_rgb": [
+        201,
+        249,
+        254
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 6092,
+        "opaque_pixels": 3124
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "claude-v1",
+      "archived": true,
+      "superseded_by": "claude-v3",
+      "version": 1,
+      "display_name": "Claude",
+      "family_hint": "Claude",
+      "executor_hint": null,
+      "atlas": "claude-idle.png",
+      "sha256": "16c4d9e2450e62b130aea3112b60c31fd8206f7010ed567f3ff2373cf241c5f0",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 5,
+      "background_rgb": [
+        201,
+        249,
+        254
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5117,
+        "opaque_pixels": 4099
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "gpt-v1",
+      "archived": true,
+      "superseded_by": "gpt-v3",
+      "version": 1,
+      "display_name": "GPT",
+      "family_hint": "GPT",
+      "executor_hint": null,
+      "atlas": "gpt-idle.png",
+      "sha256": "3866aed1a1c2ab67d3ebef72278506b2fc29838d9ae1ad239fad51da8f6ee267",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 6,
+      "background_rgb": [
+        201,
+        249,
+        253
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5379,
+        "opaque_pixels": 3837
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    },
+    {
+      "appearance_id": "grok-v1",
+      "version": 1,
+      "display_name": "Grok",
+      "family_hint": "Grok",
+      "executor_hint": null,
+      "atlas": "grok-idle.png",
+      "sha256": "0bfc2f32fbec55bac3006c60c1fd9e109a8f9a2242c80902809a434c6aa1a5a8",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 7,
+      "background_rgb": [
+        201,
+        249,
+        254
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5278,
+        "opaque_pixels": 3938
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      },
+      "archived": true,
+      "superseded_by": "grok-v3"
+    },
+    {
+      "appearance_id": "opencode-v1",
+      "archived": true,
+      "superseded_by": "opencode-v3",
+      "version": 1,
+      "display_name": "OpenCode",
+      "family_hint": null,
+      "executor_hint": "opencode",
+      "atlas": "opencode-idle.png",
+      "sha256": "e44d9e4f05d6ac4a9e2c521499b84c7b55fa8769e163dd4580c1d75e9c891edb",
+      "frame_width": 96,
+      "frame_height": 96,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "source_cell": 8,
+      "background_rgb": [
+        200,
+        249,
+        253
+      ],
+      "animations": {
+        "idle": {
+          "frames": [
+            0
+          ],
+          "fps": 0,
+          "direction": "front",
+          "loop": false
+        }
+      },
+      "missing_animations": [
+        "walk",
+        "work",
+        "read",
+        "talk",
+        "wait",
+        "rest"
+      ],
+      "alpha": {
+        "transparent_pixels": 5529,
+        "opaque_pixels": 3687
+      },
+      "attribution": {
+        "creator": "AP-Vibe / generated original redesign",
+        "reference_role": "user-provided fan-character style directions",
+        "license": "AP-Vibe Personal Noncommercial 1.0; no upstream brand endorsement"
+      }
+    }
+  ]
+}

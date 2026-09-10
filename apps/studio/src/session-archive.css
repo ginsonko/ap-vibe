@@ -1,0 +1,24 @@
+.archive-search { display:flex; gap:8px; margin-bottom:10px; }
+.archive-search .search-field { flex:1; min-width:0; }
+.archive-search button { padding:7px 12px; }
+.archive-harness { display:flex; flex-direction:column; gap:6px; color:var(--muted); font-size:12px; margin-bottom:12px; }
+.archive-harness select { padding:8px; min-width:0; border:1px solid var(--line); border-radius:6px; background:var(--surface); color:var(--ink); }
+.archive-browser .session-browser-list { flex:1; }
+.archive-pagination { display:flex; justify-content:space-between; align-items:center; gap:6px; padding-top:12px; font-size:11px; }
+.archive-pagination button { padding:7px 11px; }
+.archive-coverage { margin-top:10px; font-size:11px; color:var(--muted); }
+.archive-coverage p { line-height:1.6; }
+.archive-reader .session-detail-head { padding:14px 20px; }
+.archive-reader .session-detail-head h2 { font-size:19px; margin:0; }
+.archive-reader .session-detail-head p { margin:3px 0; }
+.archive-reader details { font-size:11px; color:var(--muted); max-width:100%; overflow-wrap:anywhere; }
+.archive-reader-status { flex-shrink:0; padding:8px 16px; color:var(--muted); font-size:11px; }
+.archive-reader-status button { margin-left:10px; }
+.archive-continue { display:flex; align-items:center; gap:12px; padding:14px 18px; border-top:1px solid var(--line); background:var(--paper); font-size:11px; color:var(--muted); }
+.archive-continue span { flex:1; }
+.timeline-history { padding:7px 16px; display:flex; flex-shrink:0; justify-content:flex-start; border-bottom:1px solid var(--line); }
+.sessions-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+.archive-browser > :not(.session-browser-list) { flex-shrink:0; }
+.archive-reader .session-detail-head { max-height:34%; overflow-y:auto; }
+@media (max-width:1050px) { .archive-browser { max-height:560px; } .archive-browser .session-browser-list { max-height:300px; flex:1; } .archive-page .session-detail-pane { scroll-margin-top:80px; height:max(560px,calc(100dvh - 160px)); } .archive-page .archive-reader { min-height:0; } }
+@media (max-width:600px) { .archive-continue { flex-wrap:wrap; } .archive-reader .session-detail-head { padding:12px; } }

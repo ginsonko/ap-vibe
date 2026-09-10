@@ -1,0 +1,40 @@
+.office-world .office-actor { transition: none; }
+.office-actor[data-motion="walking"] .office-actor-name,.office-actor[data-motion="walking"]>small,.office-actor[data-motion="talking"] .office-actor-name,.office-actor[data-motion="talking"]>small { visibility: hidden; }
+.office-actor:focus-visible .office-actor-name,.office-actor:hover .office-actor-name { visibility: visible; }
+.appearance-commission { padding: 12px 0; border-top: 1px solid #dae4df; margin-top: 14px; }
+.appearance-commission p { font-size: 12px; line-height: 1.7; color: #667c70; }
+.office-message-bubble {
+  position: absolute;
+  z-index: 80;
+  width: 260px;
+  max-height: 122px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  color: #29483e;
+  background: #fff;
+  border: 2px solid #719d86;
+  border-radius: 6px;
+  box-shadow: 3px 3px 0 #47766025;
+  font: inherit;
+}
+.office-message-bubble:after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border-right: 2px solid #719d86;
+  border-bottom: 2px solid #719d86;
+  transform: rotate(45deg);
+}
+.office-message-bubble.below:after { top: -7px; bottom: auto; transform: rotate(225deg); }
+.office-message-bubble b { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.office-message-bubble span { font-size: 12px; line-height: 19px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.office-message-bubble small { font-size: 10px; color: #60756b; }
+.office-room-title { padding: 0; background: transparent; border: 0; align-items: start; }
+.office-room-title b { background: #fffffff0; border-left: 3px solid var(--room-color); padding: 8px 6px; font-size: 13px; }
+.office-room-title>span,.office-room-title .office-more { background: #fffffff0; padding: 8px 5px; max-width: 128px; white-space: nowrap; text-align: right; }

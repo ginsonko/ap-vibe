@@ -1,0 +1,12 @@
+{
+  "version": 1, "width": 960, "height": 640,
+  "corridor_y": 300, "walking_speed": 190, "slots_x": [-80, 80],
+  "rooms": [
+    {"id":"planning", "x":160, "rows":[150,245]},
+    {"id":"library", "x":480, "rows":[150,245]},
+    {"id":"engineering", "x":800, "rows":[150,245]},
+    {"id":"review", "x":160, "rows":[490,585]},
+    {"id":"waiting", "x":480, "rows":[490,585]},
+    {"id":"rest", "x":800, "rows":[490,585]}
+  ]
+}

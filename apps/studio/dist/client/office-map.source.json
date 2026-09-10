@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "method": "original local pixel drawing",
+  "source": "tools/draw_office_map.py",
+  "size": [
+    960,
+    640
+  ],
+  "sha256": "0b67b0128cd16e917402c72146087b6012c6c750a5f65a562698b71979b12651",
+  "license": "AP-Vibe Personal Noncommercial 1.0",
+  "provider_generated": false
+}

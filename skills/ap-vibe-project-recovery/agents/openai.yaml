@@ -1,0 +1,4 @@
+interface:
+  display_name: "AP-Vibe 项目恢复"
+  short_description: "恢复已审项目基线、红线、增量与下一动作"
+  default_prompt: "使用 $ap-vibe-project-recovery 恢复当前 AP-Vibe 项目，并从已审下一动作继续。"

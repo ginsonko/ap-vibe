@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ap-mind"
+version = "0.1.0"
+description = "Dependency-free contracts for the AP Hybrid Mind runtime"
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "LicenseRef-AP-Vibe-Personal-Noncommercial-1.0"}
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
