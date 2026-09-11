@@ -494,7 +494,7 @@ def main() -> int:
     parser.add_argument("action", choices=["bootstrap", "feedback", "status", "hook", "knowledge", "update", "sessions", "session-read", "tool"])
     parser.add_argument("--name", help="Shared AP-Vibe MCP tool name for the shell fallback")
     parser.add_argument("--config", type=Path, help="Use this installation's local configuration")
-    parser.add_argument("--harness", choices=['codex', 'claude'])
+    parser.add_argument("--harness", help="Filter session source (for example codex, claude, hermes or opencode)")
     parser.add_argument("--project-id")
     parser.add_argument("--query")
     parser.add_argument("--source-id")
@@ -509,7 +509,8 @@ def main() -> int:
     parser.add_argument("--revision", type=int)
     parser.add_argument("--file")
     parser.add_argument("--cwd", default=os.getcwd())
-    parser.add_argument("--session-id", default=os.environ.get("CODEX_THREAD_ID", ""))
+    parser.add_argument("--session-id", default=(os.environ.get('AP_VIBE_SESSION_ID') or
+        (os.environ.get('CODEX_THREAD_ID', '') if os.environ.get('AP_VIBE_CLIENT_KIND', 'codex') == 'codex' else '')))
     parser.add_argument("--goal", default="Continue the current task")
     parser.add_argument("--include-history", action="store_true", help="Read historical recovery and relevant observation details on demand")
     parser.add_argument("--request-id")
@@ -519,6 +520,11 @@ def main() -> int:
     parser.add_argument("--outcome")
     parser.add_argument("--evidence", action="append", default=[])
     args = parser.parse_args()
+    caller_identity = {}
+    if os.environ.get('AP_VIBE_CLIENT_KIND', 'codex') != 'codex':
+        caller_identity['client_kind'] = os.environ['AP_VIBE_CLIENT_KIND']
+    if os.environ.get('AP_VIBE_SELECTED_PROJECT_ID'):
+        caller_identity['selected_project_id'] = os.environ['AP_VIBE_SELECTED_PROJECT_ID']
     if args.config:
         os.environ['AP_VIBE_CONFIG_PATH'] = str(args.config.expanduser().resolve())
     try:
@@ -576,10 +582,10 @@ def main() -> int:
                     # still require a real task identity.
                     args.session_id = readonly_session_id(args.cwd)
                 else:
-                    raise ValueError("current Codex session identity is unavailable")
+                    raise ValueError("当前应用的真实会话身份未提供；用 --session-id 指定原生会话ID。仍可查询会话和项目目录。")
             request_id = args.request_id or "task-client-" + uuid.uuid4().hex
             if args.action in {"bootstrap", "hook"}:
-                result = call("bootstrap", {"request_id": request_id, "cwd": args.cwd,
+                result = call("bootstrap", {**caller_identity, "request_id": request_id, "cwd": args.cwd,
                                            "session_id": args.session_id, "goal": args.goal[:2000],
                                            **({'lifecycle_event':event} if args.action=='hook' else {}),
                                            **({'include_history': True} if args.include_history else {})})
@@ -600,7 +606,7 @@ def main() -> int:
                         # a bounded read-only receipt, then continue with the
                         # requested sections using the same session identity.
                         bootstrap_id = "auto-bootstrap-" + uuid.uuid4().hex
-                        bootstrap = call("bootstrap", {"request_id": bootstrap_id, "cwd": args.cwd,
+                        bootstrap = call("bootstrap", {**caller_identity, "request_id": bootstrap_id, "cwd": args.cwd,
                                                        "session_id": args.session_id, "goal": args.goal[:2000]})
                         if not bootstrap.get("ok"):
                             result = bootstrap

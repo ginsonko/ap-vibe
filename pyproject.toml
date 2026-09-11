@@ -5,10 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ap-mind"
 version = "0.1.0"
-description = "Dependency-free contracts for the AP Hybrid Mind runtime"
+description = "Local project memory and cross-application agent collaboration"
 requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "LicenseRef-AP-Vibe-Personal-Noncommercial-1.0"}
+
+[project.optional-dependencies]
+sessions = ["zstandard>=0.22,<1", "PyYAML>=6,<7"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}

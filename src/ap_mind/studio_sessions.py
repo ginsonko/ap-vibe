@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from .contracts import ContractError, utc_now
+from .harness_registry import valid_kind
 
 
 def encoded(value):
@@ -106,7 +107,7 @@ class StudioSessions:
 
     def observe(self, raw):
         harness, session = raw.get('harness','codex'),raw.get('session_id')
-        if harness not in {'codex','claude'} or not isinstance(session,str) or not 1<=len(session)<=256 or session.startswith('readonly-'):
+        if not valid_kind(harness) or not isinstance(session,str) or not 1<=len(session)<=256 or session.startswith('readonly-'):
             return None
         identity=actor_id(harness,session)
         event_id=raw.get('event_id')
@@ -245,7 +246,7 @@ class StudioSessions:
         if not raw.get('automatic'):return
         if type(raw['automatic']) is not bool:raise ContractError('studio_automatic_flag_invalid')
         origin=raw.get('collaboration_origin')
-        if not isinstance(origin,dict) or not origin.get('session_id') or origin.get('harness') not in {'codex','claude'}:
+        if not isinstance(origin,dict) or not origin.get('session_id') or not valid_kind(origin.get('harness')):
             raise ContractError('studio_collaboration_origin_invalid')
         with closing(self.registry._connect()) as c:
             source=c.execute('SELECT payload_json FROM studio_session_actors WHERE actor_id=?',
@@ -261,7 +262,7 @@ class StudioSessions:
                         raise ContractError('recipient_automatic_collaboration_paused')
 
     def inbox(self,harness,session_id,after=0):
-        if harness not in {'codex','claude'} or not isinstance(session_id,str) or not session_id:
+        if not valid_kind(harness) or not isinstance(session_id,str) or not session_id:
             raise ContractError('studio_session_identity_required')
         identity=actor_id(harness,session_id)
         return {**self.studio.service.collaboration.inbox(identity,identity,after=after,limit=20),

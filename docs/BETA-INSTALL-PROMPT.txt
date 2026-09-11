@@ -1,5 +1,5 @@
-请帮我安装 AP-Vibe Windows 个人内测版 v0.2.0-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.2.0-beta.1
+请帮我安装 AP-Vibe Windows 个人内测版 v0.3.0-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
 
 先阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。

@@ -4,12 +4,13 @@ import json
 import time
 
 from .contracts import ContractError, utc_now
+from .harness_registry import valid_kind
 from .studio_sessions import actor_id, encoded
 
 
 def destination(raw):
     if raw is None:return None
-    if not isinstance(raw,dict) or raw.get('harness') not in {'codex','claude'} or not isinstance(raw.get('session_id'),str) or not 1<=len(raw['session_id'])<=256:
+    if not isinstance(raw,dict) or not valid_kind(raw.get('harness')) or not isinstance(raw.get('session_id'),str) or not 1<=len(raw['session_id'])<=256:
         raise ContractError('studio_return_identity_invalid')
     if type(raw.get('wake',False)) is not bool:
         raise ContractError('studio_return_wake_invalid')
@@ -58,7 +59,7 @@ class StudioReturns:
         if not target.get('wake'):return
         if target['harness']!='codex':
             if not value.get('wake_issue'):
-                value['wake_issue']='当前普通Claude终端通过下次Hook/Skill读取收件箱；未启动同会话的第二个写入进程。'
+                value['wake_issue']='当前普通应用通过下次 Hook/Skill 读取收件箱；未启动同会话的第二个写入进程。'
                 self._save(return_id,value)
             return
         messages=self.studio.service.codex_messages

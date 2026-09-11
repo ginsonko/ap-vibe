@@ -6,11 +6,11 @@
 
 仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
 
-本次固定版本：`v0.2.0-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.2.0-beta.1/docs/INSTALL-CODEX.md` 读取。
+本次固定版本：`v0.3.0-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.3.0-beta.1/docs/INSTALL-CODEX.md` 读取。
 
-下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.2.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.3.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
 
-首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.2.0-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.3.0-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
 
 ### 安装任务的最短完整路径
 
@@ -51,6 +51,14 @@
 推荐用户允许整理最近七天活跃任务。用户已经明确授权自动整理时直接执行，不重复询问。普通短问答、公告或一次性介绍不用建立长期项目。
 
 首次安装时也要读取 `ap_vibe_agents` 的 `executors.claude_available`。如果没有 Claude Code CLI，说明通过它执行的工作室伙伴暂不可用，并请求用户允许按[官方说明](https://code.claude.com/docs/en/setup)自动安装；已经明确授权该依赖时不重复询问。安装后核对 `claude --version`，再执行 `tools/install_claude.py --config <原config.json>` 并回读接入。该脚本只安装 AP-Vibe 接入，不负责下载 CLI。用户暂不安装时，监看、档案和可用的 Codex 执行器正常继续。
+
+## 其它客户端接入
+
+安装器同时检查已存在的 Hermes、OpenCode、MiMo Code、ZCode、OpenClaw、PI Desktop 和 DSH，按各自已核实的配置格式安装通用 Skill / MCP。未安装的应用直接跳过；只有 Claude Code CLI 缺失时按上方说明提示是否安装。第三方执行器、普通终端唤醒及真实验收范围见[跨应用支持](CROSS-APP-SUPPORT.md)。
+
+便携目录可用 `tools/install_harness.py --harness opencode --home <客户端配置目录> --config <工作台config.json>`，或 `tools/install_native_extras.py --client dsh --home <DSH_HOME> --config <工作台config.json>`。PI Desktop 可另传 `--agents-home <实际.agents目录>`。均使用安装配置中的 Python 运行。来源日志目录在“会话 → 管理会话来源”修改；接入配置与日志目录是两项不同设置。
+
+已有同名的人工 Skill、另一套工作台的接入，或无法安全合并的 JSONC/YAML 会保留，并给出路径与片段。安装器不改用户模型与 Key，不创建缺失客户端。PyYAML用于保留原配置文本的Hermes合并；zstandard用于DSH压缩日志。联网安装时自动补齐，离线缺失时其它能力继续可用。
 
 ## 自动接入的边界
 

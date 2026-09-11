@@ -191,6 +191,30 @@ def test_recovery_never_replays_uncertain_run(studio):
     assert not cold._processes
 
 
+def test_explicit_resume_preserves_failed_history_only_after_process_stopped(studio, monkeypatch):
+    a = profile(studio)
+    monkeypatch.setattr(agent_studio, 'claude_executable', lambda: '/fixture/claude')
+    monkeypatch.setattr(studio, '_execute', lambda *args: None)
+    request = {'agent_id': a['agent_id'], 'project_id': 'test-project', 'prompt': 'reconcile previous effect then continue'}
+    prior = studio.start({**request, 'request_id': 'resume-original'})
+    studio._state(prior['run_id'], 'uncertain', error='native path error')
+    with pytest.raises(ContractError, match='wait_for_finished_turn'):
+        studio.start({**request, 'request_id': 'resume-explicit', 'continue_run_id': prior['run_id']})
+    studio._threads.pop(prior['run_id'], None)
+    studio._state(prior['run_id'], None, exit_code=1)
+    old = studio.runs(prior['run_id'])['runs'][0]
+    work = Path(old['workspace']); work.mkdir(parents=True)
+    (work / 'existing.txt').write_text('do not repeat this work')
+    result = studio.start({**request, 'request_id': 'resume-explicit', 'continue_run_id': prior['run_id']})
+    new = studio.runs(result['run_id'])['runs'][0]
+    assert new['session_id'] == old['session_id'] and new['workspace'] == old['workspace']
+    assert new['recovery_from_run_id'] == prior['run_id']
+    context = studio.handoff_context(new)
+    assert context['execution']['stopped'] and context['execution']['exit_code'] == 1
+    assert context['execution']['external_effects'] and context['execution']['error'] == 'native path error'
+    assert (work / 'existing.txt').read_text() == 'do not repeat this work'
+
+
 def test_late_provider_usage_does_not_revive_cancelled_execution(studio):
     with studio.registry._connect() as c:
         c.execute('INSERT INTO studio_runs VALUES (?,?,?,?,?,?)',

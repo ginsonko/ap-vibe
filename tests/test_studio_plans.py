@@ -198,3 +198,66 @@ def test_reviewer_loses_key_after_child_is_registered(studio,monkeypatch):
     studio.save({**candidate,'expected_revision':candidate['revision'],'clear_api_key':True})
     studio.plans.tick();current=stored(studio,plan)
     assert current['state']=='needs_help' and len(current['returns'])==1
+
+
+def returned_leaf(studio,monkeypatch):
+    raw=graph(studio,monkeypatch)
+    raw['tasks']=[{**raw['tasks'][1],'reviewer_agent_id':None}]
+    plan=studio.plans.submit(raw)['plan'];studio.plans.tick();studio.tasks.tick()
+    node=stored(studio,plan)['nodes'][0]
+    studio._threads.clear();studio._state(node['run_id'],'awaiting_review',exit_code=0)
+    studio.tasks.tick();studio.plans.tick()
+    assert stored(studio,plan)['state']=='ready_for_review'
+    return plan,node
+
+
+def leaf_review(studio,node,accepted,request_id):
+    return studio.review({'run_id':node['run_id'],'request_id':request_id,
+        'expected_revision':0,'reviewer':'codex:independent-reviewer',
+        'accepted':accepted,'note':'Inspected the result; '+('accepted' if accepted else 'fix missing source facts'),
+        'evidence_refs':[]})
+
+
+def test_returned_plan_rework_releases_same_task_and_returns_once_per_cycle(studio,monkeypatch):
+    plan,node=returned_leaf(studio,monkeypatch)
+    leaf_review(studio,node,False,'reject-returned')
+    monkeypatch.setattr(studio.manager,'review_recovery',lambda *a:{'action':'fallback'})
+    studio.tasks.tick()
+    assert studio.tasks.list(node['task_id'])['tasks'][0]['state']=='queued'
+    studio.plans.tick();studio.plans.tick()
+    resumed=stored(studio,plan)
+    assert resumed['state']=='running' and resumed['return_cycle']==1
+    assert len(resumed['returns'])==1
+    studio.tasks.tick();new_node=stored(studio,plan)['nodes'][0]
+    assert new_node['task_id']==node['task_id'] and new_node['run_id']!=node['run_id']
+    assert new_node['state']=='running'
+    studio._threads.clear();studio._state(new_node['run_id'],'awaiting_review',exit_code=0)
+    studio.tasks.tick();studio.plans.tick();studio.plans.tick()
+    result=stored(studio,plan)
+    assert result['state']=='ready_for_review' and result['return_cycle']==1
+    assert len(result['returns'])==2
+    assert len({r['return_id'] for r in result['returns']})==2
+    assert len(studio.runs()['runs'])==2
+    leaf_review(studio,new_node,True,'accept-rework')
+    studio.tasks.tick();studio.plans.tick();studio.plans.tick()
+    assert stored(studio,plan)['state']=='completed'
+    assert len(stored(studio,plan)['returns'])==2
+
+
+def test_accepting_returned_plan_updates_state_without_duplicate_wake(studio,monkeypatch):
+    plan,node=returned_leaf(studio,monkeypatch)
+    leaf_review(studio,node,True,'accept-returned')
+    studio.tasks.tick();studio.plans.tick();studio.plans.tick()
+    result=stored(studio,plan)
+    assert result['state']=='completed' and len(result['returns'])==1
+    assert len(studio.runs()['runs'])==1
+
+
+def test_cancelled_returned_plan_cannot_be_reopened_by_late_rejection(studio,monkeypatch):
+    plan,node=returned_leaf(studio,monkeypatch);current=stored(studio,plan)
+    studio.plans.cancel({'request_id':'cancel-returned','plan_id':plan['plan_id'],
+                         'expected_revision':current['revision']})
+    leaf_review(studio,node,False,'late-rejection')
+    studio.tasks.tick();studio.plans.tick();studio.tasks.tick()
+    assert stored(studio,plan)['state']=='cancelled'
+    assert len(studio.runs()['runs'])==1

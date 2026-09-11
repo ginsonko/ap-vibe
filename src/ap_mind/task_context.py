@@ -136,7 +136,7 @@ class TaskContext:
         fingerprint = hashlib.sha256(_json(payload).encode()).hexdigest()
         project, identity = self._project(cwd, session_id, kind, selected)
         studio = getattr(self.service, 'agent_studio', None)
-        if studio and kind in {'codex','claude'} and not readonly_identity:
+        if studio and not readonly_identity:
             studio.sessions.observe({'harness':kind,'session_id':session_id,'cwd':cwd,
                 'project_id':project.project_id if identity.get('classification')!='unresolved' else None,
                 'event_id':request_id,'kind':raw.get('lifecycle_event','context')})
@@ -220,7 +220,7 @@ class TaskContext:
             "project_catalog_url": "/v1/ap-vibe/projects",
                 "instructions": "Read-only context is available immediately. Before writing a project dossier, use references/organization.md to classify this session or create a project; never merge by title or cwd similarity."}
         result["hook_context"] = self._hook_context(result)
-        if studio and kind in {'codex','claude'} and not readonly_identity:
+        if studio and not readonly_identity:
             result['studio_context'] = studio.sessions.context(kind,session_id,result.get('project_id'))
             result['hook_context'] = self._hook_context(result)
         with closing(self.registry._connect()) as connection:

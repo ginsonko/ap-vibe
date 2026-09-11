@@ -13,6 +13,34 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import task_client
 
 
+@pytest.mark.parametrize('kind', ['hermes', 'opencode', 'mimocode', 'dsh', 'pi-desktop', 'future-harness'])
+def test_native_session_filter_uses_requested_source(monkeypatch, capsys, kind):
+    calls=[]
+    monkeypatch.delenv('AP_VIBE_READONLY_CURATION',raising=False)
+    monkeypatch.setattr(task_client,'call',lambda route:calls.append(route) or {'ok':True})
+    monkeypatch.setattr(sys,'argv',['task_client.py','sessions','--harness',kind])
+    assert task_client.main()==0
+    assert 'harness='+kind in calls[0]
+    assert json.loads(capsys.readouterr().out)['ok']
+
+
+def test_native_bootstrap_never_inherits_parent_codex_session(monkeypatch, tmp_path, capsys):
+    calls=[]
+    monkeypatch.delenv('AP_VIBE_READONLY_CURATION',raising=False)
+    monkeypatch.delenv('AP_VIBE_SESSION_ID',raising=False)
+    monkeypatch.setenv('AP_VIBE_CLIENT_KIND','hermes')
+    monkeypatch.setenv('CODEX_THREAD_ID','unrelated-parent-codex')
+    monkeypatch.setattr(task_client,'save_receipt',lambda *_:None)
+    monkeypatch.setattr(task_client,'call',lambda route,body:calls.append(body) or {'ok':True})
+    monkeypatch.setattr(sys,'argv',['task_client.py','bootstrap','--cwd',str(tmp_path)])
+    assert task_client.main()==0
+    assert calls[-1]['session_id']!='unrelated-parent-codex'
+    assert calls[-1]['client_kind']=='hermes'
+    monkeypatch.setenv('AP_VIBE_SESSION_ID','actual-native-id')
+    assert task_client.main()==0
+    assert calls[-1]['session_id']=='actual-native-id'
+
+
 def test_tool_fallback_uses_shared_adapter_exact_request_and_custom_config(monkeypatch,tmp_path,capsys):
     from tools import ap_vibe_mcp
     payload={'request_id':'same-id','project_id':'real-project','title':'中文任务','goal':'write',

@@ -117,14 +117,49 @@ class Organization:
                 excluded.append({**item, "reason": reason})
             else:
                 items.append(item)
+        directory = getattr(self.service, 'session_directory', None)
+        if directory:
+            for source in directory.catalog(include_all=True)['sessions']:
+                if source['harness'] == 'codex' or source.get('managed'):
+                    continue
+                key = source['source_id']
+                seen.add((source['harness'], source['session_id']))
+                project = projects.get(source.get('project_id'))
+                classified = bool(project and project.status == 'active' and profiles[project.project_id]['registration_state'] == 'registered')
+                seconds = self.service._codex_iso_seconds(source.get('modified_at'))
+                recent = seconds is not None and 0 <= now - seconds <= 7 * 86400
+                item = {'source_key': key, 'source_id': key, 'harness': source['harness'],
+                        'session_id': source['session_id'], 'title': source['title'],
+                        'project_id': project.project_id if project else None,
+                        'project_name': project.display_name if project else '尚未归类',
+                        'classified': classified, 'recent': recent, 'last_activity_at': source.get('modified_at'),
+                        'activity_basis': 'native_source_modified', 'message_count': None, 'preview': '',
+                        'read_url': '/v1/ap-vibe/organization/context?source_key=' + quote(key)}
+                reason = ('本次未勾选' if selected is not None and key not in selected else
+                          '已经归类' if scope != 'rebuild_all' and classified else
+                          '最近 7 天没有活动' if scope == 'recent_unclassified' and not recent else None)
+                if reason:
+                    excluded.append({**item, 'reason': reason})
+                else:
+                    items.append(item)
+        items.sort(key=lambda item: item.get('last_activity_at') or '', reverse=True)
         return {"ok": True, "scope": scope, "days": 7, "items": items[offset:offset + limit],
                 "total": len(items), "offset": offset, "limit": limit,
                 "next_offset": offset + limit if offset + limit < len(items) else None,
                 "excluded": excluded[:64], "excluded_count": len(excluded),
-                "known_session_count": len(seen), "history_scope": "registered_sources_only",
+                "known_session_count": len(seen), "history_scope": "discovered_native_sources",
                 "guidance": "先核对标题与可见内容；无有效信息的任务保留为未归类。文件更新时间只作候选线索。"}
 
     def context(self, source_key):
+        if isinstance(source_key, str) and '-' in source_key:
+            window = self.service.session_directory.read(source_key, limit=32)
+            membership = self.service.task_context.projects.membership(window['harness'], window['session_id']) or {}
+            return {'ok': True, 'source_key': source_key, 'harness': window['harness'],
+                    'session_id': window['session_id'], 'project_id': membership.get('project_id'),
+                    'title': window.get('title'), 'workspace_path': window.get('cwd'),
+                    'messages': [{**event, 'source_ref': source_key + '#' + str(event['id'])} for event in window['events']],
+                    'completeness': 'bounded_recent_native_context', 'authority': 'untrusted_visible_messages',
+                    'read_url': '/v1/ap-vibe/sessions/read?source_id=' + quote(source_key), 'vibe_formal_write': False}
         source = self.registry.source(source_key)
         path = Path(source.source_path)
         meta = self.service._session_meta_for_source(path)
@@ -278,6 +313,29 @@ class Organization:
     def assign(self, raw):
         if not raw.get("evidence_refs"):
             raise ContractError("session_assignment_evidence_required")
+        if isinstance(raw.get('source_key'), str) and '-' in raw['source_key']:
+            context = self.context(raw['source_key'])
+            if context['session_id'] != raw.get('session_id'):
+                raise ContractError('session_source_identity_changed')
+            task_context = self.service.task_context
+            bootstrap_request = {'request_id': 'organization-context-' + raw['request_id'],
+                'client_kind': context['harness'], 'session_id': context['session_id'],
+                'cwd': context['workspace_path'] or str(self.service.default_project.root_path),
+                'goal': '按用户发起的会话整理结果归类此来源'}
+            # Classification changes the selected project. Reuse the original
+            # receipt for an idempotent retry rather than bootstrapping against
+            # that new membership, which would create a false identity conflict.
+            with closing(self.registry._connect()) as conn:
+                saved = conn.execute('SELECT payload_json FROM task_context_receipts WHERE request_id=?',
+                                     (bootstrap_request['request_id'],)).fetchone()
+            receipt = json.loads(saved[0]) if saved else task_context.bootstrap(bootstrap_request)
+            if any(receipt.get(k) != bootstrap_request[k] for k in ('client_kind', 'session_id', 'cwd')):
+                raise ContractError('session_assignment_request_conflict')
+            assignment = task_context.projects.classify({'request_id': raw['request_id'],
+                'receipt_id': receipt['receipt_id'], 'session_id': context['session_id'],
+                'expected_membership_version': receipt.get('membership_version', 0),
+                'project_id': raw['project_id'], 'rationale': raw['rationale'], 'evidence_refs': raw['evidence_refs']})
+            return {'ok': True, 'assignment': assignment, 'replayed': assignment['replayed'], 'vibe_formal_write': False}
         with self.service._lock, self.registry.transaction():
             context = self.context(raw.get("source_key"))
             if context["session_id"] != raw.get("session_id"):

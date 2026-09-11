@@ -66,6 +66,73 @@ def test_structured_update_selective_read_conflict_and_cold_history(context, tmp
     cold.close()
 
 
+def test_growing_history_preserves_all_entries_revisions_and_retry_after_restart(context, tmp_path):
+    service, identity = context
+    completed = [{"id": f"done-{i}", "summary": f"已完成工作 {i}"} for i in range(100)]
+    decisions = {f"decision-{i}": {"reason": f"原决定 {i}"} for i in range(120)}
+    first_patch = {**identity, "request_id": "growing-history-1", "expected_revision": 0,
+                   "sections": {"work": {"completed": completed, "remaining": ["保留旧待办"]},
+                                "decisions": {"by_id": decisions}}}
+    first = service.task_context.update_knowledge(first_patch)
+    extended = completed + [{"id": "done-100", "summary": "新增工作", "api_key": "synthetic-secret"}]
+    second_patch = {**identity, "request_id": "growing-history-2", "expected_revision": 1,
+                    "sections": {"work": {"completed": extended, "remaining": ["保留旧待办"]}}}
+    second = service.task_context.update_knowledge(second_patch)
+    assert second["revision"] == 2
+    assert service.task_context.update_knowledge(second_patch)["replayed"]
+    service.close()
+    cold = StudioEpisodeService(tmp_path / "data", project_root=tmp_path / "project", codex_project_id="one")
+    try:
+        saved = cold.task_context.knowledge({**identity, "sections": ["work", "decisions"]})
+        assert saved["revision"] == 2
+        assert saved["sections"]["work"]["completed"][:-1] == completed
+        assert saved["sections"]["work"]["completed"][-1]["api_key"] == "[REDACTED]"
+        assert saved["sections"]["work"]["remaining"] == ["保留旧待办"]
+        assert saved["sections"]["decisions"]["by_id"] == decisions
+        old = cold.task_context.knowledge({**identity, "revision": 1, "sections": ["work"]})
+        assert old["sections"]["work"]["completed"] == completed
+        assert cold.task_context.documents.latest("one")["content_hash"] == second["content_hash"]
+        assert cold.task_context.update_knowledge(first_patch)["content_hash"] == first["content_hash"]
+        assert cold.task_context.update_knowledge(second_patch)["replayed"]
+    finally:
+        cold.close()
+
+
+def test_large_collections_still_obey_byte_budget_without_losing_prior_revision(context, monkeypatch):
+    service, identity = context
+    baseline = service.task_context.update_knowledge({**identity, "request_id": "budget-baseline", "expected_revision": 0,
+                                                     "sections": {"work": {"remaining": ["旧事项"]}}})
+    monkeypatch.setenv("AP_VIBE_DOCUMENT_PATCH_BYTES", "80000")
+    patch = {**identity, "request_id": "over-budget", "expected_revision": 1,
+             "sections": {"work": {"completed": ["历史内容" * 200 for _ in range(150)]}}}
+    with pytest.raises(ContractError, match="document_patch_too_large:80000"):
+        service.task_context.update_knowledge(patch)
+    assert service.task_context.documents.latest("one")["content_hash"] == baseline["content_hash"]
+
+
+def test_total_budget_applies_to_separate_growing_chapters(context, monkeypatch):
+    service, identity = context
+    monkeypatch.setenv("AP_VIBE_DOCUMENT_PATCH_BYTES", "200000")
+    chapter = {"items": ["x" * 999 for _ in range(150)]}
+    for revision, name in enumerate(["work", "decisions"]):
+        service.task_context.update_knowledge({**identity, "request_id": "total-" + name, "expected_revision": revision,
+                                              "sections": {name: chapter}})
+    with pytest.raises(ContractError, match="document_total_too_large"):
+        service.task_context.update_knowledge({**identity, "request_id": "total-evidence", "expected_revision": 2,
+                                              "sections": {"evidence": chapter}})
+    saved = service.task_context.documents.latest("one")
+    assert saved["revision"] == 2 and "evidence" not in saved["sections"]
+
+
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), {1: "bad key"}, {"x" * 129: "bad key"}])
+def test_validation_reaches_items_beyond_old_collection_limit(context, invalid):
+    service, identity = context
+    with pytest.raises(ContractError):
+        service.task_context.update_knowledge({**identity, "request_id": "invalid-tail", "expected_revision": 0,
+                                              "sections": {"work": {"completed": ["valid"] * 150 + [invalid]}}})
+    assert service.task_context.documents.latest("one") is None
+
+
 def test_scores_need_evidence_and_unknown_is_not_zero(context):
     service, identity = context
     for bad in [{"score": 80}, {"score": 80, "reason": "fine"}, {"score": True}, {"score": 101}, {"score": float("nan")}]:
