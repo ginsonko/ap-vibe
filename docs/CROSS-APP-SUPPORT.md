@@ -21,7 +21,7 @@ AP-Vibe 的四项基础能力仍是任务监看、项目档案与记忆、逻辑
 | Codex | 支持 | 既有能力 | 支持；具备官方能力时可排队唤醒普通任务 | 自动安装 Skill、MCP 和生命周期接入 |
 | Claude Code | 支持 | 既有能力 | 支持；普通终端在下次 Hook / Skill 读取返回 | 自动安装 Skill、MCP 和生命周期接入 |
 | OpenCode | 实际会话回读通过 | 通过 | 同一原生会话接续、留言和成果检查通过 | 原生 MCP 与 Skill 桥接 |
-| OpenClaw | 实际会话回读通过 | 通过 | 接续、留言及读取依赖成果通过 | 工作室 MCP 与原生 Skill 桥接 |
+| OpenClaw | 实际会话回读通过 | 通过 | 接续、留言及读取依赖成果通过 | 原生 Skill 与本地工具回退；不提供原生 MCP 安装 |
 | MiMo Code CLI 0.1.14 | 实际会话回读通过；保留导入来源 | 通过 | 原生接续与留言通过 | 原生 MCP 与 Skill 桥接 |
 | Hermes Agent 0.21.1 / Desktop 0.17.0 | 共享 state.db 的公开会话读取通过 | CLI 通过；桌面 GUI 未完成独立验收 | CLI 托管创建、接续与留言通过 | 原生 MCP 与 Skill 桥接 |
 | PI Desktop | 实际会话回读通过 | 官方控制接口执行任务通过 | 本版未提供工作室执行端 | 原生 Skill 与 MCP 实际调用通过 |
