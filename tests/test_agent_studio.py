@@ -27,6 +27,16 @@ def profile(studio, **changes):
                         'api_key': 'fixture-secret-only', 'model': 'arbitrary-model', **changes})['agent']
 
 
+def test_native_claude_install_is_found_without_path_refresh(tmp_path,monkeypatch):
+    monkeypatch.setattr(agent_studio.shutil,'which',lambda _:None)
+    monkeypatch.setattr(Path,'home',classmethod(lambda cls:tmp_path))
+    for key in ('AP_VIBE_CLAUDE_EXE','APPDATA','LOCALAPPDATA'):monkeypatch.delenv(key,raising=False)
+    assert agent_studio.claude_executable() is None
+    native=tmp_path/'.local/bin'/('claude.exe' if agent_studio.os.name=='nt' else 'claude')
+    native.parent.mkdir(parents=True);native.write_bytes(b'fixture-only-not-executed')
+    assert agent_studio.claude_executable()==str(native.resolve())
+
+
 def test_profiles_are_separate_encrypted_and_versioned(studio):
     a, b = profile(studio), profile(studio)
     assert a['agent_id'] != b['agent_id']

@@ -101,6 +101,8 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--claude-dir',type=Path,default=Path(os.environ.get('CLAUDE_CONFIG_DIR') or Path.home()/'.claude'));parser.add_argument('--config',type=Path);parser.add_argument('--if-available',action='store_true')
     args=parser.parse_args()
     if args.if_available and not claude_executable():
-        print(json.dumps({'ok':True,'skipped':True,'reason':'尚未安装Claude Code；Codex接入正常继续。'},ensure_ascii=False))
+        print(json.dumps({'ok':True,'skipped':True,'reason':'尚未安装Claude Code；Codex接入正常继续。',
+            'next':'通过Claude Code运行的工作室伙伴暂时不可用。请向用户说明并请求按官方方式自动安装CLI；已有明确授权时直接安装。随后回读claude --version并重跑本接入脚本。监看、项目档案和可用的Codex执行器不受影响。',
+            'setup_url':'https://code.claude.com/docs/en/setup'},ensure_ascii=False))
     else:
         print(json.dumps(install(args.claude_dir,args.config),ensure_ascii=False))

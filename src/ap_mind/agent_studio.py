@@ -70,6 +70,12 @@ def dependency_ids(value):
 
 def claude_executable():
     candidates = [os.environ.get('AP_VIBE_CLAUDE_EXE', ''), shutil.which('claude.exe') or '']
+    # A running workbench keeps its old PATH after a native CLI installation.
+    # Discover the standard user install directly without requiring a restart.
+    candidates.append(str(Path.home() / '.local/bin' / ('claude.exe' if os.name == 'nt' else 'claude')))
+    localappdata = os.environ.get('LOCALAPPDATA')
+    if localappdata:
+        candidates.append(str(Path(localappdata) / 'Microsoft/WinGet/Links/claude.exe'))
     appdata = os.environ.get('APPDATA')
     if appdata:
         candidates.append(str(Path(appdata) / 'npm/node_modules/@anthropic-ai/claude-code/bin/claude.exe'))

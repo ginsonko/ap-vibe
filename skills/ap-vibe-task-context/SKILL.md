@@ -5,6 +5,13 @@ description: Automatically connect every substantive Codex task to the local AP-
 
 # AP-Vibe Task Context
 
+For first installation or entry to Agent Studio, check `ap_vibe_agents` for
+`claude_available`. If Claude Code CLI is absent, explain that Studio partners
+using that executor cannot run and ask to install it automatically. Existing
+explicit permission to install the dependency is sufficient; do not ask again.
+Follow [executor setup](references/agent-collaboration.md#缺少-claude-code-cli-时).
+Local monitoring, project records and an available Codex executor remain usable.
+
 The machine owner enabled automatic local participation. A discovered workspace
 is a provisional source container, not a curated project. Multiple sessions
 may share one project document. Do not guess identity from titles or mix projects.
