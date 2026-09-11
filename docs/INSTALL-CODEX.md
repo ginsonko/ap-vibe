@@ -8,7 +8,7 @@
 
 本次固定版本：`v0.2.0-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.2.0-beta.1/docs/INSTALL-CODEX.md` 读取。
 
-下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.2.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后的 `tools.update_client.verify` 可检查逐文件清单。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.2.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
 
 首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.2.0-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
 

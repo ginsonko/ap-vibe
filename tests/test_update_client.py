@@ -33,6 +33,20 @@ def test_staging_preserves_data_and_rejects_changed_packages(tmp_path):
     with pytest.raises(ValueError,match='digest'):update_client.stage(cfg,archive,m)
 
 
+def test_installer_cli_verifies_download_manifest_then_stages(tmp_path):
+    import subprocess,sys
+    archive,manifest=package(tmp_path)
+    manifest_path=tmp_path/'ap-vibe-manifest.json'
+    manifest_path.write_text(json.dumps(manifest),encoding='utf8')
+    unpacked=tmp_path/'unpacked'
+    with zipfile.ZipFile(archive) as z:z.extractall(unpacked)
+    cmd=[sys.executable,update_client.__file__]
+    checked=json.loads(subprocess.check_output(cmd+['verify','--root',str(unpacked),'--manifest',str(manifest_path)]))
+    assert checked['ok'] and not (unpacked/'release.json').exists()
+    staged=json.loads(subprocess.check_output(cmd+['stage','--config',str(tmp_path/'config.json'),'--archive',str(archive),'--manifest',str(manifest_path)]))
+    assert staged['ok'] and update_client.verify(Path(staged['candidate_root']),manifest)
+
+
 def test_release_traversal_and_unknown_storage_are_not_installed(tmp_path):
     archive,m=package(tmp_path,{'../escape.txt':b'unsafe'})
     with pytest.raises(ValueError,match='path_invalid'):update_client.stage(tmp_path/'config.json',archive,m)

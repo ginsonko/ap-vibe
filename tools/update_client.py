@@ -206,6 +206,7 @@ if __name__=='__main__':
         target=stage(args.config,args.archive,read(args.manifest))
         result={'ok':True,'candidate_root':str(target),'version':read(target/'release.json')['version']}
     elif args.action=='verify':
-        value=verify(args.root,read(args.root/'release.json'));result={'ok':True,'version':value['version'],'storage_contract':value['storage_contract']}
+        if not args.root:p.error('verify requires --root')
+        value=verify(args.root,read(args.manifest or args.root/'release.json'));result={'ok':True,'version':value['version'],'storage_contract':value['storage_contract']}
     else:result=checkpoint(args.config,args.root)
     print(json.dumps(result,ensure_ascii=False))
