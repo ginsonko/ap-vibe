@@ -135,6 +135,11 @@ class TaskContext:
             payload.update(client_kind=kind, selected_project_id=selected)
         fingerprint = hashlib.sha256(_json(payload).encode()).hexdigest()
         project, identity = self._project(cwd, session_id, kind, selected)
+        studio = getattr(self.service, 'agent_studio', None)
+        if studio and kind in {'codex','claude'} and not readonly_identity:
+            studio.sessions.observe({'harness':kind,'session_id':session_id,'cwd':cwd,
+                'project_id':project.project_id if identity.get('classification')!='unresolved' else None,
+                'event_id':request_id,'kind':raw.get('lifecycle_event','context')})
         membership = self.projects.membership(kind, session_id)
         # Keep the idempotency read short. The brief and memory projection can
         # inspect several bounded stores; they must not hold a SQLite read
@@ -215,6 +220,9 @@ class TaskContext:
             "project_catalog_url": "/v1/ap-vibe/projects",
                 "instructions": "Read-only context is available immediately. Before writing a project dossier, use references/organization.md to classify this session or create a project; never merge by title or cwd similarity."}
         result["hook_context"] = self._hook_context(result)
+        if studio and kind in {'codex','claude'} and not readonly_identity:
+            result['studio_context'] = studio.sessions.context(kind,session_id,result.get('project_id'))
+            result['hook_context'] = self._hook_context(result)
         with closing(self.registry._connect()) as connection:
             inserted = connection.execute(
                 "INSERT INTO task_context_receipts VALUES (?, ?, ?, ?, ?, ?, ?) "
@@ -248,6 +256,12 @@ class TaskContext:
             "跨应用继续用ap_vibe_sessions/ap_vibe_session_read；无MCP用task_client.py sessions/session-read。只读无需归类，按需读取，不扫描全部历史。",
             "仅初次接触时介绍：打开实际工作台→交给Codex需求→看进度；已有任务直接继续。",
         ]
+        studio = result.get('studio_context')
+        if studio:
+            mode = '开启：适合拆分时优先使用工作室伙伴；自然阶段读取消息，按需环视，禁止重复认领。' if studio['policy']['enabled'] else '关闭：独立完成当前任务；用户明确委托其它伙伴时仍可派发。'
+            lines.insert(1, '工作室协作'+mode+' 入口ap_vibe_studio_context，自己的消息用ap_vibe_session_inbox；见references/agent-collaboration.md。')
+            if studio.get('message_count'):
+                lines.insert(2,'工作室有保存给本会话的消息：'+str(studio['message_count'])+'条。请用ap_vibe_session_inbox读取，核对message_id避免重复执行；最新摘要：'+studio['recent_messages'][-1]['summary'])
         manifest = result.get("knowledge_manifest")
         if manifest:
             # Routing comes before optional prose so the byte-bound hook never

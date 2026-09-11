@@ -26,6 +26,33 @@ def marker(source, kind):
         stream.write(json.dumps({"type": "event_msg", "payload": {"type": kind}}) + "\n")
 
 
+def test_public_delivery_hides_long_path_offsets_and_keeps_durable_state(tmp_path,monkeypatch):
+    queue,source=fixture(tmp_path)
+    monkeypatch.setattr(queue,'_start',lambda _:None)
+    raw={'request_id':'long-source','session_id':source.session_id,'message':'x'*16000}
+    result=queue.enqueue(raw)
+    assert result['delivery']['message_truncated'] and len(result['delivery']['message'])==12000
+    record=json.loads(queue._path(raw['request_id']).read_text(encoding='utf8'))
+    offsets={'C:/'+('long-windows-path/'*12)+'rollout.jsonl':12345}
+    queue._save(record,reconcile_offsets=offsets,status='uncertain')
+    assert 'reconcile_offsets' not in queue.read_delivery(source.session_id,raw['request_id'])
+    assert queue.enqueue(raw)['replayed']
+    assert 'reconcile_offsets' not in queue.list(source.session_id)['deliveries'][0]
+    persisted=json.loads(queue._path(raw['request_id']).read_text(encoding='utf8'))
+    assert persisted['reconcile_offsets']==offsets and persisted['message']==raw['message']
+
+
+@pytest.mark.parametrize('status',['queued','running','submitted','uncertain','failed','cancelled','completed'])
+def test_background_recovery_only_starts_durably_unsent_messages(tmp_path,monkeypatch,status):
+    queue,source=fixture(tmp_path);started=[]
+    monkeypatch.setattr(queue,'_start',lambda sid:started.append(sid))
+    record={'request_id':'resume','session_id':source.session_id,'message':'result','status':status}
+    queue._save(record)
+    assert queue.resume_queued_delivery(source.session_id,'resume')==(status=='queued')
+    assert len(started)==(1 if status=='queued' else 0)
+    assert not queue.resume_queued_delivery('wrong-session','resume')
+
+
 def test_public_lifecycle_and_changed_identity(tmp_path):
     queue, source = fixture(tmp_path)
     assert source_state(source)[0] == "unknown"
@@ -55,6 +82,7 @@ def test_enqueue_idempotency_cancel_and_restart_uncertain(tmp_path, monkeypatch)
 
 
 def test_busy_message_waits_and_cancel_prevents_execution(tmp_path, monkeypatch):
+    monkeypatch.setattr('ap_mind.codex_messages.codex_command', lambda:['fixture-codex'])
     monkeypatch.setattr('ap_mind.codex_messages.supports_queue', lambda _:False)
     queue, source = fixture(tmp_path)
     marker(source, "task_started")
@@ -153,3 +181,31 @@ def test_completion_survives_large_trace_after_user_message(tmp_path, monkeypatc
         stream.write(json.dumps({'type':'ignored-fixture','padding':'x'*600000})+'\n')
         stream.write(json.dumps({'timestamp':'2026-09-07T00:01:00Z','type':'event_msg','payload':{'type':'task_complete','turn_id':'long-turn-id','last_agent_message':'完成'}})+'\n')
     assert queue.list(source.session_id)['deliveries'][0]['status']=='completed'
+
+
+def test_single_delivery_read_never_dispatches_or_crosses_session(tmp_path, monkeypatch):
+    queue, source = fixture(tmp_path)
+    monkeypatch.setattr(queue, '_start', lambda _: pytest.fail('read dispatched a sender'))
+    raw = {'request_id':'queued-read','session_id':source.session_id,'message':'继续','status':'queued','created_at':'2026-09-11T00:00:00Z'}
+    queue._save(raw)
+    assert queue.read_delivery(source.session_id, 'queued-read')['status'] == 'queued'
+    assert queue.read_delivery('different-session', 'queued-read') is None
+    assert queue.read_delivery(source.session_id, 'missing') is None
+    queue._save(raw, status='completed', response='真实完成')
+    assert queue.read_delivery(source.session_id, 'queued-read')['response'] == '真实完成'
+
+
+def test_late_read_recovers_wake_before_large_trace(tmp_path,monkeypatch):
+    queue,source=fixture(tmp_path)
+    monkeypatch.setattr(queue,'_start',lambda _:pytest.fail('must not resend'))
+    record={'request_id':'late-read','session_id':source.session_id,'message':'接续核验',
+            'status':'submitted','created_at':'2026-09-11T00:00:00Z'}
+    queue._save(record)
+    with Path(source.source_path).open('a',encoding='utf8') as stream:
+        for payload in [
+            {'type':'item_completed','turn_id':'actual-turn','item':{'id':'actual-message','type':'UserMessage','content':[{'type':'text','text':'接续核验'}]}},
+            {'type':'ignored','padding':'x'*700000},
+            {'type':'task_complete','turn_id':'actual-turn','last_agent_message':'已核对实际文件'}]:
+            stream.write(json.dumps({'timestamp':'2026-09-11T00:01:00Z','type':'event_msg','payload':payload},ensure_ascii=False)+'\n')
+    for _ in range(3):result=queue.read_delivery(source.session_id,'late-read')
+    assert result['status']=='completed' and result['matched_turn_id']=='actual-turn'

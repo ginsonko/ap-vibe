@@ -13,6 +13,22 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from tools import task_client
 
 
+def test_tool_fallback_uses_shared_adapter_exact_request_and_custom_config(monkeypatch,tmp_path,capsys):
+    from tools import ap_vibe_mcp
+    payload={'request_id':'same-id','project_id':'real-project','title':'中文任务','goal':'write',
+             'acceptance':'read real file','return_to':{'harness':'codex','session_id':'actual','wake':True}}
+    path=tmp_path/'params.json'
+    path.write_text(json.dumps(payload,ensure_ascii=False),encoding='utf-8-sig')
+    calls=[]
+    monkeypatch.delenv('AP_VIBE_READONLY_CURATION',raising=False)
+    monkeypatch.setattr(ap_vibe_mcp.task_client,'call',lambda route,body:calls.append((route,body)) or {'ok':True})
+    monkeypatch.setattr(sys,'argv',['task_client.py','tool','--config',str(tmp_path/'config.json'),
+        '--name','ap_vibe_task_save','--file',str(path)])
+    assert task_client.main()==0
+    assert calls==[('studio/tasks/save',payload)]
+    assert json.loads(capsys.readouterr().out)['ok']
+
+
 def test_explicit_full_document_read_batches_and_pins_one_revision(monkeypatch):
     calls = []
     def read(route, payload):

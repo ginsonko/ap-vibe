@@ -22,7 +22,7 @@ async function readFiles(runId, name, signal) {
   } finally { clearTimeout(timer); signal.removeEventListener('abort', abort); }
 }
 
-export function ArtifactsPanel({ runId, runState }) {
+export function ArtifactsPanel({ runId, runState, onEvidence }) {
   const [listing, setListing] = useState(null);
   const [selected, setSelected] = useState('');
   const [preview, setPreview] = useState(null);
@@ -82,6 +82,7 @@ export function ArtifactsPanel({ runId, runState }) {
           {preview.kind === 'binary' ? <p>这是图片、视频或其它非 UTF-8 文本文件，当前提供文件信息，可在本机打开查看。</p> : preview.text === '' ? <p>文件已经保存，内容为空。</p> : preview.kind === 'markdown' ? <MessageContent text={preview.text} annotations={false}/> : <pre>{preview.text}</pre>}
         </div>
         <small className="muted">读取时间：{new Date(preview.observed_at).toLocaleString('zh-CN')}</small>
+        {onEvidence && !runtimeFile(selected) && <button type="button" disabled={reading || !!readError || preview.changed_during_read} onClick={()=>onEvidence(selected)}>用于本次验收</button>}
         <details><summary>文件位置与校验信息</summary><code className="agent-artifact-hash">{preview.local_path}</code>{preview.sha256 && <p className="agent-artifact-hash">SHA-256：{preview.sha256}</p>}<p>用于确认本次读取的文件版本，不能代替质量验收。</p></details>
       </>}
     </>}

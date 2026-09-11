@@ -6,6 +6,12 @@
 
 仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
 
+本次固定版本：`v0.2.0-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.2.0-beta.1/docs/INSTALL-CODEX.md` 读取。
+
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.2.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+
+首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.2.0-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+
 ### 安装任务的最短完整路径
 
 这是安装任务，交付是“服务可用、接入可读、工作台打开”。阅读本说明和 `install.ps1`，确认已有授权与目标目录后执行安装；只有出现具体错误或与用户约束冲突时，再读相关实现。无需为了普通安装通读服务器、认知、模型和采集器全部源码，也不要把安装扩展成新产品开发或长期档案整理。
@@ -44,6 +50,8 @@
 
 推荐用户允许整理最近七天活跃任务。用户已经明确授权自动整理时直接执行，不重复询问。普通短问答、公告或一次性介绍不用建立长期项目。
 
+首次安装时也要读取 `ap_vibe_agents` 的 `executors.claude_available`。如果没有 Claude Code CLI，说明通过它执行的工作室伙伴暂不可用，并请求用户允许按[官方说明](https://code.claude.com/docs/en/setup)自动安装；已经明确授权该依赖时不重复询问。安装后核对 `claude --version`，再执行 `tools/install_claude.py --config <原config.json>` 并回读接入。该脚本只安装 AP-Vibe 接入，不负责下载 CLI。用户暂不安装时，监看、档案和可用的 Codex 执行器正常继续。
+
 ## 自动接入的边界
 
 - 所有本机任务使用同一套接入流程，不按标题、模型品牌或任务等级设置资格门槛。
@@ -57,9 +65,24 @@
 
 先保存已有配置和版本锚点，再更新代码。保留 `%LOCALAPPDATA%\AP-Vibe`、服务配置中指定的数据目录、旧项目档案和用户快照。
 
+首次从旧版升级时，使用已下载且校验过的**新版包中的工具**。不要从旧安装寻找尚不存在的更新工具。执行流程：
+
+1. 用已配置的 Python 执行新版 `tools/update_client.py stage --config <原config.json> --archive <ap-vibe-app.zip> --manifest <ap-vibe-manifest.json>`，返回 `candidate_root`。它只校验并准备版本目录，尚未切换服务。
+2. 当前版本支持维护接口时，执行候选目录内 `scripts/ap-vibe.ps1 -Action apply-update -ConfigDir <原配置目录> -CandidateRoot <candidate_root> -SkipOpen`。有托管任务时返回 busy，待空闲再切换，不强行终止任务。
+3. v0.1 旧版没有维护接口：先查看旧实例任务，确认没有托管任务运行，再用旧脚本的 `-Action stop -ConfigDir <原配置目录>` 正常停止该实例；然后执行上一步候选脚本的 apply-update。不要按进程名批量停止。
+4. 回读原配置文件的 `installed_version`、实际健康 URL、原数据目录和 `previous_product_root`。返回的 backup 保存恢复锚点。自定义 ConfigDir 的安装需在原 CODEX_HOME / CLAUDE_CONFIG_DIR 下重跑候选 `install.ps1 -ConfigDir <原配置目录>` 来同步接入；沿用原登录自启动选择。
+
+升级失败先看 returned status / code 与当前健康状态；rolled_back 表示恢复旧代码入口，不能宣称新版已生效。候选包重新校验失败时保留当前服务和用户资料。
+
 安装脚本只备份与更新 AP-Vibe 的 Skill、MCP 和 hook 定义，保留其他配置。真实恢复快照存放在用户数据目录，发布仓库只含空模板。
 
+重复运行安装时，没有显式传入的项目根、数据目录、端口和会话来源会继承已有配置；自定义字段与更新偏好也会保留。重复安装用于修复接入，不会暗中切换当前运行版本。误传不同数据目录会提示冲突并保留原配置，不会静默迁移资料。完整发布包中的 `ap-vibe-version.json` 用于标明首次安装版本。
+
 同一配置启动会复用健康实例；同时启动也不会创建两个实例。服务掉线时可运行 `start.ps1`，或桌面启动器自动恢复。不要按进程名批量停止 Python、Node 或 Codex。
+
+Studio V2 提供后台版本检查与独立版本目录。新任务只触发可合并的检查，离线或GitHub不可用不阻止原任务；包先核对来源、文件指纹和数据兼容标记，托管工作空闲后再切换。界面“更新与维护”显示实际状态和上次错误，可关闭自动检查。源码有人工改动时不执行强制reset或覆盖。
+
+新代码启动失败时恢复旧代码入口，继续使用同一数据库；不会拿旧库备份覆盖升级后新写入的项目、消息或任务。旧启动器/MCP客户端通过稳定入口寻找当前版本。发布包须包含 `ap-vibe-app.zip` 与配套 `ap-vibe-manifest.json`；没有这两个受支持附件的旧Release不会被当成可自动安装的新包。
 
 ### 下载或首次模型连接失败
 

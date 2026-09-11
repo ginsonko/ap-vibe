@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {StudioPlans} from './StudioPlans';
 import { ReviewVerdictPanel } from './ReviewVerdictPanel';
 import { TaskAttemptHistory } from './TaskAttemptHistory';
 import { MessageContent } from './MessageContent';
 
-const STATES = { queued: '待分配', dispatching: '正在派发', running: '执行中', waiting_review: '成果待验收', completed: '已完成', changes_requested: '需要修改', needs_help: '需要接手', paused: '已暂停', archived: '已归档' };
+const STATES = { budget_waiting: '等待投喂', queued: '待分配', dispatching: '正在派发', running: '执行中', waiting_review: '成果待验收', completed: '已完成', changes_requested: '需要修改', needs_help: '需要接手', paused: '已暂停', archived: '已归档' };
 const uid = () => crypto.randomUUID();
 
 async function request(path, payload, signal) {
@@ -86,6 +87,7 @@ export function TaskBoard({ projects = [], projectsLoading = false, projectId, a
   }
 
   return <section className="page-section task-board" aria-label="任务池">
+    <StudioPlans projectId={projectId} agents={agents} openRun={openRun}/>
     <div className="task-board-head"><div><span className="eyebrow">持久任务池</span><h2>把大目标拆成可接手的工作</h2><p className="muted">选择执行伙伴和验收伙伴后，成果返回就会自动检查。任务会保留依赖、负责人和每次成果。</p></div><button className="primary-button" onClick={() => setForm({ title: '', goal: '', acceptance: '', project_id: projects.find(project => project.project_id === projectId)?.project_id || '', eligible_agents: [], dependencies: [], resources: [], tags: [], reviewer_agent_id: null, max_rework_rounds: 2, max_review_retries: 1, max_author_retries: 1, auto_run: false })}>＋ 新建任务</button></div>
     {error && <div role="alert" className="agent-error">{error}<button onClick={() => refresh()}>重新读取</button></div>}
     {notice && <p className="agent-notice" role="status">{notice}</p>}

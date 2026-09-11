@@ -27,6 +27,16 @@ def profile(studio, **changes):
                         'api_key': 'fixture-secret-only', 'model': 'arbitrary-model', **changes})['agent']
 
 
+def test_native_claude_install_is_found_without_path_refresh(tmp_path,monkeypatch):
+    monkeypatch.setattr(agent_studio.shutil,'which',lambda _:None)
+    monkeypatch.setattr(Path,'home',classmethod(lambda cls:tmp_path))
+    for key in ('AP_VIBE_CLAUDE_EXE','APPDATA','LOCALAPPDATA'):monkeypatch.delenv(key,raising=False)
+    assert agent_studio.claude_executable() is None
+    native=tmp_path/'.local/bin'/('claude.exe' if agent_studio.os.name=='nt' else 'claude')
+    native.parent.mkdir(parents=True);native.write_bytes(b'fixture-only-not-executed')
+    assert agent_studio.claude_executable()==str(native.resolve())
+
+
 def test_profiles_are_separate_encrypted_and_versioned(studio):
     a, b = profile(studio), profile(studio)
     assert a['agent_id'] != b['agent_id']
@@ -40,6 +50,35 @@ def test_profiles_are_separate_encrypted_and_versioned(studio):
     assert saved['revision'] == 2
     studio.archive({'agent_id': a['agent_id'], 'expected_revision': 2})
     assert len(studio.profiles()['agents']) == 2
+
+
+def test_same_model_distinct_connection_tiers_keep_identity_and_notes(studio):
+    cheap=profile(studio,name='Claude Kiro',connection_label='Kiro',capability_notes='clear small tasks')
+    full=profile(studio,name='Claude CC Max',connection_label='CC Max',capability_notes='difficult tasks')
+    assert cheap['model']==full['model'] and cheap['agent_id']!=full['agent_id']
+    edited=profile(studio,agent_id=full['agent_id'],expected_revision=1,name='CC Max renamed',api_key='')
+    assert edited['connection_label']=='CC Max' and edited['capability_notes']=='difficult tasks' and edited['key_saved']
+    copy=studio.save({'name':'another CC Max','model':full['model'],'base_url':full['base_url'],
+        'copy_from_agent_id':full['agent_id'],'copy_from_revision':2})['agent']
+    assert copy['connection_label']=='CC Max' and copy['key_saved']
+    assert 'fixture-secret-only' not in json.dumps(studio.profiles())
+
+
+def test_retry_configuration_copy_and_running_snapshot(studio, monkeypatch):
+    monkeypatch.setattr(agent_studio, 'claude_executable', lambda: '/fixture/claude')
+    monkeypatch.setattr(agent_studio.AgentStudio, '_execute', lambda *_: None)
+    default = profile(studio)
+    assert default['max_request_retries'] == 5
+    zero = profile(studio, max_request_retries=0)
+    copied = profile(studio, api_key='', copy_from_agent_id=zero['agent_id'], copy_from_revision=1)
+    assert copied['max_request_retries'] == 0
+    started = studio.start({'request_id': 'frozen-retries', 'agent_id': default['agent_id'],
+                            'project_id': 'test-project', 'prompt': 'test frozen execution policy'})
+    profile(studio, agent_id=default['agent_id'], expected_revision=1, max_request_retries=2)
+    assert studio.runs(started['run_id'])['runs'][0]['max_request_retries'] == 5
+    for invalid in (-1, 1.5, True, 'five'):
+        with pytest.raises(ContractError):
+            profile(studio, max_request_retries=invalid)
 
 
 def test_appearance_is_independent_preserved_and_frozen_in_runs(studio, monkeypatch):
@@ -63,6 +102,8 @@ def test_appearance_is_independent_preserved_and_frozen_in_runs(studio, monkeypa
 
 def test_process_contract_result_and_redaction(studio, monkeypatch):
     a = profile(studio)
+    monkeypatch.setenv('API_TIMEOUT_MS', '1')
+    monkeypatch.setenv('CLAUDE_STREAM_IDLE_TIMEOUT_MS', '1')
     studio.service.collaboration.send({'request_id': 'context-msg', 'sender': 'planner',
                                        'recipient': a['agent_id'], 'body': '共享验收重点：检查回滚路径'})
     seen = {}
@@ -73,6 +114,7 @@ def test_process_contract_result_and_redaction(studio, monkeypatch):
             self.stdin = io.BytesIO()
             self.stdout = io.BytesIO(('\n'.join(json.dumps(x) for x in [
                 {'type': 'system', 'subtype': 'init'},
+                *[{'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': f'normal tool round {n}'}]}} for n in range(25)],
                 {'type': 'assistant', 'message': {'content': [
                     {'type': 'thinking', 'thinking': 'private-reasoning'},
                     {'type': 'tool_use', 'name': 'Write', 'id': 'tool-1', 'input': {'secret': 'private-input'}},
@@ -92,11 +134,19 @@ def test_process_contract_result_and_redaction(studio, monkeypatch):
         if snapshot['runs'][0]['state'] not in {'starting', 'running'}: break
         time.sleep(.01)
     assert snapshot['runs'][0]['state'] == 'awaiting_review'
+    assert '--max-turns' not in seen['args']
+    assert not snapshot['runs'][0].get('max_turns')
+    assert 'normal tool round 24' in json.dumps(snapshot)
     public = json.dumps(snapshot)
     assert 'private-reasoning' not in public and 'private-input' not in public
     assert 'fixture-secret-only' not in public
     assert seen['env']['ANTHROPIC_MODEL'] == a['model']
     assert seen['env']['ANTHROPIC_DEFAULT_HAIKU_MODEL'] == a['model']
+    # CC's own deadline must cover six upstream attempts plus backoff,
+    # otherwise its SDK can abandon the gateway while recovery is working.
+    assert int(seen['env']['API_TIMEOUT_MS']) > 6 * 300 * 1000 + 31000
+    assert seen['env']['CLAUDE_STREAM_IDLE_TIMEOUT_MS'] == seen['env']['API_TIMEOUT_MS']
+    assert seen['env']['CLAUDE_BYTE_STREAM_IDLE_TIMEOUT_MS'] == seen['env']['API_TIMEOUT_MS']
     assert 'fixture-secret-only' not in str(seen['args'])
     assert 'Bash' in seen['args'][seen['args'].index('--tools')+1].split(',')
     assert 'Bash' in seen['args'][seen['args'].index('--allowedTools')+1].split(',')
@@ -139,6 +189,15 @@ def test_recovery_never_replays_uncertain_run(studio):
     cold = agent_studio.AgentStudio(studio.service)
     assert cold.runs()['runs'][0]['state'] == 'interrupted'
     assert not cold._processes
+
+
+def test_late_provider_usage_does_not_revive_cancelled_execution(studio):
+    with studio.registry._connect() as c:
+        c.execute('INSERT INTO studio_runs VALUES (?,?,?,?,?,?)',
+                  ('run-late-usage','late-request','hash','agent-fixture','cancelled','{}'))
+    studio._state('run-late-usage', None, provider_usage=[{'request_id':'original','usage':{'input_tokens':12}}])
+    saved=studio.runs('run-late-usage')['runs'][0]
+    assert saved['state']=='cancelled' and saved['provider_usage'][0]['usage']['input_tokens']==12
 
 
 def test_copy_reuses_encrypted_key_without_exposing_it(studio):

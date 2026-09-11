@@ -92,6 +92,7 @@ class StudioTasks:
                 'run_id','dependencies','eligible_agents','reviewer_agent_id','review_task_id','auto_run','updated_at')}
                 | {'goal': t['goal'][:240], 'read_tool':'ap_vibe_task_list'} for t in tasks]
         return {'ok': True, 'tasks': tasks, 'events': [dict(row) | {'payload': json.loads(row['payload_json'])} for row in reversed(events)],
+                'returns':self.studio.returns.list(task_id) if task_id and hasattr(self.studio,'returns') else [],
                 'next_offset': offset + limit if has_more else None}
 
     def _scheduled(self):
@@ -140,6 +141,14 @@ class StudioTasks:
         project_id = required(raw, 'project_id', 200)
         self.registry.get(project_id, include_archived=False)
         fields = {name: required(raw, name) for name in ('title', 'goal', 'acceptance')}
+        if 'return_to' in raw:
+            from .studio_returns import destination
+            fields['return_to'] = destination(raw['return_to'])
+        if 'collaboration_origin' in raw:
+            origin=raw['collaboration_origin']
+            if not isinstance(origin,dict) or origin.get('harness') not in {'codex','claude'} or not isinstance(origin.get('session_id'),str):
+                raise ContractError('studio_collaboration_origin_invalid')
+            fields['collaboration_origin']={'harness':origin['harness'],'session_id':origin['session_id']}
         if 'extensions' in raw:
             from .studio_extensions import extension_ids
             fields['extensions'] = extension_ids(raw)
@@ -199,6 +208,12 @@ class StudioTasks:
                 raise ContractError('studio_task_version_conflict')
             if task.get('review_of_task_id'):
                 raise ContractError('studio_task_review_link_server_managed')
+            if task['state']=='waiting_review' and task.get('run_id'):
+                result=c.execute('SELECT state FROM studio_runs WHERE run_id=?',(task['run_id'],)).fetchone()
+                if result and result[0] in {'completed','changes_requested'}:
+                    # A just-saved review is already authoritative; editing
+                    # must not depend on the next background reconciliation.
+                    task['state']=result[0]
             if task['state'] in {'dispatching', 'running', 'waiting_review'}:
                 raise ContractError('studio_task_active_edit_conflict')
             self._dependencies(c, task_id, fields['dependencies'], project_id)
@@ -219,8 +234,15 @@ class StudioTasks:
                 raise ContractError('studio_task_version_conflict')
             if task['state'] != 'queued' or task.get('owner'):
                 raise ContractError('studio_task_already_owned')
+            if hasattr(self.studio,'plans'):
+                self.studio.plans.guard(c,task)
             if not self._ready(c, task):
                 raise ContractError('studio_task_dependencies_pending')
+            origin=task.get('collaboration_origin')
+            if origin and not self.studio.sessions.effective(origin['harness'],origin['session_id'],task['project_id'])['enabled']:
+                raise ContractError('studio_automatic_collaboration_paused')
+            if hasattr(self.studio, 'native_recovery'):
+                self.studio.native_recovery.guard(c, task, agent_id)
             if agent_id == task.get('reviewer_agent_id'):
                 raise ContractError('studio_task_reviewer_must_differ')
             if task.get('review_of_task_id') and agent_id not in task['eligible_agents']:
@@ -228,6 +250,13 @@ class StudioTasks:
             agent = c.execute('SELECT public_json FROM studio_agents WHERE agent_id=?', (agent_id,)).fetchone()
             if agent is None or json.loads(agent[0]).get('archived'):
                 raise ContractError('agent_not_found')
+            from .agent_studio import activation
+            if not activation(json.loads(agent[0]))['activated']:
+                raise ContractError('agent_configuration_incomplete')
+            if hasattr(self.studio,'manager') and self.studio.manager.settings(c).get('agent_id')==agent_id:
+                raise ContractError('studio_task_manager_reserved')
+            if self.studio.budget.check(agent_id, c):
+                raise ContractError('agent_budget_exhausted')
             owners = c.execute("SELECT payload_json FROM studio_tasks WHERE state IN ('dispatching','running')").fetchall()
             for row in owners:
                 other = json.loads(row[0])
@@ -243,8 +272,15 @@ class StudioTasks:
             task = self._write(c, task, 'claimed', {'agent_id': agent_id, 'epoch': task['assignment_epoch'], 'requested_by':raw.get('requested_by')})
             return self._receipt(c, request_id, fingerprint, task)
 
-    def check_owner(self, c, task_id, epoch, agent_id):
+    def check_owner(self, c, task_id, epoch, agent_id, check_policy=True):
         task = self._read(c, task_id)
+        if hasattr(self.studio,'plans'):
+            self.studio.plans.guard(c,task)
+        origin=task.get('collaboration_origin')
+        if check_policy and origin and not self.studio.sessions.effective(origin['harness'],origin['session_id'],task['project_id'])['enabled']:
+            raise ContractError('studio_automatic_collaboration_paused')
+        if check_policy and hasattr(self.studio, 'native_recovery'):
+            self.studio.native_recovery.guard(c, task, agent_id)
         if task['assignment_epoch'] != epoch or task['owner'] != agent_id or task['state'] != 'dispatching':
             raise ContractError('studio_task_owner_changed')
         if not self._ready(c, task):
@@ -281,7 +317,7 @@ class StudioTasks:
             with self.registry.transaction():
                 c = self.registry._connect()
                 current = self._read(c, task_id)
-                self.check_owner(c, task_id, task['assignment_epoch'], task['owner'])
+                self.check_owner(c, task_id, task['assignment_epoch'], task['owner'], check_policy=False)
                 attempt = {'run_id': started['run_id'], 'agent_id': task['owner'], 'epoch': task['assignment_epoch']}
                 current.update(state='running', run_id=started['run_id'], attempts=[*current['attempts'], attempt])
                 return self._write(c, current, 'dispatched', attempt)
@@ -342,7 +378,8 @@ class StudioTasks:
                     state = runs[0]['state']
                     mapped = {'awaiting_review': 'waiting_review', 'completed': 'completed',
                               'changes_requested': 'changes_requested', 'failed': 'needs_help',
-                              'uncertain': 'needs_help', 'interrupted': 'needs_help', 'cancelled': 'paused'}.get(state)
+                              'uncertain': 'needs_help', 'interrupted': 'needs_help', 'cancelled': 'paused',
+                              'budget_paused': 'budget_waiting'}.get(state)
                 elif task['state'] in {'waiting_review', 'changes_requested', 'completed'} and task.get('run_id'):
                     runs = self.studio.runs(task['run_id'])['runs']
                     if not runs: continue
@@ -366,8 +403,29 @@ class StudioTasks:
                 if task['state'] in {'waiting_review', 'completed'} and task.get('reviewer_agent_id'):
                     self._ensure_review_task(task)
             for task in self._scheduled():
+                if task['state'] == 'budget_waiting' and task.get('auto_run') and task.get('owner'):
+                    run = self.studio.runs(task['run_id'])['runs'][0] if task.get('run_id') else None
+                    if run and run['state']=='cancelled':
+                        with self.registry.transaction():
+                            c=self.registry._connect()
+                            current=self._read(c,task['task_id'])
+                            if current['version']==task['version']:
+                                self._write(c,{**current,'state':'paused','auto_run':False},'cancelled',{'reason':'user_cancelled_budget_wait'})
+                        continue
+                    if not self.studio.budget.check(task['owner']) and (not run or self.studio.execution_stopped(run)):
+                        with self.registry.transaction():
+                            c = self.registry._connect()
+                            current = self._read(c, task['task_id'])
+                            if current['version'] == task['version']:
+                                self._write(c, {**current, 'state': 'queued', 'owner': None,
+                                    'budget_resume_agent': task['owner'], 'handoff_run_id': task.get('run_id'),
+                                    'handoff_mode': 'copy', 'handoff_note': '用户补充用量后继续。读取保留的成果，只做未完成部分。'},
+                                    'budget_resumed', {'agent_id': task['owner']})
+            for task in self._scheduled():
                 if task['state'] == 'queued' and (task.get('auto_run') or task.get('rework_pending')):
-                    candidates = task['eligible_agents']
+                    candidates = [task['budget_resume_agent']] if task.get('budget_resume_agent') else task['eligible_agents']
+                    if task.get('recovery_preferred_agent') in candidates:
+                        candidates=[task['recovery_preferred_agent'],*[a for a in candidates if a!=task['recovery_preferred_agent']]]
                     if task.get('rework_pending') and task.get('rework_agent_id') in candidates:
                         candidates = [task['rework_agent_id'], *[a for a in candidates if a != task['rework_agent_id']]]
                     for agent_id in candidates:
@@ -388,36 +446,67 @@ class StudioTasks:
                         with self.registry.transaction():
                             c = self.registry._connect(); latest = self._read(c, current['task_id'])
                             if latest['state'] == 'dispatching':
-                                self._write(c, {**latest, 'state': 'needs_help'}, 'dispatch_failed', {'reason': redact(str(exc))[:1000]})
+                                if str(exc)=='studio_automatic_collaboration_paused':
+                                    self._write(c,{**latest,'state':'queued','owner':None},'collaboration_paused',{'reason':str(exc)})
+                                    continue
+                                state = 'budget_waiting' if str(exc) == 'agent_budget_exhausted' else 'needs_help'
+                                self._write(c, {**latest, 'state': state}, 'dispatch_failed', {'reason': redact(str(exc))[:1000]})
             return {'ok': True}
 
     def _recover_author(self, task):
-        if task['state'] != 'needs_help' or not task.get('auto_run') or task.get('review_of_task_id'):
+        if task['state'] not in {'needs_help','changes_requested'} or not task.get('auto_run') or task.get('review_of_task_id'):
             return
+        quality=task['state']=='changes_requested'
+        if quality and task.get('rework_round',0)>=task.get('max_rework_rounds',2):return
+        origin=task.get('collaboration_origin')
+        if origin and not self.studio.sessions.effective(origin['harness'],origin['session_id'],task['project_id'])['enabled']:
+            return
+        if not task.get('run_id'):return
+        previous_run=self.studio.runs(task['run_id'])['runs'][0]
+        previous_run=self.studio.reconcile_execution(previous_run)
+        expected_states={'changes_requested'} if quality else {'failed','uncertain','interrupted'}
+        if previous_run['state'] not in expected_states or not self.studio.execution_stopped(previous_run):return
+        decision=self.studio.manager.review_recovery(task,previous_run) if hasattr(self.studio,'manager') else {'action':'fallback'}
+        if decision['action']=='pending':return
         with self.registry.transaction():
             c = self.registry._connect()
             current = self._read(c, task['task_id'])
-            if current['state'] != 'needs_help' or not current.get('run_id'):
+            if current['state'] != task['state'] or not current.get('run_id') or not current.get('auto_run'):
+                return
+            if current['assignment_epoch']!=task['assignment_epoch'] or current['run_id']!=task['run_id']:return
+            if origin and not self.studio.sessions.effective(origin['harness'],origin['session_id'],current['project_id'])['enabled']:return
+            if decision['action']=='hold':
+                issue='管理员建议暂缓：'+decision['reason']
+                if current.get('takeover_issue')!=issue:self._write(c,{**current,'takeover_issue':issue},'manager_hold',decision)
                 return
             run = self.studio.runs(current['run_id'])['runs'][0]
-            if run['state'] not in {'failed', 'uncertain'} or not self.studio.execution_stopped(run):
+            if run['state'] not in expected_states or not self.studio.execution_stopped(run):
                 return
             tried = list(dict.fromkeys([*current.get('takeover_tried_agents', []), current['owner']]))
+            from .agent_studio import activation
+            manager_id=self.studio.manager.settings(c).get('agent_id') if hasattr(self.studio,'manager') else None
             available = {row['agent_id'] for row in c.execute('SELECT agent_id,public_json FROM studio_agents')
-                         if not json.loads(row['public_json']).get('archived')}
+                         if activation(json.loads(row['public_json']))['activated'] and row['agent_id']!=manager_id}
             alternatives = [a for a in current.get('eligible_agents', [])
                             if a not in tried and a in available and a != current.get('reviewer_agent_id')]
             retries = current.get('author_retry_count', 0)
             retrying = False
-            if (not alternatives and retries < current.get('max_author_retries', 0) and
+            retry_allowed=(current.get('rework_round',0)<current.get('max_rework_rounds',2) if quality else
+                retries<current.get('max_author_retries',0))
+            if ((decision['action']=='retry' or not alternatives or quality and decision['action']=='fallback') and retry_allowed and
                     current['owner'] in current.get('eligible_agents', []) and
                     current['owner'] != current.get('reviewer_agent_id')):
                 agent = c.execute('SELECT public_json FROM studio_agents WHERE agent_id=?', (current['owner'],)).fetchone()
-                if agent and not json.loads(agent[0]).get('archived'):
+                if agent and current['owner'] in available:
                     alternatives = [current['owner']]
                     tried = [a for a in tried if a != current['owner']]
-                    retries += 1
+                    if not quality:retries += 1
                     retrying = True
+            if decision['action']=='retry' and not retrying:
+                issue='原伙伴恢复条件已改变，保留原任务；请核对当前配置与恢复次数。'
+                if current.get('takeover_issue')!=issue:
+                    self._write(c,{**current,'takeover_issue':issue},'manager_retry_unavailable',decision)
+                return
             if not alternatives:
                 issue = '本轮可用候选均已尝试，已有成果和失败原因已保留；可编辑候选或手动继续。'
                 if current.get('takeover_issue') != issue:
@@ -425,12 +514,19 @@ class StudioTasks:
                                 'takeover_exhausted', {'reason': issue})
                 return
             note = '原执行进程已退出。先读取交接文件、已有成果和公开进展，在新目录完成剩余工作；先查询未知外部操作的结果，不直接重放。'
+            if decision.get('reason'):note+='\n协调记录：'+decision['reason']
+            if quality:
+                note+='\n独立验收结论：'+str(run.get('review',{}).get('note',''))
+                note+='\n验收证据入口：'+json.dumps(run.get('review',{}).get('evidence_refs',[]),ensure_ascii=False)
+            extra=({'rework_round':current.get('rework_round',0)+1,'review_issue':None} if quality else {})
             self._write(c, {**current, 'state': 'queued', 'owner': None, 'rework_pending': False,
                 'handoff_mode': 'copy', 'handoff_run_id': current['run_id'], 'handoff_note': note,
+                'recovery_preferred_agent':decision.get('agent_id') if decision.get('agent_id') in alternatives else None,
                 'takeover_tried_agents': tried, 'takeover_issue': None,
-                'author_retry_count': retries}, 'author_recovery' if retrying else 'auto_handoff',
+                'author_retry_count': retries,**extra}, 'review_recovery' if quality else 'author_recovery' if retrying else 'auto_handoff',
                 {'from_agent': current['owner'], 'run_id': current['run_id'], 'candidates': alternatives,
                  'exit_code': run.get('exit_code'), 'original_state': run['state'], 'note': note, 'retry': retries})
+            if hasattr(self.studio,'manager'):self.studio.manager.applied(current,decision)
 
     def _ensure_review_task(self, task):
         """Atomically link one reviewer to the exact returned attempt.
@@ -476,6 +572,10 @@ class StudioTasks:
                 'auto_run': True, 'owner': None, 'assignment_epoch': 0, 'run_id': None,
                 'attempts': [], 'created_at': utc_now(),
             }
+            if task.get('plan_id'):
+                review_task['plan_id']=task['plan_id']
+            if task.get('collaboration_origin'):
+                review_task['collaboration_origin']=task['collaboration_origin']
             created = self._write(c, review_task, 'review_created', {'parent_task_id': task['task_id'], 'source_run_id': task['run_id']})
             history = [*task.get('review_task_history', []), {'task_id': review_id, 'source_run_id': task['run_id'], 'epoch': task['assignment_epoch']}]
             self._write(c, {**task, 'review_task_id': review_id, 'review_task_epoch': task['assignment_epoch'],

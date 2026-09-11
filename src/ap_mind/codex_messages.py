@@ -57,6 +57,16 @@ def source_state(source):
 
 
 class CodexMessages:
+    @staticmethod
+    def _public(record):
+        # File offsets are internal resume state, not part of the delivery
+        # contract. Windows paths can exceed the document-key limit.
+        public = {k:v for k,v in record.items() if k != 'reconcile_offsets'}
+        if len(public.get('message','')) > 12000:
+            public['message'] = public['message'][:12000]
+            public['message_truncated'] = True
+        return clean(public)
+
     def __init__(self, service):
         self.service = service
         self.folder = service.data_dir / "codex-messages"
@@ -99,13 +109,37 @@ class CodexMessages:
             return
         cutoff = record.get("dispatch_started_at") or record.get("created_at", "")
         path = Path(source.source_path)
+        offsets = dict(record.get('reconcile_offsets') or {})
+        source_key = str(path.resolve())
         try:
             size = path.stat().st_size
+            offset = int(offsets.get(source_key, 0))
+            if offset > size:offset = 0
+            if offset == size:return
             with path.open("rb") as stream:
-                stream.seek(max(0, size - 512 * 1024))
-                if stream.tell():
-                    stream.readline()
-                lines = stream.readlines()
+                stream.seek(offset)
+                lines = []
+                while stream.tell() - offset < 512 * 1024:
+                    start = stream.tell()
+                    line = stream.readline(2 * 1024 * 1024 + 1)
+                    if not line:break
+                    if not line.endswith(b'\n'):
+                        # An unfinished line must be revisited after the
+                        # writer appends its end. Oversized non-public data
+                        # is skipped without loading it into memory.
+                        if len(line) > 2 * 1024 * 1024:
+                            while line and not line.endswith(b'\n'):
+                                line = stream.readline(65536)
+                            if not line:stream.seek(start);break
+                            continue
+                        stream.seek(start);break
+                    lines.append(line)
+                offsets[source_key] = stream.tell()
+                if record.get('matched_turn_id') and stream.tell() < size:
+                    if size - 512 * 1024 > stream.tell():
+                        stream.seek(size - 512 * 1024)
+                        stream.readline()
+                    lines.extend(stream.readlines())
         except OSError:
             return
         turns = {record["matched_turn_id"]} if record.get("matched_turn_id") else set()
@@ -132,9 +166,10 @@ class CodexMessages:
                         turns.add(turn_id)
                         self._save(record, matched_turn_id=turn_id, matched_message_id=message_id)
             elif kind == "task_complete" and payload.get("turn_id") in turns:
-                response = clean(str(payload.get("last_agent_message") or ""))[:12000]
+                response = clean(str(payload.get("last_agent_message") or "")[:12000])
                 self._save(record, status="completed", detail="Codex 已完成回复，结果已回到工作台。", response=response)
                 return
+        self._save(record, reconcile_offsets=offsets)
 
     def _source(self, session_id):
         sources = self.service.product_registry.sources_for_session(session_id)
@@ -166,13 +201,13 @@ class CodexMessages:
             if prior:
                 if (prior["session_id"], prior["message"]) != (session_id, message):
                     raise ContractError("request_id_conflict")
-                return {"ok": True, "replayed": True, "delivery": clean(prior)}
+                return {"ok": True, "replayed": True, "delivery": self._public(prior)}
             source_state(self._source(session_id))
             record = dict(request_id=request_id, session_id=session_id, message=message,
                           status="queued", detail="已接收，等待当前任务空闲后发送。", created_at=utc_now(), updated_at=utc_now())
             _write_json(self._path(request_id), record)
             self._start(session_id)
-            return {"ok": True, "replayed": False, "delivery": clean(record)}
+            return {"ok": True, "replayed": False, "delivery": self._public(record)}
 
     def _start(self, session_id):
         with self.lock:
@@ -181,6 +216,31 @@ class CodexMessages:
             worker = threading.Thread(target=self._work, args=(session_id,), daemon=True)
             self.workers[session_id] = worker
             worker.start()
+
+    def read_delivery(self, session_id, request_id):
+        """Reconcile one known message without starting or replaying a sender."""
+        with self.lock:
+            record = _read_json(self._path(request_id))
+            if not record or record.get('session_id') != session_id:
+                return None
+            if record.get('status') == 'submitted':
+                try:
+                    sources = self.service.product_registry.sources_for_session(session_id)
+                    for source in sources:
+                        if record.get('status') != 'submitted':break
+                        self._reconcile_submitted(record, source)
+                except ContractError:
+                    pass
+            return self._public(record)
+
+    def resume_queued_delivery(self, session_id, request_id):
+        """Background recovery of unsent work, separate from read-only GETs."""
+        with self.lock:
+            record = _read_json(self._path(request_id))
+            if not record or record.get('session_id') != session_id or record.get('status') != 'queued':
+                return False
+            self._start(session_id)
+            return True
 
     def list(self, session_id):
         with self.lock:
@@ -198,7 +258,7 @@ class CodexMessages:
                 transport = "desktop_queue" if supports_queue(tuple(codex_command())) else "cli_resume"
             except ContractError:
                 transport = "unavailable"
-            return {"ok": True, "session_id": session_id, "transport": transport, "deliveries": clean(records[-20:])}
+            return {"ok": True, "session_id": session_id, "transport": transport, "deliveries": [self._public(r) for r in records[-20:]]}
 
     def cancel(self, raw):
         with self.lock:
@@ -207,7 +267,7 @@ class CodexMessages:
                 raise ContractError("message_not_found")
             if record["status"] == "queued":
                 self._save(record, status="cancelled", detail="已撤回，未发送给 Codex。")
-            return {"ok": True, "delivery": clean(record)}
+            return {"ok": True, "delivery": self._public(record)}
 
     def _work(self, session_id):
         while not self.stop.is_set():
@@ -235,7 +295,7 @@ class CodexMessages:
                     self._save(record, status="running", detail="正在连接 Codex 续接当前任务。")
                 self._run(record, cwd)
             except Exception as exc:
-                self._save(record, status="failed", detail=clean(str(exc))[:900])
+                self._save(record, status="failed", detail=clean(str(exc)[:900]))
 
     def _run(self, record, cwd):
         env = dict(os.environ)
@@ -257,8 +317,8 @@ class CodexMessages:
         try:
             stdout, stderr = process.communicate(input=None if native_queue else record["message"].encode("utf-8"), timeout=timeout + 5)
             code = process.returncode
-            output = clean((stdout or b"").decode("utf-8", errors="replace"))
-            error = clean((stderr or b"").decode("utf-8", errors="replace"))
+            output = clean((stdout or b"").decode("utf-8", errors="replace")[-12000:])
+            error = clean((stderr or b"").decode("utf-8", errors="replace")[-12000:])
             started = False
             completed = False
             reply = ""
@@ -273,7 +333,7 @@ class CodexMessages:
                 completed |= event.get("type") == "turn.completed"
                 item = event.get("item") or {}
                 if event.get("type") == "item.completed" and item.get("type") == "agent_message":
-                    reply = clean(str(item.get("text") or ""))
+                    reply = clean(str(item.get("text") or "")[:12000])
             if code == 0:
                 if completed:
                     self._save(record, status="completed", submitted_at=utc_now(), detail="Codex 已完成本次回复。", response=reply)
@@ -291,7 +351,7 @@ class CodexMessages:
             _terminate_process_tree(process)
             self._save(record, status="uncertain", detail="排队请求超时，消息是否进入 Codex 未确定；请先查看原任务，不会自动重复发送。")
         except Exception as exc:
-            self._save(record, status="uncertain", detail=clean(str(exc))[:900])
+            self._save(record, status="uncertain", detail=clean(str(exc)[:900]))
         finally:
             timer.cancel()
             _terminate_process_tree(process)

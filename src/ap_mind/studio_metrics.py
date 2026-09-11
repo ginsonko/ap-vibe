@@ -7,6 +7,7 @@ import math
 from statistics import median
 
 from .contracts import ContractError, utc_now
+from .studio_usage import run_usage
 
 WINDOW = 5000
 
@@ -65,6 +66,7 @@ def observation(run, task):
         'duration_ms': duration, 'duration_source': duration_source,
         'estimated_cost_usd': number(result.get('total_cost_usd')),
         'usage': {key: number(usage.get(key)) for key in ('input_tokens', 'output_tokens', 'cache_read_input_tokens', 'cache_creation_input_tokens')},
+        'measured_usage': run_usage(run),
         'changes_requested_records': sum(1 for r in run.get('review_history', []) if r.get('accepted') is False),
         'reviewer': review.get('reviewer'), 'review_note': review.get('note', '')[:1600],
         'checks': checks[:100] if independent else [],

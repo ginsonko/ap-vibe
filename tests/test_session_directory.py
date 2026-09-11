@@ -101,6 +101,38 @@ def test_unclassified_cross_harness_discovery_title_collision_and_filters(server
     assert ap_vibe_mcp.invoke('ap_vibe_sessions', {'session_id':'two'})['total'] == 1
 
 
+def test_unified_catalog_and_reader_keep_actual_claude_title_and_model(server):
+    service, root = server
+    register(service, root, 'codex-same-name', 'one', [codex(1)])
+    record = claude(0, 'Public response')
+    record['message']['model'] = 'actual-provider/model-a'
+    path = service.claude_sessions.roots[0]/'encoded'/'ordinary-claude.jsonl'
+    write(path, [record, {'type': 'custom-title', 'customTitle': 'Same title'}])
+    directory = ap_vibe_mcp.invoke('ap_vibe_sessions', {})
+    assert directory['total'] == 2
+    assert {item['harness'] for item in directory['sessions']} == {'codex', 'claude'}
+    source = next(item for item in directory['sessions'] if item['harness'] == 'claude')
+    assert source['title'] == 'Same title' and source['title_source'] == 'claude_title'
+    assert source['model'] == 'actual-provider/model-a'
+    assert source['sources'][0]['model'] == source['model']
+    assert ap_vibe_mcp.invoke('ap_vibe_sessions', {'query': 'MODEL-A'})['total'] == 1
+    page = ap_vibe_mcp.invoke('ap_vibe_session_read', {'source_id': source['source_id']})
+    assert page['model'] == 'actual-provider/model-a'
+    assert page['events'][0]['model'] == page['model']
+
+    later = claude(1, 'Next reply')
+    later['message']['model'] = 'actual-provider/model-b'
+    with path.open('ab') as stream:
+        stream.write((json.dumps(later)+'\n').encode())
+    incremental = ap_vibe_mcp.invoke('ap_vibe_session_read', {
+        'source_id': source['source_id'], 'after': page['cursor'], 'generation': page['generation']})
+    assert incremental['model'] == 'actual-provider/model-b'
+    assert incremental['title'] == 'Same title'
+    assert incremental['events'][0]['model'] == 'actual-provider/model-b'
+    assert incremental['events'][0]['text'] == 'Next reply'
+    assert incremental['observed_models'] == ['actual-provider/model-a', 'actual-provider/model-b']
+
+
 def test_partial_rotation_and_invalid_json_do_not_stick_or_skip(server):
     service, root = server
     path, sid = register(service, root, 'one', 'one', [codex(1)])

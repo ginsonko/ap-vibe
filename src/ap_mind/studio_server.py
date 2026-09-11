@@ -306,6 +306,8 @@ class StudioEpisodeService:
         self.agent_studio = AgentStudio(self)
         self.collaboration = CollaborationStore(self.data_dir / "collaboration.sqlite")
         from .claude_sessions import ClaudeSessions
+        from .studio_updates import StudioUpdates
+        self.updates = StudioUpdates(self)
         claude_config_path = self.data_dir / 'claude-monitor.json'
         try:
             claude_config = json.loads(claude_config_path.read_text(encoding='utf-8-sig')) if claude_config_path.is_file() else {}
@@ -3026,6 +3028,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         # lossy numeric reserialization. Quotes/backslashes can double its
         # envelope size; the parsed bundle still has the normal 2 MB limit.
         body_limit = 2 * MAX_REQUEST_BYTES if urlsplit(self.path).path == "/v1/ap-vibe/portable/import/preview" else MAX_REQUEST_BYTES
+        if urlsplit(self.path).path == "/v1/ap-vibe/studio/image-qa/create":
+            body_limit = 16 * 1024 * 1024
         if length < 1 or length > body_limit:
             raise ContractError("request_body_size_out_of_bounds")
         raw = self.rfile.read(length)
@@ -3161,6 +3165,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "agent_codex_max_turns_unsupported": ("本机 Codex 没有按轮数限制的执行参数。", "移除 max_turns 后启动；任务仍可停止并保留已有成果。"),
             "agent_api_key_required": ("请填写有效的 API Key。", "首次创建需要 Key；编辑已有配置时可留空保留。"),
             "agent_revision_conflict": ("这位伙伴的配置已被更新。", "重新读取配置后编辑，避免覆盖其他修改。"),
+            "agent_budget_exhausted": ("已达到这位伙伴的用量上限。", "打开伙伴的用量与投喂，增加额度或取消上限，已有任务和成果会保留。"),
+            "agent_budget_revision_conflict": ("用量设置已经更新。", "关闭再打开用量面板，保留最新设置后重试。"),
+            "agent_budget_feed_requires_limit": ("尚未设置可补充的上限。", "先保存 token 或金额上限；不设置上限时无需投喂。"),
             "agent_url_invalid": ("服务地址格式不正确。", "填写不包含账号、密码或查询参数的 HTTP(S) 地址。"),
             "agent_remote_https_required": ("远端服务需要 HTTPS。", "本机测试可用 HTTP；远端连接请使用 HTTPS 地址。"),
             "agent_has_active_run": ("这位伙伴还有正在执行的任务。", "先处理该任务再归档；历史记录会保留。"),
@@ -3288,8 +3295,14 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/agents":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.profiles())
                 return
+            if path == "/v1/ap-vibe/updates":
+                self._write_json(HTTPStatus.OK, self.service.updates.status())
+                return
             if path == "/v1/ap-vibe/agents/directory":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.directory(self._query_value(split, 'agent_id')))
+                return
+            if path == "/v1/ap-vibe/agents/setup":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.agent_setup.catalog())
                 return
             if path == "/v1/ap-vibe/agents/metrics":
                 from .studio_metrics import snapshot
@@ -3302,6 +3315,42 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/agents/presence":
                 from .studio_presence import snapshot
                 self._write_json(HTTPStatus.OK, snapshot(self.service.agent_studio))
+                return
+            if path == "/v1/ap-vibe/studio/sessions":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.sessions.snapshot(
+                    self._query_value(split, 'project_id'), self._query_value(split, 'harness') or 'codex',
+                    self._query_value(split, 'session_id')))
+                return
+            if path == "/v1/ap-vibe/studio/manager":
+                self._write_json(HTTPStatus.OK,self.service.agent_studio.manager.list())
+                return
+            if path == "/v1/ap-vibe/studio/replay":
+                self._write_json(HTTPStatus.OK,self.service.agent_studio.replay.list(
+                    int(self._query_value(split,'after') or 0),int(self._query_value(split,'limit') or 100),self._query_value(split,'since'),self._query_bool(split,'interactions_only',False)))
+                return
+            if path == "/v1/ap-vibe/studio/image-qa/image":
+                raw,mime=self.service.agent_studio.image_qa.image(
+                    self._query_value(split,'batch_id'),self._query_value(split,'item_id'),self._query_bool(split,'reference',False))
+                self.send_response(HTTPStatus.OK)
+                self.send_header('Content-Type',mime)
+                self.send_header('Content-Length',str(len(raw)))
+                self.send_header('X-Content-Type-Options','nosniff')
+                self.send_header('Cache-Control','private, no-store')
+                self.end_headers()
+                self.wfile.write(raw)
+                return
+            if path == "/v1/ap-vibe/studio/image-qa":
+                self._write_json(HTTPStatus.OK,self.service.agent_studio.image_qa.list(
+                    self._query_value(split,'batch_id'),int(self._query_value(split,'offset') or 0),int(self._query_value(split,'limit') or 50)))
+                return
+            if path == "/v1/ap-vibe/studio/participation":
+                self._write_json(HTTPStatus.OK, {'ok':True,'settings':self.service.agent_studio.sessions.settings(
+                    self._query_value(split,'scope') or 'global',self._query_value(split,'target') or '')})
+                return
+            if path == "/v1/ap-vibe/studio/session-inbox":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.sessions.inbox(
+                    self._query_value(split,'harness') or 'codex',self._query_value(split,'session_id'),
+                    int(self._query_value(split,'after') or 0)))
                 return
             if path == "/v1/ap-vibe/agents/appearances":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.appearances.list(self._query_value(split, 'id')))
@@ -3352,6 +3401,11 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                     project_id=self._query_value(split, 'project_id'), state=self._query_value(split, 'state'),
                     offset=int(self._query_value(split, 'offset') or 0), limit=int(self._query_value(split, 'limit') or 200),
                     compact=self._query_bool(split, 'compact', False)))
+                return
+            if path == "/v1/ap-vibe/studio/plans":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.plans.list(
+                    self._query_value(split,'plan_id'), project_id=self._query_value(split,'project_id'),
+                    offset=int(self._query_value(split,'offset') or 0),limit=int(self._query_value(split,'limit') or 30)))
                 return
             if path == "/v1/ap-vibe/collaboration/ready":
                 self._write_json(HTTPStatus.OK, self.service.collaboration.ready())
@@ -3491,6 +3545,12 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         path = urlsplit(self.path).path
         if path not in {
             "/v1/ap-vibe/agents/save",
+            "/v1/ap-vibe/agents/setup/templates", "/v1/ap-vibe/agents/setup/connections",
+            "/v1/ap-vibe/agents/budget/save", "/v1/ap-vibe/agents/budget/feed",
+            "/v1/ap-vibe/studio/participation", "/v1/ap-vibe/studio/lifecycle",
+            "/v1/ap-vibe/studio/maintenance",
+            "/v1/ap-vibe/updates",
+            "/v1/ap-vibe/studio/image-qa/create", "/v1/ap-vibe/studio/image-qa/action", "/v1/ap-vibe/studio/image-qa/resolve", "/v1/ap-vibe/studio/manager",
             "/v1/ap-vibe/agents/appearances/save",
             "/v1/ap-vibe/agents/appearances/archive",
             "/v1/ap-vibe/agents/archive",
@@ -3498,6 +3558,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "/v1/ap-vibe/agents/cancel",
             "/v1/ap-vibe/agents/review",
             "/v1/ap-vibe/agents/handoff",
+            "/v1/ap-vibe/studio/plans/submit", "/v1/ap-vibe/studio/plans/cancel",
             "/v1/ap-vibe/studio/tasks/save", "/v1/ap-vibe/studio/tasks/claim",
             "/v1/ap-vibe/studio/tasks/release", "/v1/ap-vibe/studio/tasks/archive",
             "/v1/ap-vibe/studio/tasks/verdict",
@@ -3572,6 +3633,18 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "/v1/ap-vibe/organization/documents/update": self.service.organization.update_document,
                 "/v1/ap-vibe/teacher/settings": self.service.teacher_settings.update,
                 "/v1/ap-vibe/agents/save": self.service.agent_studio.save,
+                "/v1/ap-vibe/agents/setup/templates": self.service.agent_studio.agent_setup.install,
+                "/v1/ap-vibe/agents/setup/connections": self.service.agent_studio.agent_setup.connections,
+                "/v1/ap-vibe/agents/budget/save": self.service.agent_studio.budget.save,
+                "/v1/ap-vibe/agents/budget/feed": self.service.agent_studio.budget.feed,
+                "/v1/ap-vibe/studio/participation": self.service.agent_studio.sessions.configure,
+                "/v1/ap-vibe/studio/maintenance": self.service.agent_studio.maintenance.change,
+                "/v1/ap-vibe/updates": self.service.updates.action,
+                "/v1/ap-vibe/studio/image-qa/create": self.service.agent_studio.image_qa.create,
+                "/v1/ap-vibe/studio/image-qa/action": self.service.agent_studio.image_qa.action,
+                "/v1/ap-vibe/studio/image-qa/resolve": self.service.agent_studio.image_qa.resolve,
+                "/v1/ap-vibe/studio/manager": self.service.agent_studio.manager.configure,
+                "/v1/ap-vibe/studio/lifecycle": lambda r: {'ok':True,'actor_id':self.service.agent_studio.sessions.observe(r)},
                 "/v1/ap-vibe/agents/appearances/save": self.service.agent_studio.appearances.save,
                 "/v1/ap-vibe/agents/appearances/archive": self.service.agent_studio.appearances.archive,
                 "/v1/ap-vibe/agents/archive": self.service.agent_studio.archive,
@@ -3585,6 +3658,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "/v1/ap-vibe/collaboration/handoff": self.service.collaboration.handoff,
                 "/v1/ap-vibe/collaboration/dependency": self.service.collaboration.dependency,
                 "/v1/ap-vibe/studio/tasks/save": self.service.agent_studio.tasks.save,
+                "/v1/ap-vibe/studio/plans/submit": self.service.agent_studio.plans.submit,
+                "/v1/ap-vibe/studio/plans/cancel": self.service.agent_studio.plans.cancel,
                 "/v1/ap-vibe/studio/tasks/claim": self.service.agent_studio.tasks.claim,
                 "/v1/ap-vibe/studio/tasks/release": self.service.agent_studio.tasks.release,
                 "/v1/ap-vibe/studio/tasks/archive": self.service.agent_studio.tasks.archive,

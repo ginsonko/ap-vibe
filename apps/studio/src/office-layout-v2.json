@@ -1,0 +1,1358 @@
+{
+  "version": 2,
+  "scene": {
+    "width": 1600,
+    "height": 1150,
+    "name": "伙伴工作室 · 八个生活分区"
+  },
+  "walking_speed": 210,
+  "zones": [
+    {
+      "id": "hub",
+      "name": "中庭",
+      "display_name": "中庭",
+      "room_id": "planning",
+      "bounds": {
+        "x": 425,
+        "y": 475,
+        "width": 690,
+        "height": 215
+      },
+      "color": "#367f75",
+      "workstations": [
+        {
+          "id": "hub-terminal-1",
+          "type": "terminal",
+          "x": 525,
+          "y": 566,
+          "facing": "down",
+          "actor": {
+            "x": 525,
+            "y": 590
+          }
+        },
+        {
+          "id": "hub-seat-1",
+          "type": "seat",
+          "x": 760,
+          "y": 566,
+          "facing": "down",
+          "actor": {
+            "x": 760,
+            "y": 590
+          }
+        },
+        {
+          "id": "hub-seat-2",
+          "type": "seat",
+          "x": 1010,
+          "y": 566,
+          "facing": "down",
+          "actor": {
+            "x": 1010,
+            "y": 590
+          }
+        }
+      ],
+      "anchors": [
+        {
+          "id": "hub-center",
+          "x": 740,
+          "y": 510
+        }
+      ],
+      "enclosure": "open"
+    },
+    {
+      "id": "management",
+      "name": "管理办公室",
+      "display_name": "管理办公室",
+      "room_id": "management",
+      "bounds": {
+        "x": 20,
+        "y": 20,
+        "width": 360,
+        "height": 340
+      },
+      "color": "#367f75",
+      "workstations": [
+        {
+          "id": "mgmt-desk-1",
+          "type": "desk",
+          "x": 115,
+          "y": 141,
+          "facing": "down",
+          "label": "管理者席位",
+          "actor": {
+            "x": 115,
+            "y": 165
+          }
+        },
+        {
+          "id": "mgmt-desk-2",
+          "type": "desk",
+          "x": 285,
+          "y": 141,
+          "facing": "down",
+          "label": "助理席位",
+          "actor": {
+            "x": 285,
+            "y": 165
+          }
+        },
+        {
+          "id": "mgmt-desk-3",
+          "type": "desk",
+          "x": 200,
+          "y": 276,
+          "facing": "down",
+          "label": "协调席位",
+          "actor": {
+            "x": 200,
+            "y": 300
+          }
+        }
+      ],
+      "doors": [
+        {
+          "x": 380,
+          "y": 235
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "name": "资料查阅区",
+      "display_name": "资料查阅区",
+      "room_id": "library",
+      "bounds": {
+        "x": 1155,
+        "y": 20,
+        "width": 425,
+        "height": 400
+      },
+      "color": "#347ca0",
+      "workstations": [
+        {
+          "id": "lib-read-1",
+          "type": "seat",
+          "x": 1245,
+          "y": 126,
+          "facing": "right",
+          "label": "窗边阅读位",
+          "actor": {
+            "x": 1245,
+            "y": 150
+          }
+        },
+        {
+          "id": "lib-read-2",
+          "type": "seat",
+          "x": 1475,
+          "y": 126,
+          "facing": "left",
+          "label": "窗边阅读位",
+          "actor": {
+            "x": 1475,
+            "y": 150
+          }
+        },
+        {
+          "id": "lib-terminal-1",
+          "type": "terminal",
+          "x": 1270,
+          "y": 286,
+          "facing": "up",
+          "label": "检索终端",
+          "actor": {
+            "x": 1270,
+            "y": 310
+          }
+        },
+        {
+          "id": "lib-desk-1",
+          "type": "desk",
+          "x": 1450,
+          "y": 286,
+          "facing": "up",
+          "label": "整理台",
+          "actor": {
+            "x": 1450,
+            "y": 310
+          }
+        }
+      ],
+      "doors": [
+        {
+          "x": 1155,
+          "y": 235
+        }
+      ]
+    },
+    {
+      "id": "engineering",
+      "name": "工程区",
+      "display_name": "工程区",
+      "room_id": "engineering",
+      "bounds": {
+        "x": 415,
+        "y": 20,
+        "width": 705,
+        "height": 400
+      },
+      "color": "#76649b",
+      "workstations": [
+        {
+          "id": "eng-desk-1",
+          "type": "desk",
+          "x": 505,
+          "y": 121,
+          "facing": "down",
+          "label": "前端工位",
+          "group": "frontend",
+          "actor": {
+            "x": 505,
+            "y": 145
+          }
+        },
+        {
+          "id": "eng-desk-2",
+          "type": "desk",
+          "x": 680,
+          "y": 121,
+          "facing": "down",
+          "label": "后端工位",
+          "group": "backend",
+          "actor": {
+            "x": 680,
+            "y": 145
+          }
+        },
+        {
+          "id": "eng-desk-3",
+          "type": "desk",
+          "x": 855,
+          "y": 121,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 855,
+            "y": 145
+          }
+        },
+        {
+          "id": "eng-desk-4",
+          "type": "desk",
+          "x": 1030,
+          "y": 121,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 1030,
+            "y": 145
+          }
+        },
+        {
+          "id": "eng-desk-5",
+          "type": "desk",
+          "x": 520,
+          "y": 276,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 520,
+            "y": 300
+          }
+        },
+        {
+          "id": "eng-desk-6",
+          "type": "desk",
+          "x": 695,
+          "y": 276,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 695,
+            "y": 300
+          }
+        },
+        {
+          "id": "eng-desk-7",
+          "type": "desk",
+          "x": 870,
+          "y": 276,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 870,
+            "y": 300
+          }
+        },
+        {
+          "id": "eng-desk-8",
+          "type": "desk",
+          "x": 1040,
+          "y": 276,
+          "facing": "down",
+          "label": "通用工位",
+          "actor": {
+            "x": 1040,
+            "y": 300
+          }
+        }
+      ],
+      "doors": [
+        {
+          "x": 740,
+          "y": 420
+        }
+      ]
+    },
+    {
+      "id": "review",
+      "name": "验收测试室",
+      "display_name": "验收测试室",
+      "room_id": "review",
+      "bounds": {
+        "x": 20,
+        "y": 415,
+        "width": 360,
+        "height": 270
+      },
+      "color": "#ad6579",
+      "workstations": [
+        {
+          "id": "review-desk-1",
+          "type": "desk",
+          "x": 115,
+          "y": 536,
+          "facing": "right",
+          "label": "测试台",
+          "actor": {
+            "x": 115,
+            "y": 560
+          }
+        },
+        {
+          "id": "review-desk-2",
+          "type": "desk",
+          "x": 285,
+          "y": 536,
+          "facing": "left",
+          "label": "检查台",
+          "actor": {
+            "x": 285,
+            "y": 560
+          }
+        }
+      ],
+      "doors": [
+        {
+          "x": 380,
+          "y": 550
+        }
+      ]
+    },
+    {
+      "id": "collaboration",
+      "name": "讨论区",
+      "display_name": "讨论区",
+      "room_id": "planning",
+      "bounds": {
+        "x": 20,
+        "y": 755,
+        "width": 565,
+        "height": 375
+      },
+      "color": "#367f75",
+      "workstations": [
+        {
+          "id": "collab-seat-1",
+          "type": "seat",
+          "x": 130,
+          "y": 856,
+          "facing": "right",
+          "label": "讨论位",
+          "actor": {
+            "x": 130,
+            "y": 880
+          }
+        },
+        {
+          "id": "collab-seat-2",
+          "type": "seat",
+          "x": 360,
+          "y": 856,
+          "facing": "left",
+          "label": "讨论位",
+          "actor": {
+            "x": 360,
+            "y": 880
+          }
+        },
+        {
+          "id": "collab-seat-3",
+          "type": "seat",
+          "x": 245,
+          "y": 1011,
+          "facing": "right",
+          "label": "讨论位",
+          "actor": {
+            "x": 245,
+            "y": 1035
+          }
+        },
+        {
+          "id": "collab-seat-4",
+          "type": "seat",
+          "x": 480,
+          "y": 1011,
+          "facing": "left",
+          "label": "讨论位",
+          "actor": {
+            "x": 480,
+            "y": 1035
+          }
+        }
+      ],
+      "anchors": [
+        {
+          "id": "collab-table",
+          "x": 395,
+          "y": 790
+        }
+      ],
+      "enclosure": "open"
+    },
+    {
+      "id": "waiting",
+      "name": "等候区",
+      "display_name": "等候区",
+      "room_id": "waiting",
+      "bounds": {
+        "x": 1155,
+        "y": 475,
+        "width": 425,
+        "height": 655
+      },
+      "color": "#9b781d",
+      "workstations": [
+        {
+          "id": "wait-seat-1",
+          "type": "seat",
+          "x": 1250,
+          "y": 566,
+          "facing": "down",
+          "actor": {
+            "x": 1250,
+            "y": 590
+          }
+        },
+        {
+          "id": "wait-seat-2",
+          "type": "seat",
+          "x": 1470,
+          "y": 566,
+          "facing": "down",
+          "actor": {
+            "x": 1470,
+            "y": 590
+          }
+        },
+        {
+          "id": "wait-terminal-1",
+          "type": "terminal",
+          "x": 1355,
+          "y": 716,
+          "facing": "down",
+          "label": "联络终端",
+          "actor": {
+            "x": 1355,
+            "y": 740
+          }
+        },
+        {
+          "id": "wait-seat-3",
+          "type": "seat",
+          "x": 1250,
+          "y": 886,
+          "facing": "down",
+          "actor": {
+            "x": 1250,
+            "y": 910
+          }
+        },
+        {
+          "id": "wait-seat-4",
+          "type": "seat",
+          "x": 1470,
+          "y": 1011,
+          "facing": "down",
+          "actor": {
+            "x": 1470,
+            "y": 1035
+          }
+        }
+      ],
+      "enclosure": "open"
+    },
+    {
+      "id": "dormitory",
+      "name": "宿舍",
+      "display_name": "宿舍",
+      "room_id": "rest",
+      "bounds": {
+        "x": 620,
+        "y": 755,
+        "width": 495,
+        "height": 375
+      },
+      "color": "#548667",
+      "beds": [
+        {
+          "id": "bed-1",
+          "x": 710,
+          "y": 870,
+          "facing": "right",
+          "actor": {
+            "x": 710,
+            "y": 870
+          }
+        },
+        {
+          "id": "bed-2",
+          "x": 870,
+          "y": 870,
+          "facing": "right",
+          "actor": {
+            "x": 870,
+            "y": 870
+          }
+        },
+        {
+          "id": "bed-3",
+          "x": 1030,
+          "y": 870,
+          "facing": "left",
+          "actor": {
+            "x": 1030,
+            "y": 870
+          }
+        },
+        {
+          "id": "bed-4",
+          "x": 710,
+          "y": 1040,
+          "facing": "left",
+          "actor": {
+            "x": 710,
+            "y": 1040
+          }
+        },
+        {
+          "id": "bed-5",
+          "x": 870,
+          "y": 1040,
+          "facing": "left",
+          "actor": {
+            "x": 870,
+            "y": 1040
+          }
+        },
+        {
+          "id": "bed-6",
+          "x": 1030,
+          "y": 1040,
+          "facing": "left",
+          "actor": {
+            "x": 1030,
+            "y": 1040
+          }
+        }
+      ],
+      "doors": [
+        {
+          "x": 870,
+          "y": 755
+        }
+      ]
+    }
+  ],
+  "corridors": [],
+  "room_mapping": {
+    "planning": [
+      "management",
+      "hub",
+      "collaboration"
+    ],
+    "library": [
+      "library"
+    ],
+    "engineering": [
+      "engineering"
+    ],
+    "review": [
+      "review"
+    ],
+    "waiting": [
+      "waiting"
+    ],
+    "rest": [
+      "dormitory"
+    ]
+  },
+  "actor_footprint": {
+    "width": 150,
+    "height": 116
+  },
+  "navigation": {
+    "points": {
+      "west-top": {
+        "x": 395,
+        "y": 235
+      },
+      "west": {
+        "x": 395,
+        "y": 440
+      },
+      "west-mid": {
+        "x": 395,
+        "y": 550
+      },
+      "west-bottom": {
+        "x": 395,
+        "y": 725
+      },
+      "east-top": {
+        "x": 1135,
+        "y": 235
+      },
+      "east": {
+        "x": 1135,
+        "y": 440
+      },
+      "east-mid": {
+        "x": 1135,
+        "y": 650
+      },
+      "east-bottom": {
+        "x": 1135,
+        "y": 725
+      },
+      "hub": {
+        "x": 740,
+        "y": 440
+      },
+      "south": {
+        "x": 870,
+        "y": 725
+      },
+      "hub-aisle": {
+        "x": 740,
+        "y": 510
+      },
+      "hub-terminal-1-approach": {
+        "x": 525,
+        "y": 625
+      },
+      "hub-terminal-1": {
+        "x": 525,
+        "y": 590
+      },
+      "hub-seat-1-approach": {
+        "x": 760,
+        "y": 625
+      },
+      "hub-seat-1": {
+        "x": 760,
+        "y": 590
+      },
+      "hub-seat-2-approach": {
+        "x": 1010,
+        "y": 625
+      },
+      "hub-seat-2": {
+        "x": 1010,
+        "y": 590
+      },
+      "management-door": {
+        "x": 380,
+        "y": 235
+      },
+      "management-aisle": {
+        "x": 360,
+        "y": 235
+      },
+      "mgmt-desk-1-approach": {
+        "x": 115,
+        "y": 200
+      },
+      "mgmt-desk-1": {
+        "x": 115,
+        "y": 165
+      },
+      "mgmt-desk-2-approach": {
+        "x": 285,
+        "y": 200
+      },
+      "mgmt-desk-2": {
+        "x": 285,
+        "y": 165
+      },
+      "mgmt-desk-3-approach": {
+        "x": 200,
+        "y": 335
+      },
+      "mgmt-desk-3": {
+        "x": 200,
+        "y": 300
+      },
+      "library-door": {
+        "x": 1155,
+        "y": 235
+      },
+      "library-aisle": {
+        "x": 1175,
+        "y": 235
+      },
+      "lib-read-1-approach": {
+        "x": 1245,
+        "y": 185
+      },
+      "lib-read-1": {
+        "x": 1245,
+        "y": 150
+      },
+      "lib-read-2-approach": {
+        "x": 1475,
+        "y": 185
+      },
+      "lib-read-2": {
+        "x": 1475,
+        "y": 150
+      },
+      "lib-terminal-1-approach": {
+        "x": 1270,
+        "y": 345
+      },
+      "lib-terminal-1": {
+        "x": 1270,
+        "y": 310
+      },
+      "lib-desk-1-approach": {
+        "x": 1450,
+        "y": 345
+      },
+      "lib-desk-1": {
+        "x": 1450,
+        "y": 310
+      },
+      "engineering-door": {
+        "x": 740,
+        "y": 420
+      },
+      "engineering-aisle": {
+        "x": 740,
+        "y": 395
+      },
+      "eng-desk-1-approach": {
+        "x": 505,
+        "y": 180
+      },
+      "eng-desk-1": {
+        "x": 505,
+        "y": 145
+      },
+      "eng-desk-2-approach": {
+        "x": 680,
+        "y": 180
+      },
+      "eng-desk-2": {
+        "x": 680,
+        "y": 145
+      },
+      "eng-desk-3-approach": {
+        "x": 855,
+        "y": 180
+      },
+      "eng-desk-3": {
+        "x": 855,
+        "y": 145
+      },
+      "eng-desk-4-approach": {
+        "x": 1030,
+        "y": 180
+      },
+      "eng-desk-4": {
+        "x": 1030,
+        "y": 145
+      },
+      "eng-desk-5-approach": {
+        "x": 520,
+        "y": 335
+      },
+      "eng-desk-5": {
+        "x": 520,
+        "y": 300
+      },
+      "eng-desk-6-approach": {
+        "x": 695,
+        "y": 335
+      },
+      "eng-desk-6": {
+        "x": 695,
+        "y": 300
+      },
+      "eng-desk-7-approach": {
+        "x": 870,
+        "y": 335
+      },
+      "eng-desk-7": {
+        "x": 870,
+        "y": 300
+      },
+      "eng-desk-8-approach": {
+        "x": 1040,
+        "y": 335
+      },
+      "eng-desk-8": {
+        "x": 1040,
+        "y": 300
+      },
+      "review-door": {
+        "x": 380,
+        "y": 550
+      },
+      "review-aisle": {
+        "x": 360,
+        "y": 550
+      },
+      "review-desk-1-approach": {
+        "x": 115,
+        "y": 595
+      },
+      "review-desk-1": {
+        "x": 115,
+        "y": 560
+      },
+      "review-desk-2-approach": {
+        "x": 285,
+        "y": 595
+      },
+      "review-desk-2": {
+        "x": 285,
+        "y": 560
+      },
+      "collaboration-aisle": {
+        "x": 395,
+        "y": 790
+      },
+      "collab-seat-1-approach": {
+        "x": 130,
+        "y": 915
+      },
+      "collab-seat-1": {
+        "x": 130,
+        "y": 880
+      },
+      "collab-seat-2-approach": {
+        "x": 360,
+        "y": 915
+      },
+      "collab-seat-2": {
+        "x": 360,
+        "y": 880
+      },
+      "collab-seat-3-approach": {
+        "x": 245,
+        "y": 1070
+      },
+      "collab-seat-3": {
+        "x": 245,
+        "y": 1035
+      },
+      "collab-seat-4-approach": {
+        "x": 480,
+        "y": 1070
+      },
+      "collab-seat-4": {
+        "x": 480,
+        "y": 1035
+      },
+      "waiting-aisle": {
+        "x": 1180,
+        "y": 650
+      },
+      "wait-seat-1-approach": {
+        "x": 1250,
+        "y": 625
+      },
+      "wait-seat-1": {
+        "x": 1250,
+        "y": 590
+      },
+      "wait-seat-2-approach": {
+        "x": 1470,
+        "y": 625
+      },
+      "wait-seat-2": {
+        "x": 1470,
+        "y": 590
+      },
+      "wait-terminal-1-approach": {
+        "x": 1355,
+        "y": 775
+      },
+      "wait-terminal-1": {
+        "x": 1355,
+        "y": 740
+      },
+      "wait-seat-3-approach": {
+        "x": 1250,
+        "y": 945
+      },
+      "wait-seat-3": {
+        "x": 1250,
+        "y": 910
+      },
+      "wait-seat-4-approach": {
+        "x": 1470,
+        "y": 1070
+      },
+      "wait-seat-4": {
+        "x": 1470,
+        "y": 1035
+      },
+      "dormitory-door": {
+        "x": 870,
+        "y": 755
+      },
+      "dormitory-aisle": {
+        "x": 870,
+        "y": 790
+      },
+      "bed-1-approach": {
+        "x": 710,
+        "y": 905
+      },
+      "bed-1": {
+        "x": 710,
+        "y": 870
+      },
+      "bed-2-approach": {
+        "x": 870,
+        "y": 905
+      },
+      "bed-2": {
+        "x": 870,
+        "y": 870
+      },
+      "bed-3-approach": {
+        "x": 1030,
+        "y": 905
+      },
+      "bed-3": {
+        "x": 1030,
+        "y": 870
+      },
+      "bed-4-approach": {
+        "x": 710,
+        "y": 1075
+      },
+      "bed-4": {
+        "x": 710,
+        "y": 1040
+      },
+      "bed-5-approach": {
+        "x": 870,
+        "y": 1075
+      },
+      "bed-5": {
+        "x": 870,
+        "y": 1040
+      },
+      "bed-6-approach": {
+        "x": 1030,
+        "y": 1075
+      },
+      "bed-6": {
+        "x": 1030,
+        "y": 1040
+      }
+    },
+    "edges": [
+      [
+        "west-top",
+        "west"
+      ],
+      [
+        "west",
+        "west-mid"
+      ],
+      [
+        "west-mid",
+        "west-bottom"
+      ],
+      [
+        "west",
+        "hub"
+      ],
+      [
+        "hub",
+        "east"
+      ],
+      [
+        "east-top",
+        "east"
+      ],
+      [
+        "east",
+        "east-mid"
+      ],
+      [
+        "east-mid",
+        "east-bottom"
+      ],
+      [
+        "west-bottom",
+        "south"
+      ],
+      [
+        "south",
+        "east-bottom"
+      ],
+      [
+        "hub",
+        "hub-aisle"
+      ],
+      [
+        "hub-aisle",
+        "hub-terminal-1-approach"
+      ],
+      [
+        "hub-terminal-1-approach",
+        "hub-terminal-1"
+      ],
+      [
+        "hub-aisle",
+        "hub-seat-1-approach"
+      ],
+      [
+        "hub-seat-1-approach",
+        "hub-seat-1"
+      ],
+      [
+        "hub-aisle",
+        "hub-seat-2-approach"
+      ],
+      [
+        "hub-seat-2-approach",
+        "hub-seat-2"
+      ],
+      [
+        "west-top",
+        "management-door"
+      ],
+      [
+        "management-door",
+        "management-aisle"
+      ],
+      [
+        "management-aisle",
+        "mgmt-desk-1-approach"
+      ],
+      [
+        "mgmt-desk-1-approach",
+        "mgmt-desk-1"
+      ],
+      [
+        "management-aisle",
+        "mgmt-desk-2-approach"
+      ],
+      [
+        "mgmt-desk-2-approach",
+        "mgmt-desk-2"
+      ],
+      [
+        "management-aisle",
+        "mgmt-desk-3-approach"
+      ],
+      [
+        "mgmt-desk-3-approach",
+        "mgmt-desk-3"
+      ],
+      [
+        "east-top",
+        "library-door"
+      ],
+      [
+        "library-door",
+        "library-aisle"
+      ],
+      [
+        "library-aisle",
+        "lib-read-1-approach"
+      ],
+      [
+        "lib-read-1-approach",
+        "lib-read-1"
+      ],
+      [
+        "library-aisle",
+        "lib-read-2-approach"
+      ],
+      [
+        "lib-read-2-approach",
+        "lib-read-2"
+      ],
+      [
+        "library-aisle",
+        "lib-terminal-1-approach"
+      ],
+      [
+        "lib-terminal-1-approach",
+        "lib-terminal-1"
+      ],
+      [
+        "library-aisle",
+        "lib-desk-1-approach"
+      ],
+      [
+        "lib-desk-1-approach",
+        "lib-desk-1"
+      ],
+      [
+        "hub",
+        "engineering-door"
+      ],
+      [
+        "engineering-door",
+        "engineering-aisle"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-1-approach"
+      ],
+      [
+        "eng-desk-1-approach",
+        "eng-desk-1"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-2-approach"
+      ],
+      [
+        "eng-desk-2-approach",
+        "eng-desk-2"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-3-approach"
+      ],
+      [
+        "eng-desk-3-approach",
+        "eng-desk-3"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-4-approach"
+      ],
+      [
+        "eng-desk-4-approach",
+        "eng-desk-4"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-5-approach"
+      ],
+      [
+        "eng-desk-5-approach",
+        "eng-desk-5"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-6-approach"
+      ],
+      [
+        "eng-desk-6-approach",
+        "eng-desk-6"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-7-approach"
+      ],
+      [
+        "eng-desk-7-approach",
+        "eng-desk-7"
+      ],
+      [
+        "engineering-aisle",
+        "eng-desk-8-approach"
+      ],
+      [
+        "eng-desk-8-approach",
+        "eng-desk-8"
+      ],
+      [
+        "west-mid",
+        "review-door"
+      ],
+      [
+        "review-door",
+        "review-aisle"
+      ],
+      [
+        "review-aisle",
+        "review-desk-1-approach"
+      ],
+      [
+        "review-desk-1-approach",
+        "review-desk-1"
+      ],
+      [
+        "review-aisle",
+        "review-desk-2-approach"
+      ],
+      [
+        "review-desk-2-approach",
+        "review-desk-2"
+      ],
+      [
+        "west-bottom",
+        "collaboration-aisle"
+      ],
+      [
+        "collaboration-aisle",
+        "collab-seat-1-approach"
+      ],
+      [
+        "collab-seat-1-approach",
+        "collab-seat-1"
+      ],
+      [
+        "collaboration-aisle",
+        "collab-seat-2-approach"
+      ],
+      [
+        "collab-seat-2-approach",
+        "collab-seat-2"
+      ],
+      [
+        "collaboration-aisle",
+        "collab-seat-3-approach"
+      ],
+      [
+        "collab-seat-3-approach",
+        "collab-seat-3"
+      ],
+      [
+        "collaboration-aisle",
+        "collab-seat-4-approach"
+      ],
+      [
+        "collab-seat-4-approach",
+        "collab-seat-4"
+      ],
+      [
+        "east-mid",
+        "waiting-aisle"
+      ],
+      [
+        "waiting-aisle",
+        "wait-seat-1-approach"
+      ],
+      [
+        "wait-seat-1-approach",
+        "wait-seat-1"
+      ],
+      [
+        "waiting-aisle",
+        "wait-seat-2-approach"
+      ],
+      [
+        "wait-seat-2-approach",
+        "wait-seat-2"
+      ],
+      [
+        "waiting-aisle",
+        "wait-terminal-1-approach"
+      ],
+      [
+        "wait-terminal-1-approach",
+        "wait-terminal-1"
+      ],
+      [
+        "waiting-aisle",
+        "wait-seat-3-approach"
+      ],
+      [
+        "wait-seat-3-approach",
+        "wait-seat-3"
+      ],
+      [
+        "waiting-aisle",
+        "wait-seat-4-approach"
+      ],
+      [
+        "wait-seat-4-approach",
+        "wait-seat-4"
+      ],
+      [
+        "south",
+        "dormitory-door"
+      ],
+      [
+        "dormitory-door",
+        "dormitory-aisle"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-1-approach"
+      ],
+      [
+        "bed-1-approach",
+        "bed-1"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-2-approach"
+      ],
+      [
+        "bed-2-approach",
+        "bed-2"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-3-approach"
+      ],
+      [
+        "bed-3-approach",
+        "bed-3"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-4-approach"
+      ],
+      [
+        "bed-4-approach",
+        "bed-4"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-5-approach"
+      ],
+      [
+        "bed-5-approach",
+        "bed-5"
+      ],
+      [
+        "dormitory-aisle",
+        "bed-6-approach"
+      ],
+      [
+        "bed-6-approach",
+        "bed-6"
+      ]
+    ]
+  }
+}

@@ -1,6 +1,10 @@
 """Dependency-free stdio MCP adapter over the existing AP-Vibe task protocol."""
 from __future__ import annotations
 
+if __name__ == '__main__':
+    from active_entry import forward
+    forward(__file__)
+
 import json
 import base64
 import os
@@ -31,6 +35,33 @@ def invoke(name, args):
                          ('缺少必填字段 ' + ', '.join(missing) + '。' if missing else '') +
                          ('不支持字段 ' + ', '.join(extra) + '。' if extra else '') +
                          ('goal 应填写当前任务目标。' if 'goal' in missing else ''))
+    if name == 'ap_vibe_run_review':
+        if 'accepted' not in args:
+            if set(args)!={'run_id'}:raise ValueError('只读验收记录时仅填写run_id；提交时需要accepted和实际验收依据')
+            return task_client.call('agents/runs?' + urlencode(args))
+        return task_client.call('agents/review',args)
+    if name == 'ap_vibe_agent_templates':
+        return task_client.call('agents/setup')
+    if name == 'ap_vibe_agent_templates_install':
+        return task_client.call('agents/setup/templates', args)
+    if name == 'ap_vibe_agent_connections_file':
+        path = Path(args['file_path']).expanduser().resolve()
+        if not path.is_file() or path.stat().st_size > 65536:
+            raise ValueError('请选择存在且不超过64KB的配置JSON')
+        return task_client.call('agents/setup/connections', json.loads(path.read_text('utf-8-sig')))
+    if name in {'ap_vibe_studio_context','ap_vibe_session_inbox'}:
+        route='studio/sessions' if name=='ap_vibe_studio_context' else 'studio/session-inbox'
+        return task_client.call(route + ('?' + urlencode(args) if args else ''))
+    if name=='ap_vibe_image_qa':
+        return task_client.call('studio/image-qa'+('?' + urlencode(args) if args else ''))
+    if name in {'ap_vibe_manager','ap_vibe_replay'}:
+        return task_client.call('studio/'+name.removeprefix('ap_vibe_')+('?' + urlencode(args) if args else ''))
+    if name=='ap_vibe_image_qa_create':
+        path=Path(args['manifest_path']).expanduser().resolve()
+        if not path.is_file() or path.stat().st_size>16*1024*1024:raise ValueError('图片清单不存在或超过16MB')
+        return task_client.call('studio/image-qa/create',json.loads(path.read_text(encoding='utf-8-sig')))
+    if name=='ap_vibe_image_qa_action':
+        return task_client.call('studio/image-qa/action',args)
     if name == 'ap_vibe_context':
         identity={'client_kind':os.environ.get('AP_VIBE_CLIENT_KIND','codex')}
         if os.environ.get('AP_VIBE_SELECTED_PROJECT_ID'):
@@ -115,6 +146,12 @@ def invoke(name, args):
         if os.environ.get('AP_VIBE_AGENT_ID'):
             payload['requested_by'] = os.environ['AP_VIBE_AGENT_ID']
         return task_client.call('studio/tasks/' + name.removeprefix('ap_vibe_task_'), payload)
+    if name == 'ap_vibe_plan_list':
+        return task_client.call('studio/plans'+('?' + urlencode(args) if args else ''))
+    if name in {'ap_vibe_plan_submit','ap_vibe_plan_cancel'}:
+        return task_client.call('studio/plans/'+name.removeprefix('ap_vibe_plan_'),args)
+    if name == 'ap_vibe_agent_budget':
+        return task_client.call('agents/budget/save', args)
     if name in {'ap_vibe_collaboration_send','ap_vibe_collaboration_broadcast'}:
         if os.environ.get('AP_VIBE_AGENT_ID'):
             args={**args,'sender':os.environ['AP_VIBE_AGENT_ID']}

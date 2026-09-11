@@ -1,3 +1,5 @@
+SYNTHETIC_KEY = "sk-" + "test" * 10
+
 import json
 from pathlib import Path
 import sys
@@ -23,14 +25,14 @@ def test_public_blocks_and_explicit_title_only(tmp_path):
     records=[entry(0,'first prompt'),{'type':'custom-title','customTitle':'Real title'},
              entry(1,[{'type':'thinking','thinking':'HIDDEN_REASONING'},
                       {'type':'tool_use','name':'Read','input':{'private':'TOOL_INPUT'}},
-                      {'type':'text','text':'Visible sk-abcdefghijklmnopqrstuvwxy'}],'assistant'),
+                      {'type':'text','text':'Visible '+SYNTHETIC_KEY}],'assistant'),
              entry(2,[{'type':'tool_result','content':'SECRET_TOOL_CONTENT','is_error':False}]),
              {'type':'attachment','attachment':{'content':'ATTACHMENT_BODY'}},
              {**entry(3,'INJECTED_SKILL_BODY'), 'isMeta':True}]
     monitor,path,sid=setup(tmp_path,records)
     assert monitor.discover()['sources'][0]['title']=='Real title'
     output=json.dumps(monitor.read(sid))
-    for hidden in ('HIDDEN_REASONING','TOOL_INPUT','SECRET_TOOL_CONTENT','ATTACHMENT_BODY','INJECTED_SKILL_BODY','sk-abcdefghijklmnopqrstuvwxy'):
+    for hidden in ('HIDDEN_REASONING','TOOL_INPUT','SECRET_TOOL_CONTENT','ATTACHMENT_BODY','INJECTED_SKILL_BODY',SYNTHETIC_KEY):
         assert hidden not in output
     assert 'Visible' in output and 'tool_result' in output
     with pytest.raises(ContractError):monitor.read('../../anything')
@@ -57,6 +59,40 @@ def test_cached_source_activity_ages_without_new_output(tmp_path,monkeypatch):
     assert monitor.discover()['sources'][0]['activity']=='recent_output'
     monkeypatch.setattr('ap_mind.claude_sessions.time.time',lambda:updated+130)
     assert monitor.discover()['sources'][0]['activity']=='historical'
+
+
+def test_model_comes_from_real_assistant_response_and_refreshes(tmp_path):
+    first = entry(1, 'first answer', 'assistant')
+    first['message']['model'] = 'provider/first-model'
+    spoofed = entry(2, 'user supplied identity')
+    spoofed['message']['model'] = 'not-a-response-model'
+    injected = {**entry(3, 'injected', 'assistant'), 'isMeta': True}
+    injected['message']['model'] = 'injected-model'
+    synthetic = entry(4, 'synthetic interruption notice', 'assistant')
+    synthetic['message']['model'] = '<synthetic>'
+    monitor, path, sid = setup(tmp_path, [first, spoofed, injected, synthetic])
+    source = monitor.discover()['sources'][0]
+    assert source['model'] == 'provider/first-model'
+    assert source['model_source'] == 'assistant_message'
+    assert source['observed_models'] == ['provider/first-model']
+
+    next_reply = entry(5, 'changed model answer', 'assistant')
+    next_reply['message']['model'] = 'custom-next-model'
+    with path.open('ab') as stream:
+        stream.write((json.dumps(next_reply)+'\n').encode())
+    updated = monitor.discover()['sources'][0]
+    assert updated['model'] == 'custom-next-model'
+    assert updated['observed_models'] == ['provider/first-model', 'custom-next-model']
+
+
+def test_missing_model_stays_unknown_and_malformed_metadata_is_ignored(tmp_path):
+    invalid = entry(2, 'malformed', 'assistant')
+    invalid['message']['model'] = {'model': 'never stringify a whole object'}
+    monitor, _, _ = setup(tmp_path, [entry(1, 'ordinary prompt'), invalid])
+    source = monitor.discover()['sources'][0]
+    assert source['model'] is None and source['model_source'] is None
+    assert source['observed_models'] == []
+
 
 def test_history_windows_do_not_drop_crossing_record(tmp_path):
     monitor,path,sid=setup(tmp_path,[entry(i,'x'*330+str(i)) for i in range(35)],window_bytes=4096)

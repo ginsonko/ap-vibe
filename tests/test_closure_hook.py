@@ -18,6 +18,10 @@ def test_stop_is_local_bounded_and_requires_current_receipt(tmp_path, monkeypatc
     task_client.mark_document_maintained('cwd', 'session', 'r1')
     assert task_client.stop_hook_output({}, 'cwd', 'session') == {}
     task_client.save_receipt('cwd', 'session', {'receipt_id':'r2','project_id':'p','session_id':'session','created_at':'now'})
+    assert task_client.stop_hook_output({}, 'cwd', 'session') == {}
+    task_client.reset_closure_reminder({'hook_event_name':'UserPromptSubmit','prompt':'<hook_prompt>收尾</hook_prompt>'},'cwd','session')
+    assert task_client.stop_hook_output({}, 'cwd', 'session') == {}
+    task_client.reset_closure_reminder({'hook_event_name':'UserPromptSubmit','prompt':'新用户任务'},'cwd','session')
     assert task_client.stop_hook_output({}, 'cwd', 'session')['decision'] == 'block'
     monkeypatch.setenv('AP_VIBE_READONLY_CURATION','1')
     assert task_client.stop_hook_output({}, 'cwd', 'session') == {}

@@ -1,0 +1,32 @@
+name: Verify Windows beta
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: apps/studio/package-lock.json
+      - run: python -m pip install pytest pillow pytest-xdist
+      - run: python -m pytest -q -n 4 --durations=15
+      - run: npm ci --no-audit --no-fund
+        working-directory: apps/studio
+      - run: npm run build
+        working-directory: apps/studio
+      - run: node --test
+        working-directory: apps/studio
+      - run: |
+          $version = (Get-Content ap-vibe-version.json -Raw | ConvertFrom-Json).version
+          python tools/release_bundle.py --output release-check --version $version

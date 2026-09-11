@@ -209,7 +209,7 @@ def execute(studio, run_id, value, profile, key, project):
             '如有ap-vibe-handoff.json，先读原任务目标、成果及公开输出，在原成果基础上继续未完成工作，不重复未知外部操作。'
             '成果完成后说明真实验证和遗留问题，不虚构通过或费用。'
             '这是一次自动托管运行：不要调用question、request_user_input或任何等待用户确认的工具；遇到参数错误或工具暂不可用时记录错误并继续可执行步骤。'
-            f'角色偏好：{profile.get("role", "")}'
+            f'角色偏好：{profile.get("role", "")}。可选人设（不改变事实、权限或完成标准）：{profile.get("persona", "")}'
         )
         args = command(value, profile, mcp, instructions + extension['instructions'], connection, extension['mcp'])
         studio._event(run_id, 'status', {'text': '正在启动 Codex；本次模型配置独立生效。',
@@ -277,6 +277,7 @@ def execute(studio, run_id, value, profile, key, project):
                                 studio._event(run_id, 'project_document', {'text': note, 'maintenance': dict(maintenance)})
             elif kind == 'turn.completed':
                 result = {'is_error': False, 'usage': event.get('usage'), 'total_cost_usd': None}
+                studio.budget.observe(value['agent_id'], run_id, run_id + ':codex-turn', event.get('usage'), 'codex')
                 studio._event(run_id, 'result', {'text': 'Codex 已返回成果，等待验收。', 'result': result})
             elif kind in {'turn.failed', 'error'}:
                 detail = event.get('error') or event.get('message') or kind

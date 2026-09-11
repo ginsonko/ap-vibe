@@ -14,6 +14,8 @@ WRITE_TOOLS = {'Write', 'Edit', 'MultiEdit', 'file_change', 'apply_patch',
 
 def location(run, event, review=False):
     state = run['state']
+    if state == 'budget_paused':
+        return 'rest', '饿昏了 · 等待投喂', 'rest'
     if state in {'failed', 'uncertain', 'interrupted', 'changes_requested', 'cancelling'}:
         return 'waiting', '需要留意', 'wait'
     if state == 'waiting':
@@ -60,7 +62,7 @@ def snapshot(studio):
     for row in rows:
         value = json.loads(row['payload_json'])
         run = {key: value.get(key) for key in ('agent_id', 'name', 'appearance_id', 'model',
-               'executor_kind', 'project_id', 'created_at', 'updated_at', 'logical_task_id', 'depends_on')}
+               'executor_kind', 'project_id', 'created_at', 'updated_at', 'logical_task_id', 'depends_on', 'coordination_only')}
         run.update(run_id=row['run_id'], state=row['state'], prompt=value.get('prompt', '')[:500])
         event = None
         if row['event_json']:
@@ -68,6 +70,7 @@ def snapshot(studio):
             event = {'seq': row['seq'], 'kind': row['kind'], 'created_at': row['event_at'],
                      'text': str(payload.get('text', ''))[:500], 'tool': payload.get('tool')}
         task = tasks.get(run.get('logical_task_id'), {})
+        run['title'] = task.get('title') or ('协调工作安排' if value.get('coordination_only') else '')
         run['room'], run['activity_label'], run['animation'] = location(run, event, bool(task.get('review_of_task_id')))
         run['last_event'] = event
         run['active'] = row['state'] in ACTIVE
@@ -76,5 +79,38 @@ def snapshot(studio):
     messages = collaboration.list()['messages'][:80] if collaboration else []
     messages = [{key: m.get(key) for key in ('message_id', 'sender', 'recipient', 'created_at', 'task_id')}
                 | {'body': m['body'][:300], 'truncated': len(m['body']) > 300} for m in messages]
+    manager_actor=None
+    if hasattr(studio,'manager'):
+        manager=studio.manager.list(limit=10)
+        settings=manager['settings']
+        # Normal plan coordination has no failure incident. Project the actual
+        # manager run, so both plan assignment and incident handling animate.
+        busy=next((r for r in runs if r['agent_id']==settings['agent_id'] and r.get('coordination_only')
+                   and r['state'] in ('starting','running','cancelling')),None)
+        with closing(studio.registry._connect()) as c:
+            row=c.execute('SELECT public_json FROM studio_agents WHERE agent_id=?',(settings['agent_id'],)).fetchone()
+            manager_profile=json.loads(row[0]) if row else {}
+        from .agent_studio import activation
+        inactive=bool(settings['agent_id']) and not activation(manager_profile)['activated'] and not busy
+        manager_actor={'actor_id':'studio-manager','agent_id':settings['agent_id'],'name':settings['name'],
+            'model':manager_profile.get('model'),'executor_kind':manager_profile.get('executor_kind'),
+            'appearance_id':settings['appearance_id'],'room':'rest' if inactive else 'management','animation':'read' if busy else 'rest' if inactive else 'wait',
+            'state':'running' if busy else 'inactive' if inactive else 'idle','active':bool(busy),
+            'activity_label':'正在协调' if busy else '未激活 · 等待配置' if inactive else '本地值守' if settings['agent_id'] and settings['enabled'] else '可配置管理伙伴',
+            'summary':'事件触发的协调办公室；空闲时不调用模型。','manager':True}
+    batch_actors=[]
+    if hasattr(studio,'image_qa'):
+        with closing(studio.registry._connect()) as c:
+            for row in c.execute("SELECT * FROM studio_image_batches WHERE state IN ('running','paused') ORDER BY rowid"):
+                batch=json.loads(row['payload_json']);agent=c.execute('SELECT public_json FROM studio_agents WHERE agent_id=?',(batch['agent_id'],)).fetchone()
+                if not agent:continue
+                profile=json.loads(agent[0])
+                batch_actors.append({'actor_id':row['batch_id'],'agent_id':batch['agent_id'],'name':batch['title'],
+                    'model':profile['model'],'appearance_id':profile.get('appearance_id'),'project_id':batch['project_id'],
+                    'room':'review' if row['state']=='running' else 'waiting','state':row['state'],'active':row['state']=='running',
+                    'animation':'read' if row['state']=='running' else 'wait','activity_label':'批量看图' if row['state']=='running' else '已暂停新增图片',
+                    'summary':batch['title'],'batch_id':row['batch_id']})
     return {'ok': True, 'observed_at': utc_now(), 'runs': runs, 'messages': messages,
+            'manager_actor':manager_actor,'batch_actors':batch_actors,
+            'ordinary': studio.sessions.snapshot() if hasattr(studio,'sessions') else {'actors':[]},
             'active_count': sum(r['active'] for r in runs), 'source': 'persisted_managed_runs'}

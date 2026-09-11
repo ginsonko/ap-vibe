@@ -1,7 +1,7 @@
 ﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidateSet("install", "start", "status", "open", "launch", "install-desktop-launcher", "stop", "uninstall-autostart")]
+    [ValidateSet("install", "start", "status", "open", "launch", "install-desktop-launcher", "stop", "uninstall-autostart", "apply-update")]
     [string]$Action,
 
     [string]$ConfigDir,
@@ -12,6 +12,7 @@ param(
     [string]$BindHost = "127.0.0.1",
     [string]$Python,
     [string]$StudioDir,
+    [string]$CandidateRoot,
     [string]$CodexSessionsRoot,
     [switch]$AutoMonitor,
     [switch]$AutoOnboardWorkspaces,
@@ -22,12 +23,17 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
+$script:InvocationParameters = @{} + $PSBoundParameters
 Set-StrictMode -Version 2.0
 
 $script:ProductRoot = (Resolve-Path (Join-Path $PSScriptRoot ".." )).Path
+$script:PackageRoot = $script:ProductRoot
 $script:ScriptPath = (Resolve-Path $MyInvocation.MyCommand.Path).Path
 $script:ConfigSchema = "ap-vibe.lifecycle.v1"
 $script:AutostartMarker = "AP-VIBE-AUTOSTART-V1"
+. (Join-Path $PSScriptRoot 'process-identity.ps1')
 
 function Convert-ToFullPath {
     param([Parameter(Mandatory = $true)][string]$Value)
@@ -145,10 +151,12 @@ function Get-ProcessRecord {
     $process = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
     if ($null -eq $process) { return $null }
     $cim = Get-CimInstance Win32_Process -Filter ("ProcessId = {0}" -f $ProcessId) -ErrorAction SilentlyContinue
+    $imagePath = if ($cim) { [string]$cim.ExecutablePath } else { [string]$process.Path }
+    if ([string]::IsNullOrWhiteSpace($imagePath)) { $imagePath = Get-LimitedProcessImage $ProcessId }
     [pscustomobject]@{
         pid = $ProcessId
         name = [string]$process.ProcessName
-        path = if ($cim) { [string]$cim.ExecutablePath } else { [string]$process.Path }
+        path = $imagePath
         command_line = if ($cim) { [string]$cim.CommandLine } else { "" }
         start_time = try { $process.StartTime.ToUniversalTime().ToString("o") } catch { $null }
     }
@@ -243,9 +251,16 @@ function New-Configuration {
         $sessionsValue = Convert-ToFullPath $CodexSessionsRoot
         if (-not (Test-Path -LiteralPath $sessionsValue -PathType Container)) { throw "codex_sessions_root_not_found" }
     }
+    $releaseVersion = $null
+    $versionFile = Join-Path $script:ProductRoot 'ap-vibe-version.json'
+    if (Test-Path -LiteralPath $versionFile -PathType Leaf) {
+        $releaseMetadata = Read-JsonFile $versionFile
+        if ($releaseMetadata.product -eq 'AP-Vibe' -and $releaseMetadata.version -match '^v\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?$') { $releaseVersion = [string]$releaseMetadata.version }
+    }
     [pscustomobject]@{
         schema = $script:ConfigSchema
         product = "AP-Vibe"
+        installed_version = $releaseVersion
         product_root = $script:ProductRoot
         script_path = $script:ScriptPath
         python = $python.path
@@ -294,6 +309,11 @@ function Test-OwnedProcess {
     $rootOk = $cmd.Contains($rootToken)
     if ($moduleOk -and $portOk -and $projectOk -and $dataOk -and $rootOk) {
         return $record
+    }
+    if ([string]::IsNullOrWhiteSpace($cmd)) {
+        $receipt = Read-JsonFile (Get-ReceiptPath)
+        $listener = Get-ListeningPid ([int]$Config.port)
+        if ($listener -and (Test-ReceiptProcessIdentity $Config $record $receipt $listener)) { return $record }
     }
     return $null
 }
@@ -446,7 +466,9 @@ function Start-ManagedService {
     $stderr = Join-Path $logDir "daemon-$stamp.stderr.log"
     $srcRoot = Join-Path $script:ProductRoot "src"
     $oldPythonPath = $env:PYTHONPATH
+    $oldApConfigPath = $env:AP_VIBE_CONFIG_PATH
     try {
+        $env:AP_VIBE_CONFIG_PATH = Get-ConfigPath
         if ([string]::IsNullOrWhiteSpace($oldPythonPath)) { $env:PYTHONPATH = $srcRoot } else { $env:PYTHONPATH = "$srcRoot$([IO.Path]::PathSeparator)$oldPythonPath" }
         $helper = Join-Path $script:ProductRoot "tools\launch_daemon.py"
         $prefix = @($Config.python_prefix)
@@ -458,6 +480,7 @@ function Start-ManagedService {
         $launch = [pscustomobject]@{ Id = [int]$launched.pid }
     } finally {
         $env:PYTHONPATH = $oldPythonPath
+        $env:AP_VIBE_CONFIG_PATH = $oldApConfigPath
     }
     $health = Wait-Healthy $Config $HealthTimeoutSeconds
     if (-not ($health -and $health.reachable -and $health.body.status -eq "ok")) {
@@ -660,7 +683,108 @@ function New-ResultError {
 }
 
 function Invoke-Action {
+    if ($Action -ne 'install') {
+        $activeConfig = Get-ExistingConfig
+        if ($activeConfig -and (Test-Path -LiteralPath (Join-Path $activeConfig.product_root 'src\ap_mind\studio_server.py'))) {
+            $script:ProductRoot = [string]$activeConfig.product_root
+            $script:ScriptPath = Join-Path $script:ProductRoot 'scripts\ap-vibe.ps1'
+        }
+    }
     switch ($Action) {
+        "apply-update" {
+            $config = Get-ExistingConfig
+            Assert-ConfigIdentity $config
+            $candidate = Convert-ToFullPath $CandidateRoot
+            $versions = Convert-ToFullPath (Join-Path (Get-ResolvedConfigDir) 'versions')
+            if (-not $candidate.StartsWith($versions + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'update_candidate_outside_versions' }
+            # The first update may start from a version without update_client.py.
+            # Use this verified invocation package's helper, while keeping the
+            # original installation root for process identity and rollback.
+            $check = & ([string]$config.python) (Join-Path $script:PackageRoot 'tools\update_client.py') verify --root $candidate
+            if ($LASTEXITCODE -ne 0) { throw 'update_package_verification_failed' }
+            $verified = $check | ConvertFrom-Json
+            $oldRoot = $script:ProductRoot
+            $original = $config | ConvertTo-Json -Depth 32 | ConvertFrom-Json
+            $owner = 'update-' + [Guid]::NewGuid().ToString('N')
+            $maintenanceUrl = "http://$($config.host):$($config.port)/v1/ap-vibe/studio/maintenance"
+            $lease = $false
+            $stopped = $false
+            $started = $null
+            try {
+                $current = Get-ManagedStatus
+                if ($current.running) {
+                    $acquired = Invoke-RestMethod -Uri $maintenanceUrl -Method Post -ContentType 'application/json' -Body (@{owner=$owner;action='acquire'} | ConvertTo-Json) -TimeoutSec 5
+                    if (-not $acquired.acquired) { return [pscustomobject]@{ok=$true;updated=$false;status='busy';reason=$acquired.reason} }
+                    $lease = $true
+                    $stop = Stop-ExactOwnedProcess $config ([int]$current.pid)
+                    if ($stop.status -notin @('stopped','already_exited','absent')) { throw 'update_stop_not_confirmed' }
+                    $stopped = $true
+                } elseif ($current.status -ne 'stopped') { throw 'update_runtime_identity_unavailable' }
+                $backupJson = & ([string]$config.python) (Join-Path $script:PackageRoot 'tools\update_client.py') checkpoint --config (Get-ConfigPath) --root $candidate
+                if ($LASTEXITCODE -ne 0) { throw 'update_backup_failed' }
+                $backup = $backupJson | ConvertFrom-Json
+                $config.product_root = $candidate
+                $config.script_path = Join-Path $candidate 'scripts\ap-vibe.ps1'
+                $config.studio_dir = Join-Path $candidate 'apps\studio\dist\client'
+                Set-PropertyValue $config 'installed_version' ([string]$verified.version)
+                Set-PropertyValue $config 'previous_product_root' $oldRoot
+                Write-AtomicJson (Get-ConfigPath) $config
+                $script:ProductRoot = $candidate
+                $script:ScriptPath = [string]$config.script_path
+                $started = Start-ManagedService $config
+                if (-not $started.ok) { throw 'update_new_runtime_unhealthy' }
+                # Keep private config and original data identity; only sync integration files.
+                $integrationIssues = @()
+                if (Test-SamePath (Get-ResolvedConfigDir) (Get-DefaultConfigDir)) {
+                    $integrationResults = @()
+                    foreach ($installer in @('install_task_context.py','install_mcp.py','install_claude.py','trust_hooks.py')) {
+                        $syncArgs = @('--config', (Get-ConfigPath))
+                        if ($installer -eq 'install_claude.py') { $syncArgs += '--if-available' }
+                        $previousPreference = $ErrorActionPreference
+                        try {
+                            # Windows PowerShell treats native stderr as error
+                            # records. Capture the full diagnostic before handling
+                            # the exit status, rather than losing it to "Traceback".
+                            $ErrorActionPreference = 'Continue'
+                            $sync = & ([string]$config.python) (Join-Path $candidate ('tools\' + $installer)) @syncArgs 2>&1
+                            $syncExit = $LASTEXITCODE
+                        } finally { $ErrorActionPreference = $previousPreference }
+                        $integrationResults += [pscustomobject]@{ installer = $installer; exit_code = $syncExit; output = (($sync | ForEach-Object { [string]$_ }) -join "`n") }
+                        if ($syncExit -ne 0) { $integrationIssues += $installer }
+                    }
+                    Write-AtomicJson (Join-Path (Get-ResolvedConfigDir) 'update-integration.json') ([pscustomobject]@{version=$verified.version;results=$integrationResults})
+                }
+                return [pscustomobject]@{ok=$true;updated=$true;status='installed';version=$verified.version;pid=$started.pid;url=$started.receipt.url;backup=$backup.backup;integration_issues=$integrationIssues}
+            } catch {
+                $failure = $_.Exception.Message
+                $cleanupComplete = $true
+                if ($script:ProductRoot -eq $candidate) {
+                    $candidatePids = @()
+                    if ($null -ne $started) {
+                        foreach ($field in @('pid','launch_pid','owner_pid')) {
+                            if ($started.PSObject.Properties.Name -contains $field -and $started.$field) { $candidatePids += [int]$started.$field }
+                        }
+                    }
+                    $candidatePids += Get-ListeningPid ([int]$config.port)
+                    foreach ($candidatePid in ($candidatePids | Where-Object { $_ -and $_ -gt 0 } | Select-Object -Unique)) {
+                        $cleanupResult = Stop-ExactOwnedProcess $config ([int]$candidatePid)
+                        if ($cleanupResult.status -notin @('stopped','already_exited','absent')) { $cleanupComplete = $false }
+                    }
+                }
+                $script:ProductRoot = $oldRoot
+                $script:ScriptPath = [string]$original.script_path
+                Write-AtomicJson (Get-ConfigPath) $original
+                if (-not $cleanupComplete) {
+                    return [pscustomobject]@{ok=$false;updated=$false;status='recovery_pending';code=$failure;recovered=$false;data_restored=$false;solution='旧版入口已恢复，但候选进程尚未确认退出；保留数据并等待进程核对，未启动第二份服务。'}
+                }
+                $recovered = Start-ManagedService $original
+                return [pscustomobject]@{ok=$false;updated=$false;status='rolled_back';code=$failure;recovered=[bool]$recovered.ok;data_restored=$false;solution='已恢复旧代码入口，保留同一数据库和所有新写入。'}
+            } finally {
+                if ($lease) {
+                    try { $released = Invoke-RestMethod -Uri $maintenanceUrl -Method Post -ContentType 'application/json' -Body (@{owner=$owner;action='release'} | ConvertTo-Json) -TimeoutSec 5 } catch { }
+                }
+            }
+        }
         "status" {
             return (Get-ManagedStatus)
         }
@@ -668,8 +792,16 @@ function Invoke-Action {
             return (Uninstall-Autostart)
         }
         "install" {
-            $config = New-Configuration
             $existing = Get-ExistingConfig
+            if ($existing) {
+                Assert-ConfigIdentity $existing
+                if (-not $script:InvocationParameters.ContainsKey('ProjectRoot')) { $ProjectRoot = $existing.project_root }
+                if (-not $script:InvocationParameters.ContainsKey('ProjectId')) { $ProjectId = $existing.project_id }
+                if (-not $script:InvocationParameters.ContainsKey('Port')) { $Port = [string]$existing.port }
+                if (-not $script:InvocationParameters.ContainsKey('DataDir')) { $DataDir = $existing.data_dir }
+                if (-not $script:InvocationParameters.ContainsKey('CodexSessionsRoot')) { $CodexSessionsRoot = $existing.codex_sessions_root }
+            }
+            $config = New-Configuration
             if ($existing) {
                 Assert-ConfigIdentity $existing
                 if ($null -ne $existing.PSObject.Properties["requested_port"] -and [int]$existing.requested_port -eq [int]$config.port) {
@@ -679,6 +811,12 @@ function Invoke-Action {
                 if (-not (Test-SamePath ([string]$existing.project_root) ([string]$config.project_root)) -or [int]$existing.port -ne [int]$config.port -or [string]$existing.project_id -ne [string]$config.project_id) {
                     return (New-ResultError "config_identity_conflict" "preflight" "现有配置属于另一个项目或端口；使用对应的 ConfigDir，或明确选择新的隔离配置目录。")
                 }
+                if (-not (Test-SamePath ([string]$existing.data_dir) ([string]$config.data_dir))) {
+                    return (New-ResultError 'config_data_directory_conflict' 'preflight' '已保留原资料目录。重复安装不会迁移数据；继续使用原DataDir，迁移请单独备份并明确安排。')
+                }
+                # Repair integration around the existing instance. Version
+                # switching belongs to apply-update, preserving unknown fields.
+                $config = $existing
             }
             Select-AvailableServicePort $config
             New-Item -ItemType Directory -Force -Path (Get-ResolvedConfigDir), $config.data_dir | Out-Null
@@ -787,7 +925,7 @@ function Invoke-Action {
                 $receipt.state = "stopped"; Set-PropertyValue $receipt "stopped_at" ([DateTime]::UtcNow.ToString("o")); Set-PropertyValue $receipt "stop_reason" "process_already_exited"; $receipt.updated_at = [DateTime]::UtcNow.ToString("o"); Write-AtomicJson (Get-ReceiptPath) $receipt
                 return [pscustomobject]@{ ok = $true; status = "stopped"; stopped = $false; reason = "process_already_exited"; pid = $receiptPid; port_released = ($null -eq $portOwnerPid); owner_pid = $portOwnerPid; receipt_path = (Get-ReceiptPath) }
             }
-            if ($stopResult.status -eq "identity_mismatch") { return (New-ResultError "stop_refused_identity_mismatch" "stop" "receipt 中的 PID 仍存在但已被其它命令占用；未停止任何进程。请先查看 status 并核对 owner。") }
+            if ($stopResult.status -eq "identity_mismatch") { return (New-ResultError "stop_refused_identity_mismatch" "stop" "暂时无法确认 receipt 中的 PID 仍属于本服务；未停止任何进程。请先查看 status 核对身份，不代表已经确认被其它命令占用。") }
             if ($stopResult.status -eq "stop_failed") { return [pscustomobject]@{ ok = $false; status = "failed"; code = "stop_failed"; stage = "stop"; retryable = $true; error = $stopResult.error; owner = $stopResult.owner; solution = "确认当前用户仍有权停止该 AP-Vibe 进程后重试；未按进程名停止其它服务。" } }
             if ($stopResult.status -eq "stop_timeout") { return [pscustomobject]@{ ok = $false; status = "failed"; code = "stop_timeout"; stage = "stop"; retryable = $true; pid = $receiptPid; owner = $stopResult.owner; solution = "服务未在有限时间内退出；查看 status/日志后再重试，不要按进程名批量停止。" } }
             $receipt.state = "stopped"; Set-PropertyValue $receipt "stopped_at" ([DateTime]::UtcNow.ToString("o")); $receipt.updated_at = [DateTime]::UtcNow.ToString("o"); Write-AtomicJson (Get-ReceiptPath) $receipt
@@ -800,7 +938,7 @@ $result = $null
 $lifecycleMutex = $null
 $ownsLifecycleMutex = $false
 try {
-    if ($Action -in @("install", "start", "launch", "stop")) {
+    if ($Action -in @("install", "start", "launch", "stop", "apply-update")) {
         $sha = [Security.Cryptography.SHA256]::Create()
         try { $lockHash = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes((Get-ResolvedConfigDir).ToLowerInvariant()))).Replace("-", "") }
         finally { $sha.Dispose() }

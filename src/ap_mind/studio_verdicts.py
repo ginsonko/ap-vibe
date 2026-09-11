@@ -171,7 +171,12 @@ class StudioVerdicts:
                 elif outcome == 'changes_requested':
                     rounds = parent.get('rework_round', 0)
                     parent.update(state='changes_requested', rework_pending=False)
-                    if rounds < parent.get('max_rework_rounds', 2):
+                    manager=self.studio.manager.settings() if hasattr(self.studio,'manager') else {}
+                    if rounds < parent.get('max_rework_rounds',2) and manager.get('enabled') and manager.get('agent_id'):
+                        # The same recovery coordinator chooses whether to ask
+                        # the author to revise or to use another suitable worker.
+                        parent['review_issue']='验收已指出修改项，等待管理员安排修订。'
+                    elif rounds < parent.get('max_rework_rounds', 2):
                         parent.update(state='queued', owner=None, rework_round=rounds + 1, rework_pending=True,
                                       takeover_tried_agents=[], takeover_issue=None, author_retry_count=0,
                                       rework_agent_id=source['agent_id'],
@@ -208,8 +213,8 @@ class StudioVerdicts:
             run = self._run(c, current['run_id'])
             # exit_code is written only after wait() has reaped this exact
             # process. A crash label or elapsed time alone cannot establish it.
-            if (run['state'] not in {'failed', 'uncertain'} or type(run.get('exit_code')) is not int or
-                    current['run_id'] in self.studio._threads):
+            run=self.studio.reconcile_execution(run)
+            if (run['state'] not in {'failed', 'uncertain','interrupted'} or not self.studio.execution_stopped(run)):
                 return
             retries = current.get('review_retry_count', 0)
             if retries >= parent.get('max_review_retries', 1):

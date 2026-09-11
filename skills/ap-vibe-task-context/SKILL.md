@@ -5,9 +5,44 @@ description: Automatically connect every substantive Codex task to the local AP-
 
 # AP-Vibe Task Context
 
+For first installation or entry to Agent Studio, check `ap_vibe_agents` for
+`executors.claude_available`. If Claude Code CLI is absent, explain that Studio partners
+using that executor cannot run and ask to install it automatically. Existing
+explicit permission to install the dependency is sufficient; do not ask again.
+Follow [executor setup](references/agent-collaboration.md#缺少-claude-code-cli-时).
+Local monitoring, project records and an available Codex executor remain usable.
+
 The machine owner enabled automatic local participation. A discovered workspace
 is a provisional source container, not a curated project. Multiple sessions
 may share one project document. Do not guess identity from titles or mix projects.
+
+## First action for an existing task
+
+Before choosing how to execute or split substantive work, obtain context for
+this goal and the current real session. Reuse a matching Hook response only if
+it includes `studio_context.policy`; otherwise run `bootstrap` as shown below.
+Reading this Skill or an old receipt id alone does not retrieve that policy.
+
+If `studio_context.policy.enabled=true`, read
+[Agent collaboration](references/agent-collaboration.md), query configured
+partners with `ap_vibe_agents`, and give suitable independent work to those
+partners before considering private/native subagents. Save `return_to` for
+results and wake-up. Small work stays local. A global `settings.enabled=false`
+in a directory is not this session's policy; session and project overrides may
+enable collaboration. Use `ap_vibe_studio_context` with the real `harness` and
+`session_id` to refresh `current_session.policy` when needed.
+
+For a complex goal with dependent delegated work, prefer `ap_vibe_plan_submit`:
+one durable graph, a real manager assignment, independent upstream review and
+one batch return to the original session. Read `ap_vibe_plan_list` to confirm
+the manager actually acknowledged the plan before saying it was handed over.
+The collaboration reference explains fallback, failure recovery and resumption.
+
+Missing MCP tools do not mean Studio is unavailable. The same operations are
+available through `task_client.py tool --name TOOL --file arguments.json`;
+see the collaboration reference. If no suitable partner is available, continue
+the original task with a brief explanation. Preserve user authorization and
+existing paid-model settings; do not configure new paid services merely to split work.
 
 ## First-contact route (must happen before another project Skill)
 
@@ -131,6 +166,15 @@ No receipt or project classification is required for these reads.
 For authorized Agent Studio work, read [Agent collaboration](references/agent-collaboration.md).
 It covers peer/task discovery, task planning and assignment, queued follow-up work,
 messages, handoffs, real artifacts and independent review using the shared MCP tools.
+
+When the returned `studio_context.policy.enabled` is true, use Studio partners
+for useful independent subtasks before creating private parallel workers. Use
+the existing task ledger, retain the caller in `return_to`, and check the inbox
+at natural milestones. Small work can stay in the original task. Disabled
+collaboration still permits read access and the user's explicit delegation.
+For large batches of product or generated images, use
+[batch visual acceptance](references/batch-image-qa.md) to select and calibrate
+a configured vision partner; do not load thousands of images into this task.
 
 For chapter fields, assessment dimensions, and a complete patch example, read
 [the document protocol](references/project-documents.md) when writing. All

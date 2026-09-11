@@ -1,9 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {advance,makeNavigation,routeBetween,samePoint,MessageWatermark} from '../src/office-motion.js';
+import {advance,makeNavigation,meetingReached,routeBetween,samePoint,MessageWatermark} from '../src/office-motion.js';
 const layout=JSON.parse(fs.readFileSync(new URL('../src/office-layout.json',import.meta.url)));
 const nav=makeNavigation(layout);
+
+test('Message dwell starts at the meeting position, not before routing or midway',()=>{
+  const meeting={senderId:'a'},goals=new Map([['a',{x:100,y:200}]]),actors=new Map();
+  assert.ok(!meetingReached(meeting,actors,goals,true));
+  actors.set('a',{at:{x:10,y:20},path:[]});
+  assert.ok(!meetingReached(meeting,actors,goals,true));
+  actors.set('a',{at:{x:50,y:200},path:[{x:100,y:200}]});
+  assert.ok(!meetingReached(meeting,actors,goals,true));
+  actors.set('a',{at:{x:100,y:200},path:[]});
+  assert.ok(meetingReached(meeting,actors,goals,true));
+  assert.ok(meetingReached({senderId:null},actors,goals,true));
+  assert.ok(meetingReached(meeting,new Map(),goals,false));
+});
 test('Every room pair crosses divisions only through the shared corridor',()=>{
   const slots=Object.values(nav.points);
   for(const from of slots)for(const to of slots){
