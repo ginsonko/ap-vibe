@@ -146,7 +146,8 @@ class StudioTasks:
             fields['return_to'] = destination(raw['return_to'])
         if 'collaboration_origin' in raw:
             origin=raw['collaboration_origin']
-            if not isinstance(origin,dict) or origin.get('harness') not in {'codex','claude'} or not isinstance(origin.get('session_id'),str):
+            from .harness_registry import valid_kind
+            if not isinstance(origin,dict) or not valid_kind(origin.get('harness')) or not isinstance(origin.get('session_id'),str):
                 raise ContractError('studio_collaboration_origin_invalid')
             fields['collaboration_origin']={'harness':origin['harness'],'session_id':origin['session_id']}
         if 'extensions' in raw:

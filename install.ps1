@@ -65,6 +65,8 @@ if (-not $NoAutostart) { $arguments.RegisterAutostart = $true }
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $installed = Get-Content -LiteralPath (Join-Path $installedConfigDir 'config.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $integrationRoot = $installed.product_root
+& $installed.python (Join-Path $integrationRoot 'tools/install_dependencies.py') --config (Join-Path $installedConfigDir 'config.json')
+if ($LASTEXITCODE -ne 0) { Write-Warning 'DSH 压缩会话读取依赖未就绪；其它功能仍可使用，联网后重跑安装器即可补齐。' }
 & $installed.python (Join-Path $integrationRoot 'tools/install_task_context.py') --config (Join-Path $installedConfigDir 'config.json')
 if ($LASTEXITCODE -ne 0) { throw '本地服务已安装，但 Codex 项目资料 Skill 安装失败。请根据错误修复后重新安装。' }
 & $installed.python (Join-Path $integrationRoot 'tools/trust_hooks.py') --config (Join-Path $installedConfigDir 'config.json')
@@ -74,6 +76,10 @@ if ($LASTEXITCODE -ne 0) { throw '本地服务与 Skill 已安装，MCP 注册�
 if (-not $SkipClaude) {
     & $installed.python (Join-Path $integrationRoot 'tools/install_claude.py') --if-available --config (Join-Path $installedConfigDir 'config.json')
     if ($LASTEXITCODE -ne 0) { Write-Warning 'Claude 自动接入未完成；原设置和 Codex 接入保持可用。修复提示的问题后可重跑 tools/install_claude.py。' }
+}
+foreach ($nativeInstaller in @('install_harness.py','install_native_extras.py')) {
+    & $installed.python (Join-Path $integrationRoot ('tools/' + $nativeInstaller)) --config (Join-Path $installedConfigDir 'config.json')
+    if ($LASTEXITCODE -ne 0) { Write-Warning '部分外部客户端接入需要处理；已有服务与原客户端设置保留。请按安装器返回的路径和配置片段处理。' }
 }
 if ($OrganizeRecent) {
     $localBase = "http://$($installed.host):$($installed.port)/v1/ap-vibe"

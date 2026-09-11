@@ -63,13 +63,16 @@ class TaskProjects:
                 'instructions': '按真实来源判断项目；用project_id及sections读取候选章节，不凭名称合并。'}
 
     def annotate_claude_sources(self, catalog):
+        return self.annotate_sources(catalog, 'claude')
+
+    def annotate_sources(self, catalog, default_kind=None):
         with closing(self.registry._connect()) as conn:
-            rows = conn.execute('''SELECT m.session_id, m.project_id, p.display_name, p.status
+            rows = conn.execute('''SELECT m.client_kind, m.session_id, m.project_id, p.display_name, p.status
                 FROM task_project_memberships m JOIN projects p ON p.project_id=m.project_id
-                WHERE m.client_kind='claude' ''').fetchall()
-        memberships = {row['session_id']: dict(row) for row in rows}
+                WHERE p.status!='archived' ''').fetchall()
+        memberships = {(row['client_kind'], row['session_id']): dict(row) for row in rows}
         # The source cache remains read-only; membership may change between polls.
-        return {**catalog, 'sources': [{**source, 'project_membership': memberships.get(source.get('session_id'))}
+        return {**catalog, 'sources': [{**source, 'project_membership': memberships.get((source.get('harness', default_kind), source.get('session_id')))}
                                        for source in catalog.get('sources', [])]}
 
     def classify(self, raw):

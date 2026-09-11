@@ -186,12 +186,12 @@ def clean(value: Any, depth: int = 0) -> Any:
             text = pattern.sub(lambda m: ("".join(m.groups()) if m.lastindex else "") + "[REDACTED]", text)
         return text
     if isinstance(value, dict):
-        if len(value) > 100 or any(not isinstance(key, str) or len(key) > 128 for key in value):
+        if any(not isinstance(key, str) or len(key) > 128 for key in value):
             raise ContractError("document_fields_invalid")
         return {key: "[REDACTED]" if re.search(r"(?i)(?:api[_-]?key|password|authorization|access[_-]?token|secret)", key) and not re.search(r"(?i)(?:_location|_path|_ref)$", key) else clean(item, depth + 1) for key, item in value.items()}
     if isinstance(value, list):
-        if len(value) > 100:
-            raise ContractError("document_list_too_long")
+        # Long-lived decisions/work histories grow naturally. Bound writes by
+        # the configured byte budget, not an arbitrary number of history items.
         return [clean(item, depth + 1) for item in value]
     if value is None or isinstance(value, (bool, int)):
         return value

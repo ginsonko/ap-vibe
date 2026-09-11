@@ -344,8 +344,33 @@ class StudioPlans:
             c=self.registry._connect();current=self._read(c,plan['plan_id'])
             if current['state']!='running': return
             if failed: self._disable(c,current)
-            self.studio.returns.enqueue('return:'+plan['plan_id'],plan['plan_id'],plan['return_to'],message)
+            cycle=current.get('return_cycle',0)
+            return_id='return:'+plan['plan_id']+(f':cycle:{cycle}' if cycle else '')
+            self.studio.returns.enqueue(return_id,plan['plan_id'],plan['return_to'],message)
             self._write(c,{**current,'state':state,'returned_at':utc_now()})
+
+    def _reconcile_returned(self,plan):
+        """A batch return is a review handoff, not a permanent execution lock.
+
+        Reviewers can reject an already-returned leaf. Keep its original task,
+        assignments and recovery policy; only reopen the graph for the changed
+        nodes. A new return cycle is persisted once so restart/polling cannot
+        lose or duplicate the next batch notification.
+        """
+        with self.registry.transaction():
+            c=self.registry._connect();current=self._read(c,plan['plan_id'])
+            if current['state'] not in {'ready_for_review','completed'}: return
+            tasks=[self.studio.tasks._read(c,n['task_id']) for n in current['nodes']]
+            if all(t['state']=='completed' for t in tasks):
+                if current['state']!='completed': self._write(c,{**current,'state':'completed'})
+                return
+            upstream={dep for t in tasks for dep in t['dependencies']}
+            terminal=lambda t:t['state']=='completed' or (t['state']=='waiting_review' and
+                not t.get('reviewer_agent_id') and t['task_id'] not in upstream)
+            if all(terminal(t) for t in tasks): return
+            self._write(c,{**current,'state':'running','issue':None,
+                'return_cycle':current.get('return_cycle',0)+1,
+                'previous_returned_at':current.get('returned_at'),'returned_at':None})
 
     def tick(self):
         with self.studio._lock, self.studio.tasks.lock:
@@ -356,6 +381,7 @@ class StudioPlans:
                     if plan['state']=='cancelled': self._stop_cancelled(plan)
                     elif plan['state'] in {'planning','needs_configuration'}: self._planning(plan)
                     elif plan['state']=='running': self._progress(plan)
+                    elif plan['state'] in {'ready_for_review','completed'}: self._reconcile_returned(plan)
                 except (ContractError,OSError,ValueError) as exc:
                     # Preserve a recoverable diagnostic without blocking other plans.
                     self._issue(plan,str(exc),plan['state'])

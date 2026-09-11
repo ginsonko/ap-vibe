@@ -22,3 +22,21 @@
 .archive-reader .session-detail-head { max-height:34%; overflow-y:auto; }
 @media (max-width:1050px) { .archive-browser { max-height:560px; } .archive-browser .session-browser-list { max-height:300px; flex:1; } .archive-page .session-detail-pane { scroll-margin-top:80px; height:max(560px,calc(100dvh - 160px)); } .archive-page .archive-reader { min-height:0; } }
 @media (max-width:600px) { .archive-continue { flex-wrap:wrap; } .archive-reader .session-detail-head { padding:12px; } }
+.harness-sources-dialog.agent-dialog{width:min(760px,calc(100vw - 32px));max-width:none;max-height:90dvh;padding:0;display:flex;flex-direction:column;gap:0;overflow:hidden}
+.harness-sources-dialog>header,.harness-sources-dialog>footer{flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 24px;background:#fff}
+.harness-sources-dialog>header{border-bottom:1px solid var(--line,#dce5e0)}
+.harness-sources-dialog h2{margin:0;font-size:21px}
+.harness-sources-dialog>header button{font-size:24px;border:0;background:transparent;cursor:pointer;width:36px;height:36px}
+.harness-sources-body{min-height:0;overflow:auto;overscroll-behavior:contain;padding:4px 24px 20px;line-height:1.65}
+.harness-sources-body details{margin:12px 0;border:1px solid var(--line,#dce5e0);border-radius:12px;background:#f8faf8;overflow:hidden}
+.harness-sources-body summary{cursor:pointer;padding:12px 16px;font-weight:600}
+.harness-source-fields{display:grid;gap:12px;padding:4px 16px 16px}
+.harness-source-fields p{margin:0;color:var(--muted,#637872)}
+.harness-source-fields small{display:block;overflow-wrap:anywhere}
+.harness-source-fields label{display:grid;gap:6px;font-size:13px}
+.harness-source-fields label:has(input[type=checkbox]){display:flex;align-items:center;gap:8px}
+.harness-source-fields textarea{width:100%;box-sizing:border-box;resize:vertical;border:1px solid #cbdad3;border-radius:8px;padding:10px;font:inherit;background:#fff;color:inherit}
+.harness-source-fields>button{justify-self:start;padding:6px 10px;border:1px solid #cbdad3;border-radius:8px;background:#fff;font:inherit;cursor:pointer}
+.harness-sources-dialog>footer{border-top:1px solid var(--line,#dce5e0)}
+.harness-sources-dialog>footer span{font-size:12px;color:var(--muted,#637872)}
+@media(max-width:560px){.harness-sources-dialog>header,.harness-sources-dialog>footer{padding:14px 16px}.harness-sources-body{padding:4px 16px 16px}.harness-sources-dialog>footer span{max-width:100px}}

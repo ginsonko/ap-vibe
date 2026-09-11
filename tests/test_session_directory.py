@@ -38,6 +38,8 @@ def server(tmp_path, monkeypatch):
     endpoint = create_server(port=0, data_dir=tmp_path/'data', project_root=root, codex_project_id='fixture-project')
     service = endpoint.service
     service.claude_sessions = ClaudeSessions([tmp_path/'claude-projects'], cache_seconds=0)
+    from ap_mind.external_sessions import ExternalSessions
+    service.external_sessions = ExternalSessions(tmp_path/'data', roots={}, cache_seconds=0)
     monkeypatch.setattr(service.agent_studio, 'tick', lambda: None)
     monkeypatch.setattr(service, '_codex_titles', lambda:{'one':'Same title', 'two':'Same title'})
     monkeypatch.setattr(task_client, '_installed_config', lambda:{'host':'127.0.0.1', 'port':endpoint.server_address[1], 'auto_start':False})

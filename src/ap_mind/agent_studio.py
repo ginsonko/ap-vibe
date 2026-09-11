@@ -22,6 +22,7 @@ from .teacher_settings import protect
 from .claude_gateway import ClaudeGateway
 from .claude_context import prepare_plugin, observe_document_result
 from .codex_cli import codex_command
+from .harness_registry import HARNESS, executable as native_executable
 
 
 def _json(value):
@@ -158,6 +159,11 @@ class AgentStudio:
                 'features': {'buffered_upstream': True, 'request_retries': True, 'artifact_recovery_review': True,
                              'agent_setup': True, 'incomplete_agent_profiles': True},
                 'codex_available': codex_available,
+                'executors': [{'id': key, 'name': item['name'],
+                    'available': codex_available if key == 'codex' else bool(claude_executable()) if key == 'claude' else bool(native_executable(key)),
+                    'mcp': key != 'openclaw', 'tool_fallback': True,
+                    'request_retry_managed': key == 'claude'}
+                    for key, item in HARNESS.items() if item.get('executor')],
                 'claude_available': bool(claude_executable()), 'executor': 'claude-code',
                 'compatibility': 'messages_and_openai_chat_experimental'}
 
@@ -167,7 +173,7 @@ class AgentStudio:
             raise ContractError('agent_id_invalid')
         name = _text(raw, 'name', 100)
         executor_kind = raw.get('executor_kind', 'claude')
-        if executor_kind not in {'claude', 'codex'}:
+        if executor_kind not in HARNESS or not HARNESS[executor_kind].get('executor'):
             raise ContractError('agent_executor_invalid')
         auth_mode = raw.get('auth_mode', 'api_key')
         if auth_mode not in {'api_key', 'local_login'} or (auth_mode == 'local_login' and executor_kind != 'codex'):
@@ -181,7 +187,7 @@ class AgentStudio:
         if url.scheme == 'http' and url.hostname not in {'localhost', '127.0.0.1', '::1'}:
             raise ContractError('agent_remote_https_required')
         protocol = 'responses' if local_login else raw.get('protocol', 'anthropic')
-        if protocol not in ({'responses'} if executor_kind == 'codex' else {'anthropic', 'openai'}):
+        if protocol not in ({'responses'} if executor_kind == 'codex' else {'anthropic', 'openai'} if executor_kind == 'claude' else {'openai'}):
             raise ContractError('agent_protocol_not_implemented')
         role = raw.get('role', '')
         request_timeout = raw.get('request_timeout_seconds', 300)
@@ -338,7 +344,8 @@ class AgentStudio:
             public['measured_capability'] = summary if summary and summary['attempts'] else None
             agents.append(public)
         return {'ok': True, 'agents': agents, 'observed_at': presence['observed_at'],
-                'executors': {key: profiles[key] for key in ('codex_available','claude_available')},
+                'executors': {**{key: profiles[key] for key in ('codex_available','claude_available')},
+                              'catalog': profiles['executors']},
                 'metrics_coverage': metrics['coverage'],
                 'evidence_help': 'role是配置偏好，实测摘要仅当前配置；旧版本与具体任务用ap_vibe_agent_metrics按需读。不由模型名推断能力，费用缺失不按零计。'}
 
@@ -490,10 +497,10 @@ class AgentStudio:
                 if json.loads(dependency_row[0]).get('project_id') != project_id:
                     raise ContractError('agent_dependency_project_mismatch')
             executor_kind = profile.get('executor_kind', 'claude')
-            command = codex_command() if executor_kind == 'codex' else None
-            exe = command[0] if command else claude_executable()
+            command = codex_command() if executor_kind == 'codex' else native_executable(executor_kind) if executor_kind != 'claude' else None
+            exe = command[0] if command else claude_executable() if executor_kind == 'claude' else None
             if not exe:
-                raise ContractError('agent_claude_not_found')
+                raise ContractError('agent_' + executor_kind + '_not_found')
             key = protect(row['secret'], decrypt=True).decode('utf-8') if row['secret'] else ''
             run_id = 'run-' + uuid.uuid4().hex
             session_id = str(uuid.uuid4())
@@ -501,9 +508,13 @@ class AgentStudio:
             parent = None
             if parent_id:
                 source = c.execute('SELECT * FROM studio_runs WHERE run_id=?', (parent_id,)).fetchone()
-                if source is None or source['state'] not in {'awaiting_review', 'completed', 'changes_requested', 'budget_paused'}:
+                if source is None or source['state'] not in {'awaiting_review', 'completed', 'changes_requested', 'budget_paused', 'failed', 'uncertain', 'interrupted'}:
                     raise ContractError('agent_continue_wait_for_finished_turn')
                 parent = json.loads(source['payload_json'])
+                if source['state'] in {'failed', 'uncertain', 'interrupted'}:
+                    if not self.execution_stopped({**parent, 'run_id': parent_id, 'state': source['state']}):
+                        raise ContractError('agent_continue_wait_for_finished_turn')
+                    parent['resume_requires_reconciliation'] = True
                 if parent['agent_id'] != agent_id or parent['project_id'] != project_id:
                     raise ContractError('agent_continue_identity_mismatch')
                 if parent['profile_revision'] != profile['revision']:
@@ -564,8 +575,12 @@ class AgentStudio:
             if parent:
                 value.update(parent_run_id=parent_id, workspace=parent['workspace'],
                              claude_config_dir=parent.get('claude_config_dir') or str(Path(parent['workspace']).parent / 'claude-config'))
+                if parent.get('resume_requires_reconciliation'):
+                    value['recovery_from_run_id'] = parent_id
                 if parent.get('codex_home'):
                     value['codex_home'] = parent['codex_home']
+                if parent.get('native_state_dir'):
+                    value['native_state_dir'] = parent['native_state_dir']
             c.execute('INSERT INTO studio_runs VALUES (?,?,?,?,?,?)',
                       (run_id, request_id, fingerprint, agent_id, 'starting', _json(value)))
             if hasattr(self.service, 'collaboration'):
@@ -686,7 +701,7 @@ class AgentStudio:
         return run
 
     def handoff_context(self, value):
-        source = value.get('handoff_from_run_id')
+        source = value.get('handoff_from_run_id') or value.get('recovery_from_run_id')
         if not source:
             return None
         context = self.dependency_context({'depends_on': source})
@@ -736,6 +751,9 @@ class AgentStudio:
         return workspace
 
     def _execute(self, run_id, value, profile, key, project):
+        if value.get('executor_kind') in {'opencode', 'openclaw', 'mimocode','hermes'}:
+            from .native_runner import execute
+            return execute(self, run_id, value, profile, key, project)
         if value.get('executor_kind') == 'codex':
             from .codex_runner import execute
             return execute(self, run_id, value, profile, key, project)

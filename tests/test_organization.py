@@ -35,6 +35,9 @@ def service(tmp_path):
     source(sessions,other,'older',datetime.now(timezone.utc)-timedelta(days=9))
     instance=StudioEpisodeService(tmp_path/'data', project_root=project, codex_project_id='project',
                                   codex_sessions_root=sessions, auto_onboard_workspaces=True)
+    from ap_mind.external_sessions import ExternalSessions
+    instance.external_sessions = ExternalSessions(tmp_path/'data', roots={}, cache_seconds=0)
+    instance.claude_sessions.roots = []
     instance.poll_codex_sources()
     yield instance
     instance.close()

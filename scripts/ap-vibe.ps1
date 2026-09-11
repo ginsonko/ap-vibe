@@ -737,7 +737,7 @@ function Invoke-Action {
                 $integrationIssues = @()
                 if (Test-SamePath (Get-ResolvedConfigDir) (Get-DefaultConfigDir)) {
                     $integrationResults = @()
-                    foreach ($installer in @('install_task_context.py','install_mcp.py','install_claude.py','trust_hooks.py')) {
+                    foreach ($installer in @('install_dependencies.py','install_task_context.py','install_mcp.py','install_claude.py','install_harness.py','install_native_extras.py','trust_hooks.py')) {
                         $syncArgs = @('--config', (Get-ConfigPath))
                         if ($installer -eq 'install_claude.py') { $syncArgs += '--if-available' }
                         $previousPreference = $ErrorActionPreference

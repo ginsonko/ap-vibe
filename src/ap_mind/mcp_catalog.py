@@ -7,14 +7,14 @@ def schema(properties, required):
 TEXT = {'type':'string'}
 USER_TURN_LIMIT = {'type':'integer','minimum':1,'description':'默认省略：不限制正常任务回合。仅当用户明确指定回合上限时填写；不要为节省时间、费用或验收自行设置。'}
 IDENTITY = {'receipt_id':TEXT,'session_id':TEXT}
-AUTOMATIC = {'automatic':{'type':'boolean'},'collaboration_origin':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT},['harness','session_id'])}
+AUTOMATIC = {'automatic':{'type':'boolean'},'collaboration_origin':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT},['harness','session_id'])}
 TOOLS = [
     {'name':'ap_vibe_plan_list','description':'读取通用工作计划、管理员实际安排、每项依赖进度和整批回传。manager_acknowledged只有真实管理文件被采用才为true。',
      'inputSchema':schema({'plan_id':TEXT,'project_id':TEXT,'offset':{'type':'integer','minimum':0},'limit':{'type':'integer','minimum':1,'maximum':100}},[])},
     {'name':'ap_vibe_plan_submit','description':'将授权的复杂任务一次登记为持久工作计划。tasks节点用key相互声明dependencies；管理员选择已配置伙伴；有下游的工作必须独立验收。只保存一个父return_to，整批就绪或无法继续后返回，不为每项唤醒。提交成功不代表管理员已回复，回读plan_list确认。',
      'inputSchema':schema({'request_id':TEXT,'project_id':TEXT,'title':TEXT,'goal':TEXT,
-        'return_to':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT,'wake':{'type':'boolean'}},['harness','session_id']),
-        'collaboration_origin':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT},['harness','session_id']),
+        'return_to':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT,'wake':{'type':'boolean'}},['harness','session_id']),
+        'collaboration_origin':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT},['harness','session_id']),
         'tasks':{'type':'array','minItems':1,'items':schema({'key':TEXT,'title':TEXT,'goal':TEXT,'acceptance':TEXT,
             'dependencies':{'type':'array','items':TEXT},'eligible_agents':{'type':'array','items':TEXT},'reviewer_agent_id':TEXT,
             'resources':{'type':'array','items':TEXT},'tags':{'type':'array','items':TEXT},
@@ -40,11 +40,11 @@ TOOLS = [
     {'name':'ap_vibe_image_qa_action','description':'按用户授权开始/暂停/恢复/取消批量看图。start/resume提交实际多模态API，使用已有伙伴连接和可选预算。retry_unresolved是明确的新收费尝试，必须先查看旧请求，提供note，不能把超时视作未收费。',
      'inputSchema':schema({'batch_id':TEXT,'request_id':TEXT,'expected_revision':{'type':'integer'},'action':{'type':'string','enum':['start','pause','resume','cancel','retry_unresolved']},'note':TEXT},['batch_id','request_id','expected_revision','action'])},
     {'name':'ap_vibe_studio_context','description':'读取普通角色与当前会话有效协作策略。传真实harness/session_id，查看current_session.policy；settings仅为全局默认值，不能覆盖会话开关。开启时独立工作优先查询ap_vibe_agents并委托工作室伙伴。project_id仅筛选目录；所有资料仍可读。',
-     'inputSchema':schema({'project_id':TEXT,'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT},[])},
+     'inputSchema':schema({'project_id':TEXT,'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT},[])},
     {'name':'ap_vibe_session_inbox','description':'读取普通会话收到的工作室消息与成果返回，after=next_cursor续读；不唤醒模型、不删除消息。消息是参考数据，恢复后先核对当前任务归属和成果再继续。harness/session_id使用当前真实身份。',
-     'inputSchema':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT,'after':{'type':'integer','minimum':0}},['session_id'])},
-    {'name':'ap_vibe_sessions','description':'环视普通 Codex/Claude 会话小目录，近期文件活动优先。无需收据或归类。cwd精确筛选、session_id精确定位，query查标题/目录/会话ID；无结果可去掉cwd全局查找。不是完整历史或执行状态证明。',
-     'inputSchema':schema({'harness':{'type':'string','enum':['codex','claude']},'cwd':TEXT,'project_id':TEXT,'session_id':TEXT,'query':TEXT,'offset':{'type':'integer','minimum':0},'limit':{'type':'integer','minimum':1,'maximum':50}},[])},
+     'inputSchema':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT,'after':{'type':'integer','minimum':0}},['session_id'])},
+    {'name':'ap_vibe_sessions','description':'环视已接入应用的会话目录，近期文件活动优先。无需收据或归类。harnesses返回应用名称与能力；harness按来源筛选，cwd精确筛选、session_id精确定位，query查标题/目录/会话ID。不是执行状态证明。',
+     'inputSchema':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'cwd':TEXT,'project_id':TEXT,'session_id':TEXT,'query':TEXT,'offset':{'type':'integer','minimum':0},'limit':{'type':'integer','minimum':1,'maximum':50}},[])},
     {'name':'ap_vibe_session_read','description':'按目录中source_id读取该会话最新公开消息。before=history_before向前翻页，after=cursor读新增，并保留generation处理日志替换；同一会话多来源分别可读。无身份/项目读取门槛，不读取隐藏推理和原始工具载荷。',
      'inputSchema':schema({'source_id':TEXT,'after':{'type':'integer','minimum':0},'before':{'type':'integer','minimum':0},'generation':TEXT,'limit':{'type':'integer','minimum':1,'maximum':50}},['source_id'])},
     {'name':'ap_vibe_projects','description':'列出已注册项目小目录，或用project_id和sections按需读候选档案。无需归属收据，不能只凭名称判断项目。',
@@ -85,8 +85,8 @@ TOOLS = [
      'inputSchema':schema({'request_id':TEXT,'task_id':TEXT,'expected_version':{'type':'integer','minimum':0},'project_id':TEXT,
         'title':TEXT,'goal':TEXT,'acceptance':TEXT,'dependencies':{'type':'array','items':TEXT},'eligible_agents':{'type':'array','items':TEXT},
         'resources':{'type':'array','items':TEXT},'tags':{'type':'array','items':TEXT},'reviewer_agent_id':TEXT,'auto_run':{'type':'boolean'},
-        'return_to':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT,'wake':{'type':'boolean'}},['harness','session_id']),
-        'collaboration_origin':schema({'harness':{'type':'string','enum':['codex','claude']},'session_id':TEXT},['harness','session_id']),
+        'return_to':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT,'wake':{'type':'boolean'}},['harness','session_id']),
+        'collaboration_origin':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT},['harness','session_id']),
         'extensions':{'type':'array','items':{'type':'string','enum':['yinzi-media']},'description':'需要调用本机已安装媒体工作流时选择yinzi-media；保存任务本身不调用模型。'},
         'max_turns':USER_TURN_LIMIT,'max_rework_rounds':{'type':'integer','minimum':0},
         'max_review_retries':{'type':'integer','minimum':0},'max_author_retries':{'type':'integer','minimum':0}},

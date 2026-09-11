@@ -2,13 +2,13 @@
 
 **让每一次接力，都接得住。**
 
-给 Codex 与 Claude Code 一个共同的项目工作台：看见任务在做什么，留下重要决定，换个会话继续工作。你的项目不必每次从头解释。
+给 Codex、Claude Code 与更多编程客户端一个共同的项目工作台：看见任务在做什么，留下重要决定，换个会话继续工作。你的项目不必每次从头解释。
 
 > Windows 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
-[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-2-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
+[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-3-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.2.0-beta.1。** 在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.2.0-beta.1) 为准。
+**当前内测版本：v0.3.0-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1) 为准。
 
 第一次先做自己的个人项目，换个会话试着继续；愿意体验协作时再给推荐伙伴填 Key。AP 外部认知默认关闭。旧版图片/视频不作为本版教程，新版宣传材料另行审核。
 
@@ -19,13 +19,13 @@
 - 修过的坑过几天又踩一次，旧决定和撤销方案埋在长对话里。
 - 想让不同模型协作，最后却变成自己搬运消息、复制上下文、检查成果。
 
-AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的 Codex 或 Claude Code 工作；它提供共同的项目资料、可追踪的任务记录和协作入口。
+AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接入客户端工作；它提供共同的项目资料、可追踪的任务记录和协作入口。
 
 ## 把这段话发给 Codex
 
 ~~~text
-请帮我安装 AP-Vibe Windows 个人内测版 v0.2.0-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.2.0-beta.1
+请帮我安装 AP-Vibe Windows 个人内测版 v0.3.0-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
 先阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
@@ -56,6 +56,10 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.2.0-beta.1
 | AP 认知 | 想尝试额外认知辅助 | 可选模型连接、观察与认知轨迹、反馈、实验和费用说明 |
 | 帮助 | 不知道第一步点哪里 | 用途、步骤、可复制示例和故障处理 |
 
+### 多应用接力
+
+会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
+
 ### 多个会话，共用一份项目档案
 
 “会话”和“项目”是两回事。两个任务一起维护一个应用，就应该读写同一份档案。临时公告、模型介绍和一次性问答不用新建长期项目。
@@ -80,7 +84,7 @@ Skill 要求长期任务开始时读取目录，结束时维护变化的章节�
 
 ### 让模型团队的工作看得见
 
-新增伙伴时填写名称、URL、API Key 和模型；同一个模型可以承担不同角色。第三方模型通过 Claude Code 执行器运行，接口需具备兼容能力，应完成连接与工具实测。目录里有模型名不代表它一定能正确完成任务。
+新增伙伴时填写名称、URL、API Key 和模型，并选择可用的执行端；同一个模型可以承担不同角色。除 Claude Code 外，也支持已安装的 OpenCode、OpenClaw、MiMo Code 和 Hermes CLI。各执行端的接口需具备兼容能力，应完成连接与工具实测。目录里有模型名不代表它一定能正确完成任务。
 
 Codex 伙伴使用本机 Codex 登录与配置。工作室保存认领、依赖、交接、消息和成果；上游完成后启动满足依赖的下游；独立验收可以通过、要求返工或保留未知结论。
 
@@ -118,7 +122,7 @@ Codex 伙伴使用本机 Codex 登录与配置。工作室保存认领、依赖�
 
 ~~~mermaid
 flowchart LR
-  A[Codex / Claude 可见活动] --> B[本地采集与任务目录]
+  A[多应用公开会话] --> B[本地采集与任务目录]
   B --> C[按项目组织的 11 章档案]
   C --> D[先给目录 · 需要哪章读哪章]
   D --> E[继续执行真实任务]

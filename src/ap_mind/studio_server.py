@@ -318,6 +318,8 @@ class StudioEpisodeService:
             self.claude_sessions = ClaudeSessions()
             self.claude_sessions.config_warning = 'Claude监看配置无法读取，暂用当前用户默认记录目录；其他功能继续可用。'
         from .session_directory import SessionDirectory
+        from .external_sessions import ExternalSessions
+        self.external_sessions = ExternalSessions(self.data_dir)
         self.session_directory = SessionDirectory(self)
         if self.teacher_settings.path.exists():
             self.teacher_settings.apply()
@@ -3275,6 +3277,10 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             return
         try:
             project_id = self._query_project_id(split)
+            if path == '/v1/ap-vibe/sessions/sources':
+                from .harness_settings import read
+                self._write_json(HTTPStatus.OK, read(self.service.external_sessions))
+                return
             if path in {'/v1/ap-vibe/sessions', '/v1/ap-vibe/sessions/read'}:
                 query = parse_qs(split.query)
                 args = {key: values[0] for key, values in query.items()}
@@ -3544,6 +3550,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
         path = urlsplit(self.path).path
         if path not in {
+            "/v1/ap-vibe/sessions/sources",
             "/v1/ap-vibe/agents/save",
             "/v1/ap-vibe/agents/setup/templates", "/v1/ap-vibe/agents/setup/connections",
             "/v1/ap-vibe/agents/budget/save", "/v1/ap-vibe/agents/budget/feed",
@@ -3622,7 +3629,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/codex/messages/cancel":
                 self._write_json(HTTPStatus.OK, self.service.codex_messages.cancel(raw))
                 return
+            from .harness_settings import save as save_harness_settings
             organization_routes = {
+                "/v1/ap-vibe/sessions/sources": lambda r: save_harness_settings(self.service.external_sessions, r),
                 "/v1/ap-vibe/logic/configure": self.service.configure_project_logic,
                 "/v1/ap-vibe/logic/analyze": self.service.organization.prepare_logic,
                 "/v1/ap-vibe/organization/apply": lambda r: self.service.organization.apply_result(r.get("task_id"), r.get("result")),
