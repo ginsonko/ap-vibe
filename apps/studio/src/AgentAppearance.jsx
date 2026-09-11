@@ -34,6 +34,11 @@ export function useReducedMotion(){
   useEffect(()=>{const query=window.matchMedia('(prefers-reduced-motion: reduce)');const changed=()=>setReduced(query.matches);query.addEventListener('change',changed);return()=>query.removeEventListener('change',changed);},[]);
   return reduced;
 }
+export function useDocumentHidden(){
+  const [hidden,setHidden]=useState(()=>document.hidden);
+  useEffect(()=>{const changed=()=>setHidden(document.hidden);document.addEventListener('visibilitychange',changed);return()=>document.removeEventListener('visibilitychange',changed);},[]);
+  return hidden;
+}
 export function PixelSprite({character,action='idle',direction='front',animate=false,size=96}){
   const reduced=useReducedMotion();
   const [frame,setFrame]=useState(0),[failed,setFailed]=useState(false);

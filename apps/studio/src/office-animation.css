@@ -38,3 +38,14 @@
 .office-room-title { padding: 0; background: transparent; border: 0; align-items: start; }
 .office-room-title b { background: #fffffff0; border-left: 3px solid var(--room-color); padding: 8px 6px; font-size: 13px; }
 .office-room-title>span,.office-room-title .office-more { background: #fffffff0; padding: 8px 5px; max-width: 128px; white-space: nowrap; text-align: right; }
+
+.office-actor[data-idle="true"] .pixel-sprite{animation:office-breathe 4s ease-in-out infinite;animation-delay:var(--idle-delay,0s);transform-origin:center bottom}
+@keyframes office-breathe{0%,100%{transform:translateY(0)}45%{transform:translateY(-2px)}55%{transform:translateY(-1px)}}
+@media(prefers-reduced-motion:reduce){.office-actor .pixel-sprite{animation:none!important}}
+.studio-participation{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;border:1px solid #d4e2d8;border-radius:10px;background:#f1f8f3;margin:10px 0;font-size:13px}
+.studio-participation label{display:flex;align-items:center;gap:8px}.studio-participation small{flex-basis:100%;color:#557265;line-height:1.6}.studio-participation select{max-width:240px}
+.office-pages{display:flex;gap:14px;justify-content:center;align-items:center;padding:14px;font-size:12px}.office-pages button{border:1px solid #ccdbd1;border-radius:6px;padding:8px;background:white}
+.ordinary-session-messages{height:360px;overflow:auto;overscroll-behavior:contain;border:1px solid #d6e0dc;border-radius:8px;padding:12px;margin:12px 0}.ordinary-session-messages article{border-bottom:1px solid #e6ece8;padding:10px 0;font-size:13px;overflow-wrap:anywhere}.ordinary-session-messages small{color:#5f756c}
+.studio-participation label{width:auto;flex:0 1 auto;white-space:nowrap}.studio-participation input[type=checkbox]{width:16px;min-width:16px;margin:0}.studio-participation b{white-space:nowrap}.studio-participation button{white-space:nowrap}
+.office-toolbar .office-motion{white-space:nowrap}.office-world .office-room-marker{pointer-events:none}.office-room-marker .office-more{display:none}
+.office-lap-blanket{position:absolute;pointer-events:none;width:42px;height:16px;top:51px;left:50%;transform:translateX(-50%);background:repeating-linear-gradient(90deg,#9e88ac 0 7px,#b4a0bf 7px 9px);border:2px solid #7e648c;border-radius:3px 3px 7px 7px;box-shadow:inset 0 3px #c4b3cd}

@@ -153,8 +153,15 @@
         "x": 48,
         "y": 94
       },
-      "sha256": "3c5be1708cd7f2b2bb980eea3574590d16ae175cf904d01871d260cc3af465de",
-      "missing_animations": []
+      "sha256": "e558968e42e5b3fd05989aae4e9dc01331ea0804e64b6faac9d094889366a36e",
+      "missing_animations": [],
+      "local_corrections": [
+        {
+          "frame": 15,
+          "operation": "horizontal_mirror",
+          "reason": "walk_right contained a left-facing generated frame"
+        }
+      ]
     }
   ]
 }

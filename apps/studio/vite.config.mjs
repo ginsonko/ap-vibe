@@ -13,7 +13,7 @@ export default defineConfig({
     allowedHosts: ["terminal.local"],
     proxy: {
       "/v1": {
-        target: "http://127.0.0.1:8765",
+        target: process.env.AP_VIBE_DEV_BACKEND || "http://127.0.0.1:8765",
         changeOrigin: false,
       },
     },

@@ -86,8 +86,11 @@ def install(directory:Path,config_path:Path|None=None):
         (backup/(uuid.uuid4().hex+'-settings.json')).write_bytes(prior)
     skill.mkdir(parents=True,exist_ok=True);(skill/'references').mkdir(exist_ok=True)
     (skill/'SKILL.md').write_text(source,encoding='utf-8');owned.write_text('ap-vibe-claude-v1',encoding='utf-8')
-    for name in ('project-documents.md', 'agent-collaboration.md', 'session-continuation.md'):
-        shutil.copyfile(ROOT/'skills/ap-vibe-task-context/references'/name,skill/'references'/name)
+    references=ROOT/'skills/ap-vibe-task-context/references'
+    for reference in references.rglob('*.md'):
+        target=skill/'references'/reference.relative_to(references)
+        target.parent.mkdir(parents=True,exist_ok=True)
+        shutil.copyfile(reference,target)
     temp=settings_path.with_suffix('.'+uuid.uuid4().hex+'.tmp')
     temp.write_text(json.dumps(settings,ensure_ascii=False,indent=2),encoding='utf-8');os.replace(temp,settings_path)
     return {'ok':True,'claude_dir':str(directory),'mcp_config':str(config_file),'mcp_readback':True,'skill':'ap-vibe-project-context','mcp':'ap-vibe','hooks':['SessionStart','UserPromptSubmit','Stop'],'existing_settings_preserved':True,'next':'新开Claude任务或恢复任务时使用；已在运行的回合不强行重启。'}

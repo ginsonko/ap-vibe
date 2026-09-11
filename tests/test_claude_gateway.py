@@ -67,6 +67,18 @@ def test_tool_errors_remain_actionable_text():
     assert 'failed' in message['content']
 
 
+def test_multiple_image_tool_results_keep_strict_tool_reply_order():
+    raw={'messages':[{'role':'user','content':[
+        {'type':'tool_result','tool_use_id':'image-a','content':[{'type':'image','source':{'type':'base64','media_type':'image/png','data':'aGVsbG8='}}]},
+        {'type':'tool_result','tool_use_id':'text-b','content':'File found'},
+        {'type':'text','text':'Compare the image'}]}]}
+    messages=translate_request(raw,'selected')['messages']
+    assert [m['role'] for m in messages]==['tool','tool','user','user']
+    assert all(isinstance(m['content'],str) for m in messages if m['role']=='tool')
+    assert 'image-a' in messages[2]['content'][0]['text']
+    assert messages[2]['content'][1]['image_url']['url']=='data:image/png;base64,aGVsbG8='
+
+
 def test_null_content_blocks_are_treated_as_empty_without_gateway_crash():
     converted = translate_request({'messages': [
         {'role': 'assistant', 'content': None},
@@ -241,9 +253,9 @@ def test_inflight_cli_retry_never_reaches_provider():
         assert 'still in flight' in caught.value.read().decode()
         release.set(); caller.join(timeout=3)
         assert first_result[0]['content'][0]['text'] == 'original result'
-        with pytest.raises(urllib.error.HTTPError) as caught:
-            urllib.request.urlopen(request(), timeout=2)
-        assert caught.value.code == 400 and len(received) == 1
+        with urllib.request.urlopen(request(), timeout=2) as response:
+            assert json.load(response)['content'][0]['text'] == 'original result'
+        assert len(received) == 2 and gateway.failure is None
         assert any(e['phase'] == 'inflight_duplicate_blocked' for e in events)
         assert gateway.request_lock.acquire(timeout=2)
         gateway.request_lock.release()

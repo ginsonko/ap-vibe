@@ -40,7 +40,9 @@ def prepare_plugin(directory: Path, product_root: Path) -> Path:
         'description': 'AP-Vibe project context and incremental dossier maintenance',
     }), encoding='utf-8')
     shutil.copyfile(product_root / 'skills/ap-vibe-claude/SKILL.md', skill / 'SKILL.md')
-    for name in ('project-documents.md', 'agent-collaboration.md', 'session-continuation.md'):
-        shutil.copyfile(product_root / 'skills/ap-vibe-task-context/references' / name,
-                        skill / 'references' / name)
+    reference_root = product_root / 'skills/ap-vibe-task-context/references'
+    for source in reference_root.rglob('*.md'):
+        destination = skill / 'references' / source.relative_to(reference_root)
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
     return plugin

@@ -3,7 +3,13 @@ import dijkstra from 'dijkstrajs';
 export const distance=(a,b)=>Math.hypot(b.x-a.x,b.y-a.y);
 export const samePoint=(a,b)=>a&&b&&distance(a,b)<0.1;
 
+// An empty path can also mean the new route has not been installed yet.
+export const meetingReached=(meeting,actors,goals,enabled)=>!enabled||!meeting.senderId||
+  (samePoint(actors.get(meeting.senderId)?.at,goals.get(meeting.senderId))&&
+    !actors.get(meeting.senderId)?.path.length);
+
 export function makeNavigation(layout){
+  if(layout.navigation)return {points:layout.navigation.points,edges:layout.navigation.edges};
   const points={},edges=[];
   const add=(id,x,y)=>{points[id]={x,y};return id;};
   const corridors=[...new Set(layout.rooms.map(r=>r.x))].sort((a,b)=>a-b);

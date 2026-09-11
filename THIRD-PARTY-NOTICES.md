@@ -123,6 +123,7 @@ AP-Vibe 自身采用个人非商业使用许可证。下列第三方组件保留
 | gensync | 1.0.0-beta.2 | MIT | [LICENSE](licenses/third-party/e3a956681ee067f971ac.txt) |
 | hast-util-to-jsx-runtime | 2.3.6 | MIT | [license](licenses/third-party/dd1081884a92952802f4.txt) |
 | hast-util-whitespace | 3.0.0 | MIT | [license](licenses/third-party/ca4662cb5d1b738fbe53.txt) |
+| html-to-image | 1.11.13 | MIT | [LICENSE](licenses/third-party/9fe73723f7a9e91057f7.txt) |
 | html-url-attributes | 3.0.1 | MIT | [license](licenses/third-party/e18cf5173e928f808f0c.txt) |
 | inline-style-parser | 0.2.7 | MIT | [LICENSE](licenses/third-party/395c95f20598da653ff1.txt) |
 | is-alphabetical | 2.0.1 | MIT | [license](licenses/third-party/ca4662cb5d1b738fbe53.txt) |

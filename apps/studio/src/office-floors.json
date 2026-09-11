@@ -1,0 +1,581 @@
+{
+  "floors": [
+    {
+      "id": 0,
+      "name": "迎宾层",
+      "description": "专业温馨的接待与管理空间",
+      "theme": "professional-welcoming",
+      "rugs": [
+        {
+          "x": 174,
+          "y": 144,
+          "width": 180,
+          "height": 120,
+          "color": "#d8e6de"
+        },
+        {
+          "x": 1368,
+          "y": 165,
+          "width": 180,
+          "height": 120,
+          "color": "#dce6f0"
+        },
+        {
+          "x": 671,
+          "y": 165,
+          "width": 360,
+          "height": 160,
+          "color": "#e8e0f0"
+        },
+        {
+          "x": 770,
+          "y": 582,
+          "width": 180,
+          "height": 120,
+          "color": "#f0e8d8"
+        }
+      ],
+      "details": [
+        {
+          "type": "bulletin",
+          "x": 46,
+          "y": 66,
+          "width": 70,
+          "height": 50
+        },
+        {
+          "type": "clock",
+          "x": 46,
+          "y": 314
+        },
+        {
+          "type": "plant",
+          "x": 329,
+          "y": 267,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 712,
+          "y": 523,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 828,
+          "y": 618,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1095,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 460,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 560,
+          "y": 800,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 800,
+          "size": "small"
+        }
+      ],
+      "palette": {
+        "floor": "#f2e6d4",
+        "tile": "#d8bf94",
+        "zones": {
+          "management": "#d8e8d2",
+          "engineering": "#e5d9ea",
+          "library": "#dbe7ee"
+        }
+      }
+    },
+    {
+      "id": 1,
+      "name": "专注层",
+      "description": "图书馆风格的深度工作空间",
+      "theme": "library-focus",
+      "rugs": [
+        {
+          "x": 174,
+          "y": 144,
+          "width": 180,
+          "height": 120,
+          "color": "#e0e8f0"
+        },
+        {
+          "x": 1368,
+          "y": 165,
+          "width": 200,
+          "height": 140,
+          "color": "#e8f0f8"
+        },
+        {
+          "x": 671,
+          "y": 165,
+          "width": 360,
+          "height": 160,
+          "color": "#d8e0f0"
+        },
+        {
+          "x": 770,
+          "y": 582,
+          "width": 180,
+          "height": 120,
+          "color": "#e8e8e8"
+        }
+      ],
+      "details": [
+        {
+          "type": "bookshelf",
+          "x": 1178,
+          "y": 47,
+          "width": 65,
+          "height": 100
+        },
+        {
+          "type": "bookshelf",
+          "x": 1284,
+          "y": 47,
+          "width": 65,
+          "height": 100
+        },
+        {
+          "type": "bookshelf",
+          "x": 1390,
+          "y": 47,
+          "width": 65,
+          "height": 100
+        },
+        {
+          "type": "window",
+          "x": 1504,
+          "y": 75,
+          "width": 80,
+          "height": 60
+        },
+        {
+          "type": "windowLight",
+          "x1": 1504,
+          "y1": 75,
+          "x2": 1626,
+          "y2": 75,
+          "x3": 1610,
+          "y3": 311,
+          "x4": 1489,
+          "y4": 311
+        },
+        {
+          "type": "plant",
+          "x": 1489,
+          "y": 329,
+          "size": "large"
+        },
+        {
+          "type": "plant",
+          "x": 479,
+          "y": 75,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1040,
+          "y": 75,
+          "size": "small"
+        },
+        {
+          "type": "waterCooler",
+          "x": 463,
+          "y": 347
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1095,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 460,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 560,
+          "y": 800,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 800,
+          "size": "small"
+        }
+      ],
+      "palette": {
+        "floor": "#dce7ee",
+        "tile": "#aec4d5",
+        "zones": {
+          "engineering": "#cedcee",
+          "library": "#c8e3de",
+          "review": "#d9dcf0",
+          "hub": "#dae5ef"
+        }
+      }
+    },
+    {
+      "id": 2,
+      "name": "协作层",
+      "description": "活跃多彩的团队工作空间",
+      "theme": "collaboration-active",
+      "rugs": [
+        {
+          "x": 174,
+          "y": 144,
+          "width": 180,
+          "height": 120,
+          "color": "#f0e0e6"
+        },
+        {
+          "x": 1368,
+          "y": 165,
+          "width": 180,
+          "height": 120,
+          "color": "#f0f0e0"
+        },
+        {
+          "x": 671,
+          "y": 165,
+          "width": 360,
+          "height": 160,
+          "color": "#e0e8e0"
+        },
+        {
+          "x": 161,
+          "y": 550,
+          "width": 210,
+          "height": 120,
+          "color": "#f0e0e6"
+        },
+        {
+          "x": 246,
+          "y": 942,
+          "width": 140,
+          "height": 120,
+          "color": "#e0ece4"
+        },
+        {
+          "x": 1332,
+          "y": 802,
+          "width": 160,
+          "height": 120,
+          "color": "#f5eedc"
+        }
+      ],
+      "details": [
+        {
+          "type": "equipmentRack",
+          "x": 264,
+          "y": 456,
+          "width": 40,
+          "height": 40
+        },
+        {
+          "type": "plant",
+          "x": 329,
+          "y": 604,
+          "size": "small"
+        },
+        {
+          "type": "collabTable",
+          "x": 190,
+          "y": 868,
+          "width": 80,
+          "height": 32
+        },
+        {
+          "type": "plant",
+          "x": 1527,
+          "y": 573,
+          "size": "small"
+        },
+        {
+          "type": "bulletin",
+          "x": 1545,
+          "y": 966,
+          "width": 60,
+          "height": 40
+        },
+        {
+          "type": "waterCooler",
+          "x": 1261,
+          "y": 934
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1095,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 460,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 560,
+          "y": 800,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 800,
+          "size": "small"
+        }
+      ],
+      "palette": {
+        "floor": "#e8e0ed",
+        "tile": "#c6accf",
+        "zones": {
+          "collaboration": "#cfdfd7",
+          "engineering": "#ddd1eb",
+          "hub": "#eed9db",
+          "waiting": "#e8dbc7"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "name": "休憩层",
+      "description": "温馨宁静的休息恢复空间",
+      "theme": "rest-recovery",
+      "rugs": [
+        {
+          "x": 174,
+          "y": 144,
+          "width": 180,
+          "height": 120,
+          "color": "#e8e8e0"
+        },
+        {
+          "x": 1368,
+          "y": 165,
+          "width": 180,
+          "height": 120,
+          "color": "#e8e0e8"
+        },
+        {
+          "x": 671,
+          "y": 165,
+          "width": 360,
+          "height": 160,
+          "color": "#e8e8e8"
+        },
+        {
+          "x": 770,
+          "y": 582,
+          "width": 180,
+          "height": 120,
+          "color": "#f0f0e8"
+        },
+        {
+          "x": 826,
+          "y": 942,
+          "width": 160,
+          "height": 120,
+          "color": "#e4ede6"
+        }
+      ],
+      "details": [
+        {
+          "type": "nightstand",
+          "x": 641,
+          "y": 868
+        },
+        {
+          "type": "nightstand",
+          "x": 641,
+          "y": 1018
+        },
+        {
+          "type": "nightstand",
+          "x": 1012,
+          "y": 868
+        },
+        {
+          "type": "nightstand",
+          "x": 1012,
+          "y": 1018
+        },
+        {
+          "type": "plant",
+          "x": 929,
+          "y": 1092,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 712,
+          "y": 523,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 828,
+          "y": 618,
+          "size": "small"
+        },
+        {
+          "type": "clock",
+          "x": 826,
+          "y": 755
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1095,
+          "y": 65,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 355,
+          "y": 460,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 560,
+          "y": 800,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1555,
+          "y": 520,
+          "size": "small"
+        },
+        {
+          "type": "plant",
+          "x": 1090,
+          "y": 800,
+          "size": "small"
+        }
+      ],
+      "palette": {
+        "floor": "#e4ead8",
+        "tile": "#b7c7a4",
+        "zones": {
+          "dormitory": "#c6dcc9",
+          "management": "#e8ddce",
+          "library": "#dcdfec",
+          "waiting": "#e5e1cb"
+        }
+      }
+    }
+  ]
+}

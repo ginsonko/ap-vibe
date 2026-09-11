@@ -64,7 +64,9 @@ def test_exited_failure_adopted_once_in_new_workspace(service, monkeypatch, stat
 def test_no_automatic_takeover_without_intent_and_exit(service, monkeypatch, case):
     studio, task, run, first, second = setup_task(service, monkeypatch, auto=case != 'manual')
     state = case if case in {'cancelled', 'interrupted'} else 'uncertain'
-    studio._state(run['run_id'], state, pid=123, **({} if case == 'missing_exit' else {'exit_code': 1}))
+    studio._state(run['run_id'], state, pid=123, **({} if case in {'missing_exit','interrupted'} else {'exit_code': 1}))
+    # This case requires unknown liveness, not a probe of a real machine PID.
+    monkeypatch.setattr('ap_mind.studio_processes.process_absent', lambda pid: None)
     if case == 'process_live':
         studio._processes[run['run_id']] = object()
     try:

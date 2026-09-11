@@ -6,12 +6,11 @@ import {
   PauseCircle, Pulse, ShieldCheck, Sparkle, UsersThree, WarningCircle, X,
 } from "@phosphor-icons/react";
 
+import { WorkbenchUpdates } from "./WorkbenchUpdates";
 import { LogicWorkbench } from "./LogicWorkbench";
 import { projectDescription } from "./dossier-presentation.mjs";
 import { registeredProject } from "./monitor-model.mjs";
-import { SessionTimeline } from "./SessionTimeline";
 import { SessionArchive } from "./SessionArchive";
-import { SessionComposer } from "./SessionComposer";
 import { CognitionPage } from "./CognitionPage";
 import { OrganizationButtons, OrganizationPage, ProjectManagement } from "./OrganizationPage";
 import { ProjectKnowledge } from "./ProjectKnowledge";
@@ -224,6 +223,7 @@ function HomePage({ health, sessions, events, state, loading = false, onRefresh,
   const maxCount = Math.max(1, ...ranking.map(item => item.message_count));
   return <div className="page-stack home-page">
     <PageHeader eyebrow="本机实时监看 · 每 10 秒自动更新" title="每一条任务，都在眼前" description="先看谁有新进展，再点标题查看上下文。其他功能在左侧各自的页面里。" action={<div className="page-header-actions"><button className="secondary-button" onClick={onRefresh}><ArrowClockwise size={17} />刷新现场</button><button className="text-action launcher-action" onClick={onInstallLauncher} title="在 Windows 桌面创建 AP-Vibe 启动快捷方式"><Desktop size={16} />添加桌面启动器</button></div>} />
+    <WorkbenchUpdates />
     <section className="stats-grid">
       <StatCard icon={Broadcast} label="本地服务" value={healthLabel(health?.status, true)} detail="本机运行 · 无需云端上传" tone="teal" />
       <StatCard icon={Pulse} label="近期活跃任务" value={active.length} detail="最近 15 分钟出现可见消息" tone="blue" />
@@ -240,30 +240,6 @@ function HomePage({ health, sessions, events, state, loading = false, onRefresh,
     {empty.length > 0 && <details className="empty-sources"><summary>已发现、尚无可见内容的来源 <b>{empty.length}</b></summary><p>来源存在，但当前读取窗口还没有可展示的消息。展开后仍可按 Codex 标题定位；这不代表任务已删除。</p><div className="session-grid">{empty.map(item => <SessionCard key={item.source_key} session={item} onClick={() => onOpenSession(item)} />)}</div></details>}
     <section className="page-section"><SectionHeading eyebrow="当前项目 · 最近记录" title="刚刚发生了什么" description="带任务标题的记录可以直接打开原任务上下文。" icon={List} />{recent.length ? <div className="event-list">{recent.map(item => <EventRow key={item.request_id} item={item} session={sessionForActivity(sessions, getActivity(getEpisode(item)))} onClick={() => onOpenEvent(item)} />)}</div> : <EmptyState title="还没有工程记录" detail="读取到消息或执行逻辑观察后，这里会显示真实记录。" />}</section>
   </div>;
-}
-
-function SessionDetail({ session, draft, setDraft, onHandoff }) {
-  if (!session) return <EmptyState icon={UsersThree} title="选择一条会话" detail="左侧会话列表按标题区分来源。点击后，这里只显示该任务的可见消息。" />;
-  const messages = Array.isArray(session.messages) ? session.messages : [];
-  return <div className="session-detail"><div className="session-detail-head"><div><div className="session-detail-kicker"><span className={"session-dot " + (session.active ? "active" : "")} />{session.active ? "近期活跃" : "暂未活动"}<span>·</span>{session.project_name || session.project_id}</div><h2>{session.title || "标题尚未取得"}</h2><p>{TITLE_SOURCES[session.title_source] || session.title_source || "标题来源未知"} · {number(session.message_count)} 条可见消息 · 最近 {formatRelative(session.last_activity_at)}</p></div><div className="session-detail-id"><span>来源会话</span><code>{session.session_id || "未取得"}</code></div></div><div className="context-note"><Info size={16} /><span>初次读取最近 80 条可见消息；停在底部会跟随新消息，向上翻阅时保留位置。更早记录可通过上方“查找历史”按需读取。</span></div><SessionTimeline session={session} /><SessionComposer key={session.session_id} session={session} draft={draft} setDraft={setDraft} /></div>;
-}
-
-function SessionsPage({ sessions, projects, getDraft, changeDraft, loading = false, selectedKey, onSelect, draft, setDraft, onHandoff, onRefresh }) {
-  const [archive, setArchive] = useState(false);
-  const [filter, setFilter] = useState("all");
-  const [showEmpty, setShowEmpty] = useState(false);
-  const [search, setSearch] = useState("");
-  const visible = useMemo(() => sessions.filter((session) => {
-    if (!showEmpty && !session.message_count && session.project_id + ":" + session.source_key !== selectedKey) return false;
-    if (filter === "active" && !session.active) return false;
-    if (filter === "inactive" && session.active) return false;
-    const needle = search.trim().toLowerCase();
-    return !needle || (session.title + " " + session.project_name + " " + session.session_id).toLowerCase().includes(needle);
-  }), [filter, search, sessions, showEmpty, selectedKey]);
-  const selected = visible.find((session) => session.project_id + ":" + session.source_key === selectedKey) || visible[0] || null;
-  useEffect(() => { if (selected && selected.project_id + ":" + selected.source_key !== selectedKey) onSelect(selected); }, [onSelect, selected, selectedKey]);
-  if (archive) return <SessionArchive projects={projects} getDraft={getDraft} changeDraft={changeDraft} onBack={() => setArchive(false)} />;
-  return <div className="page-stack sessions-page"><PageHeader eyebrow="会话" title="按任务标题，接着看上下文" description="这里展示最近监看到的任务，活跃任务在前。需要更早记录或 Claude Code 的任务，可打开历史查询。" action={<div className="sessions-actions"><button type="button" className="secondary-button" onClick={() => setArchive(true)}><Archive size={16} />查找历史 · Codex / Claude</button><button type="button" className="text-action" onClick={onRefresh}><ArrowClockwise size={16} />刷新</button></div>} /><div className="session-workspace"><aside className="session-browser"><div className="session-browser-head"><div><span className="eyebrow">会话列表</span><strong>{loading ? "正在读取会话…" : `${sessions.length} 条最近任务`}</strong></div><StatusPill status={sessions.length ? "ready" : "unknown"} label={loading ? "加载中" : sessions.length ? "已读取" : "暂无来源"} /></div><label className="search-field"><MagnifyingGlass size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索标题或项目" /></label><div className="segmented-control" role="tablist"><button type="button" className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>全部 <b>{sessions.length}</b></button><button type="button" className={filter === "active" ? "active" : ""} onClick={() => setFilter("active")}>活动 <b>{sessions.filter((item) => item.active).length}</b></button><button type="button" className={filter === "inactive" ? "active" : ""} onClick={() => setFilter("inactive")}>不活跃 <b>{sessions.filter((item) => !item.active).length}</b></button></div><label className="empty-filter"><input type="checkbox" checked={showEmpty} onChange={event => setShowEmpty(event.target.checked)} />显示暂无内容的任务</label><div className="session-browser-list">{visible.length ? visible.map((session) => { const key = session.project_id + ":" + session.source_key; return <SessionCard key={key} session={session} selected={key === selectedKey} onClick={() => onSelect(session)} />; }) : <EmptyState icon={MagnifyingGlass} title={loading ? "正在读取任务标题和消息" : "没有匹配的会话"} detail={loading ? "首次读取可能需要几秒，完成后自动显示。" : "试试搜索项目名、会话标题，或者切换筛选。"} />}</div></aside><section className="session-detail-pane" aria-label="所选任务的对话"><SessionDetail session={selected} draft={draft} setDraft={setDraft} onHandoff={onHandoff} /></section></div></div>;
 }
 
 function LogicObservation({ record, onOpen }) {
@@ -355,19 +331,21 @@ function ProjectsPage({ projects, registeredProjects = projects, projectId, onPr
 
 function HelpPage({ onNavigate, onCopy }) {
   const helpCards = [
-    { icon: Sparkle, title: "第一次：把任务交给 Codex", when: "刚安装好，手里只有图片、素材或一句想法时。", steps: ["打开 Codex，新建或继续自己的任务。", "把图片拖进去，或直接说你想做什么；不需要先懂 Skill 名称。", "回到工作台，在首页点击这条任务标题查看消息与进展。"], example: "我是第一次使用。请先打开 AP-Vibe 工作台，再看这张图片，告诉我能怎么做；先分析素材，不上传或付费生成。" },
-    { icon: Brain, title: "AP 认知：按需尝试", when: "想查看感知、行动回读，或试用外部模型辅助认知时。", steps: ["先看基础模式的实际记录，不配置 Key 也可以使用。", "需要增强时，填写服务商地址、Key 和真实模型名称；阅读费用提示后开启。", "查看实际调用与采用记录，效果不好时可关闭并继续使用本地功能。"], example: "请解释 AP-Vibe 最近一次感知、行动和回读；指出已发生的行为和仍未验证的收益。" },
+    { icon: Sparkle, title: "第一步：提出第一件事", when: "刚安装好，手里只有图片、素材或一句想法时。", steps: ["打开你常用的 Codex 或 Claude Code，新建一条任务。", "把图片拖进去，或直接说你想做什么；不需要先懂 Skill 名称。", "回到工作台，在首页点击这条任务标题查看消息与进展。"], example: "我是第一次使用。请先打开 AP-Vibe 工作台，再看这张图片，告诉我能怎么做；先分析素材，不上传或付费生成。" },
+    { icon: ArrowRight, title: "第二步：换个会话继续同一个项目", when: "上一条会话关掉了、换了终端，或想在新窗口接着做同一个项目时。", steps: ["在新的 Codex 或 Claude Code 里说明要继续哪个项目。", "直接说这次想做什么；它会按需读取项目资料，保留原决定。", "在会话页按标题确认新会话已归到同一项目，历史仍在原会话保留。"], example: "继续这个项目，先说目前做到哪里，再完成下一步；保留原来的设计约束。" },
+    { icon: Broadcast, title: "第三步（可选）：让工作室伙伴一起做", when: "一件事明显能拆成几块，或你想让别的模型帮忙检查成果时。", steps: ["在 Agent 工作室按推荐模板添加伙伴并填写 Key；其它服务可调整地址和模型。", "打开“自动 Agent 协作”，再用自然语言交代值得拆分的整件事。", "在任务与输出看成果文件，用故事回放看经过；简单的事由原任务直接完成，不必拆。"], example: "这件事可以拆给工作室伙伴：请安排合适的分工并各自交出文件，最后让另一位独立检查成果，再把结论告诉我。" },
     { icon: House, title: "首页：只看现场", when: "想知道现在有没有 Codex 正在工作，或服务是否在线时。", steps: ["看顶部四个数字，先确认服务在线。", "优先点“近期活跃的会话”。", "需要完整内容时，进入会话页。"], example: "我想知道刚才哪条 Codex 还在继续工作。" },
     { icon: UsersThree, title: "会话：按标题回看", when: "你记得任务名字，但不知道消息属于哪条 Codex 会话时。", steps: ["在左侧搜索任务标题或项目名。", "点击一张会话卡片。", "在右侧向上或向下滚动查看历史。"], example: "打开“修复支付回调”的会话，帮我接着看上次结论。" },
     { icon: GitBranch, title: "逻辑观察：查清代码关系", when: "你想知道一个文件负责什么、改动会影响谁，或者一条预期链路先断在哪里时。", steps: ["选择项目，默认使用“交给 Codex 分析”。", "用中文描述问题；若需要 Python 静态关系，再切换本地查询并填写限定名。", "查看进度和报告，先看结论，再看证据、未知项和历史。"], example: "请梳理当前项目从用户点击开始到结果保存的流程，指出可能中断的位置，并保留旧档案后更新相关章节。" },
     { icon: Database, title: "项目与记忆：项目说明书", when: "你想知道项目做什么、为什么这样设计、哪些完成了，或有哪些薄弱环节时。", steps: ["切换到正确项目，先看简介与用户目标。", "按目录打开需要的章节；资料由 Codex 在工作中整理。", "查看十维雷达图，点击每项了解评分理由与改进建议。"], example: "请使用 AP-Vibe 读取这个项目的资料目录，核对简介、红线与待办；完成工作后更新相关章节，评分必须附理由和证据。" },
+    { icon: Brain, title: "进阶 · AP 认知：按需尝试", when: "想查看感知、行动回读，或试用外部模型辅助认知时。", steps: ["先看基础模式的实际记录，不配置 Key 也可以使用。", "需要增强时，填写服务商地址、Key 和真实模型名称；阅读费用提示后开启。", "查看实际调用与采用记录，效果不好时可关闭并继续使用本地功能。"], example: "请解释 AP-Vibe 最近一次感知、行动和回读；指出已发生的行为和仍未验证的收益。" },
   ];
-  return <div className="page-stack help-page"><PageHeader eyebrow="帮助" title="不用懂技术，也能知道下一步做什么" description="每项能力都写清楚了用途、适用时机、操作步骤和可以直接复制给 Codex 的示例。" action={<button type="button" className="secondary-button" onClick={() => onNavigate("home")}><House size={16} />回到首页</button>} /><section className="help-hero"><div className="help-hero-icon"><Sparkle size={28} weight="duotone" /></div><div><span className="eyebrow">第一次使用</span><h2>把 AP‑Vibe 当成一个项目现场管家</h2><p>它会在本机观察 Codex 的可见消息，按项目分开保存，并把最近发生了什么、为什么这样处理、哪些内容仍不确定，用中文展示给你。</p></div></section><section className="help-grid">{helpCards.map((card) => { const CardIcon = card.icon; return <article className="help-card" key={card.title}><span className="help-card-icon"><CardIcon size={21} weight="duotone" /></span><h2>{card.title}</h2><div><span>什么时候用</span><p>{card.when}</p></div><div><span>怎么做</span><ol>{card.steps.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="help-example"><span>示例口令</span><code>{card.example}</code><button type="button" className="text-action" onClick={() => onCopy(card.example)}><Copy size={15} />复制示例</button></div></article>; })}</section><section className="help-card troubleshooting"><h2>遇到问题，照着做</h2><details><summary>有任务标题，为什么没有消息？</summary><p>任务已发现，但当前采集窗口没有读到可见文本。先让该任务继续一次，再等约十秒；仍为空时，把“请检查 AP-Vibe 的会话采集与游标状态”发给 Codex。</p></details><details><summary>如何发消息给任务？</summary><p>会话页先选对标题，填写消息，再点击“发送给 Codex”。任务正在执行时消息会排队，空闲后自动续接；你可以撤回尚未发送的消息。若出现“需要查看结果”，请先打开原任务确认，不要重复发送。</p></details><details><summary>页面提示数据未更新怎么办？</summary><p>先点重新连接。页面会保留上一次成功数据；如果仍未恢复，双击桌面 AP-Vibe 启动器，或把“请使用安装配置恢复 AP-Vibe 本地服务，并打开它实际监听的工作台地址”发给 Codex。</p></details><details><summary>怎样知道 AP-Vibe 真正帮助了任务？</summary><p>可以让 Codex 报告“读取了哪些项目记忆、采用了什么、具体减少了哪次重复解释或返工”。活跃数量和消息曲线只反映活动，不能直接当作质量提升。</p></details></section><section className="help-boundaries"><SectionHeading eyebrow="看懂状态" title="几个容易误解的词" description="这些提示是为了让你知道 AP‑Vibe 做到了什么，以及还没有做到什么。" icon={Info} /><div className="boundary-grid"><div><StatusPill status="running" label="近期活跃" /><p>最近 15 分钟内发现了新的可见消息。</p></div><div><StatusPill status="stopped" label="暂未活动" /><p>最近没有新消息，历史仍然可以打开。</p></div><div><StatusPill status="ready" label="静态链路已观察" /><p>看到了源码中的关系，不代表真实运行一定正确。</p></div><div><StatusPill status="warn" label="显示上一次现场" /><p>刷新失败时保留上一次成功数据，不把失败误显示成零。</p></div></div></section></div>;
+  return <div className="page-stack help-page"><PageHeader eyebrow="帮助" title="不用懂技术，也能知道下一步做什么" description="每项能力都写清楚了用途、适用时机、操作步骤和可以直接复制给 Codex 的示例。" action={<button type="button" className="secondary-button" onClick={() => onNavigate("home")}><House size={16} />回到首页</button>} /><section className="help-hero"><div className="help-hero-icon"><Sparkle size={28} weight="duotone" /></div><div><span className="eyebrow">第一次使用</span><h2>把 AP‑Vibe 当成一个项目现场管家</h2><p>它会在本机观察 Codex 与 Claude Code 的可见消息，按项目分开保存，并把最近发生了什么、为什么这样处理、哪些内容仍不确定，用中文展示给你。</p></div></section><section className="help-grid">{helpCards.map((card) => { const CardIcon = card.icon; return <article className="help-card" key={card.title}><span className="help-card-icon"><CardIcon size={21} weight="duotone" /></span><h2>{card.title}</h2><div><span>什么时候用</span><p>{card.when}</p></div><div><span>怎么做</span><ol>{card.steps.map((step) => <li key={step}>{step}</li>)}</ol></div><div className="help-example"><span>示例口令</span><code>{card.example}</code><button type="button" className="text-action" onClick={() => onCopy(card.example)}><Copy size={15} />复制示例</button></div></article>; })}</section><section className="help-card troubleshooting"><h2>遇到问题，照着做</h2><details><summary>有任务标题，为什么没有消息？</summary><p>任务已发现，但当前采集窗口没有读到可见文本。先让该任务继续一次，再等约十秒；仍为空时，把“请检查 AP-Vibe 的会话采集与游标状态”发给 Codex。</p></details><details><summary>如何发消息给任务？</summary><p>会话页先选对标题，填写消息，再点击“发送给 Codex”。任务正在执行时消息会排队，空闲后自动续接；你可以撤回尚未发送的消息。若出现“需要查看结果”，请先打开原任务确认，不要重复发送。</p></details><details><summary>页面提示数据未更新怎么办？</summary><p>先点重新连接。页面会保留上一次成功数据；如果仍未恢复，双击桌面 AP-Vibe 启动器，或把“请使用安装配置恢复 AP-Vibe 本地服务，并打开它实际监听的工作台地址”发给 Codex。</p></details><details><summary>怎样知道 AP-Vibe 真正帮助了任务？</summary><p>可以让 Codex 报告“读取了哪些项目记忆、采用了什么、具体减少了哪次重复解释或返工”。活跃数量和消息曲线只反映活动，不能直接当作质量提升。</p></details></section><section className="help-boundaries"><SectionHeading eyebrow="看懂状态" title="几个容易误解的词" description="这些提示是为了让你知道 AP‑Vibe 做到了什么，以及还没有做到什么。" icon={Info} /><div className="boundary-grid"><div><StatusPill status="running" label="近期活跃" /><p>最近 15 分钟内发现了新的可见消息。</p></div><div><StatusPill status="stopped" label="暂未活动" /><p>最近没有新消息，历史仍然可以打开。</p></div><div><StatusPill status="ready" label="静态链路已观察" /><p>看到了源码中的关系，不代表真实运行一定正确。</p></div><div><StatusPill status="warn" label="显示上一次现场" /><p>刷新失败时保留上一次成功数据，不把失败误显示成零。</p></div></div></section></div>;
 }
 
 function Sidebar({ page, onNavigate, project, health, sessions, loading = false }) {
   page = page === "organization" ? "projects" : page;
-  return <aside className="app-sidebar"><div className="brand"><span className="brand-mark"><Brain size={24} weight="duotone" /></span><div><strong>AP‑Vibe</strong><small>项目心智工作台</small></div></div><div className="sidebar-status"><StatusPill status={health?.status || "unknown"} label={healthLabel(health?.status)} /><span>{loading ? (["home", "sessions"].includes(page) ? '正在读取会话…' : '会话页查看任务') : sessions.length + ' 条最近任务'}</span></div><nav className="main-nav" aria-label="主导航">{NAV_ITEMS.map(({ id, label, description, icon: Icon }) => <button type="button" key={id} className={page === id ? "active" : ""} onClick={() => onNavigate(id)}><span className="nav-icon"><Icon size={20} weight="duotone" /></span><span><b>{label}</b><small>{description}</small></span>{page === id && <span className="nav-current" />}</button>)}</nav><div className="sidebar-project"><span className="eyebrow">当前项目</span><strong>{project?.display_name || "等待项目"}</strong><small>{!project ? "正在读取项目…" : project.auto_monitor_enabled ? "自动监控已开启" : "自动监控已关闭"}</small><button type="button" className="text-action" onClick={() => onNavigate("projects")}><GearSix size={15} />管理项目</button></div><div className="sidebar-foot"><ShieldCheck size={17} /><span><b>本地与有界</b><small>隐藏推理不会被采集</small></span></div></aside>;
+  return <aside className="app-sidebar"><div className="brand"><span className="brand-mark"><Brain size={24} weight="duotone" /></span><div><strong>AP‑Vibe</strong><small>项目心智工作台</small></div></div><div className="sidebar-status"><StatusPill status={health?.status || "unknown"} label={healthLabel(health?.status)} /><span>{loading ? (page === "home" ? '正在读取会话…' : '会话页查看全部任务') : sessions.length + ' 条 Codex 监看来源'}</span></div><nav className="main-nav" aria-label="主导航">{NAV_ITEMS.map(({ id, label, description, icon: Icon }) => <button type="button" key={id} className={page === id ? "active" : ""} onClick={() => onNavigate(id)}><span className="nav-icon"><Icon size={20} weight="duotone" /></span><span><b>{label}</b><small>{description}</small></span>{page === id && <span className="nav-current" />}</button>)}</nav><div className="sidebar-project"><span className="eyebrow">当前项目</span><strong>{project?.display_name || "等待项目"}</strong><small>{!project ? "正在读取项目…" : project.auto_monitor_enabled ? "自动监控已开启" : "自动监控已关闭"}</small><button type="button" className="text-action" onClick={() => onNavigate("projects")}><GearSix size={15} />管理项目</button></div><div className="sidebar-foot"><ShieldCheck size={17} /><span><b>本地与有界</b><small>隐藏推理不会被采集</small></span></div></aside>;
 }
 
 function Topbar({ page, project, health, refreshing, onRefresh, onSync, syncBusy }) {
@@ -421,13 +399,10 @@ export function App() {
   const [stale, setStale] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [notice, setNotice] = useState(null);
-  const [selectedSessionKey, setSelectedSessionKey] = useState("");
+  const [selectedSession, setSelectedSession] = useState(null);
   const [drafts, setDrafts] = useState({});
-  const draftSession = overview?.sessions?.find(session => session.project_id + ":" + session.source_key === selectedSessionKey);
   const getDraft = session => drafts[sessionDraftKey(session)] || "";
   const changeDraft = (session, value) => setDrafts(previous => ({ ...previous, [sessionDraftKey(session)]: value }));
-  const draft = getDraft(draftSession);
-  const setDraft = value => changeDraft(draftSession, value);
   const [logicModal, setLogicModal] = useState(null);
   const [busy, setBusy] = useState("");
   const showNotice = useCallback((tone, title, detail) => setNotice({ tone, title, detail }), []);
@@ -473,7 +448,7 @@ export function App() {
         catalogue,
         ["home", "logic", "cognition"].includes(page) ? readSelected("state", setState) : Promise.resolve(snapshotRef.current.state || null),
         page === "projects" ? readSelected("data", setData) : Promise.resolve(snapshotRef.current.data || null),
-        ["home", "sessions"].includes(page) ? read(API + "/codex/overview?include_archived=false&limit=128").then(publish("overview", setOverview)) : Promise.resolve(snapshotRef.current.overview || null),
+        page === "home" ? read(API + "/codex/overview?include_archived=false&limit=128").then(publish("overview", setOverview)) : Promise.resolve(snapshotRef.current.overview || null),
       ]);
       if (!requestsRef.current.isCurrent(token) || currentProjectRef.current !== projectId || pendingRef.current?.token !== token) return;
       const next = selectSnapshot(snapshotRef.current, projectId, results);
@@ -512,7 +487,7 @@ export function App() {
   const currentProject = projects.find((item) => item.project_id === projectId) || state?.project || null;
 
   const navigate = useCallback((nextPage) => { setPage(nextPage); window.scrollTo({ top: 0, behavior: "smooth" }); }, []);
-  const openSession = useCallback((session) => { setSelectedSessionKey(session.project_id + ":" + session.source_key); setPage("sessions"); }, []);
+  const openSession = useCallback((session) => { setSelectedSession(session); setPage("sessions"); }, []);
   const openEvent = useCallback((item) => { const episode = getEpisode(item); const session = sessionForActivity(sessions, getActivity(episode)); if (session) { openSession(session); return; } if (episode.episode_kind === "logic_field_observation" || episode.logic_field) { setLogicModal(item); setPage("logic"); } else showNotice("info", "这是一条 AP 工程事件", "进入会话页可以查看对应 Codex 可见消息；当前事件本身没有稳定的会话来源。"); }, [showNotice, sessions, openSession]);
 
   const syncCodex = useCallback(async () => {
@@ -572,7 +547,7 @@ export function App() {
   }, [showNotice]);
 
   let content;
-  if (page === "sessions") content = <SessionsPage projects={projects} getDraft={getDraft} changeDraft={changeDraft} sessions={sessions} loading={!overview} selectedKey={selectedSessionKey} onSelect={(session) => setSelectedSessionKey(session.project_id + ":" + session.source_key)} draft={draft} setDraft={setDraft} onHandoff={handoff} onRefresh={() => load(false)} />;
+  if (page === "sessions") content = <SessionArchive mode="sessions" projects={projects} getDraft={getDraft} changeDraft={changeDraft} requestedSession={selectedSession} onSelectionChange={setSelectedSession} />;
   else if (page === "logic") content = <LogicWorkbench records={logicRecords} project={currentProject} projects={registeredProjects} onProjectChange={changeProject} busy={busy === "logic"} onQuery={submitLogic} onChanged={() => load(true)} renderRecord={record => <LogicObservation key={record.request_id} record={record} onOpen={() => setLogicModal(record)} />} />;
   else if (page === "cognition") content = <CognitionPage state={state} project={currentProject} />;
   else if (page === "agents") content = <AgentStudio projects={registeredProjects} project={currentProject} currentProjectId={projectId} projectsLoading={refreshing && !projects.length} />;

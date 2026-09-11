@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+if __name__ == '__main__':
+    from active_entry import forward
+    forward(__file__)
+
 import argparse
 from contextlib import contextmanager
 import hashlib
@@ -32,6 +36,28 @@ def _config_path() -> Path:
 
 def _installed_config() -> dict:
     return json.loads(_config_path().read_text(encoding="utf-8-sig"))
+
+
+def schedule_update_check():
+    """A task records interest; the detached worker coalesces network checks."""
+    try:
+        config = _installed_config()
+        update_options = dict(config.get('updates') or {})
+        option_path = _config_path().parent / 'update-options.json'
+        if option_path.exists():update_options.update(json.loads(option_path.read_text(encoding='utf-8-sig')))
+        if config.get('auto_start') is False or update_options.get('enabled') is False:
+            return
+        status_path = _config_path().parent / 'update-status.json'
+        if status_path.exists():
+            status = json.loads(status_path.read_text(encoding='utf8'))
+            if status.get('next_check_at',0) > time.time():return
+        script = Path(config['product_root']) / 'tools/update_client.py'
+        if not script.is_file():return
+        subprocess.Popen([config['python'],str(script),'check','--config',str(_config_path())],
+            cwd=config['product_root'],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,
+            creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0),close_fds=True)
+    except (OSError,ValueError,KeyError):
+        pass
 
 
 def _service_url(installed: dict) -> str:
@@ -135,14 +161,16 @@ def call(route: str, payload: dict | None = None) -> dict:
     installed = _installed_config()
     # Collaboration is a sibling API to task context; keep the same bounded
     # client/startup/retry semantics while routing it to its own namespace.
-    prefix = "/v1/ap-vibe/" if route.split('?')[0] in {"collaboration", "studio/tasks", "sessions", "sessions/read"} or route.startswith(("collaboration/", "studio/tasks/", "agents/")) else "/v1/ap-vibe/tasks/"
+    prefix = "/v1/ap-vibe/" if route.split('?')[0] in {"collaboration", "agents", "studio/tasks", "sessions", "sessions/read"} or route.startswith(("collaboration/", "studio/", "agents/")) else "/v1/ap-vibe/tasks/"
     url = _service_url(installed).rstrip("/") + prefix + route
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
     opener = request.build_opener(request.ProxyHandler({}))
     start_info = None
     timeout = BOOTSTRAP_TIMEOUT_SECONDS if route == "bootstrap" else REQUEST_TIMEOUT_SECONDS
     idempotent_write = route in {"update", "feedback", "classify", "collaboration/message", "collaboration/broadcast",
-        "studio/tasks/save", "studio/tasks/claim", "studio/tasks/release", "studio/tasks/archive", "studio/tasks/verdict"}
+        "studio/tasks/save", "studio/tasks/claim", "studio/tasks/release", "studio/tasks/archive", "studio/tasks/verdict", "agents/review",
+        "studio/plans/submit", "studio/plans/cancel",
+        "agents/setup/templates", "agents/setup/connections"}
     attempts = WRITE_RETRY_ATTEMPTS if idempotent_write else READ_RETRY_ATTEMPTS
     startup_attempted = False
     last_network_error = None
@@ -187,6 +215,7 @@ def call(route: str, payload: dict | None = None) -> dict:
                                   "recovered_after_retry": True, "recovery_attempt": start_info}
                 if route == "bootstrap":
                     result["service"] = start_info or {"status": "online", "url": _service_url(installed), "started": False}
+                    schedule_update_check()
                 elif start_info and start_info.get("status") == "online":
                     result.setdefault("service", start_info)
                 return result
@@ -344,6 +373,39 @@ def mark_document_maintained(cwd: str, session_id: str, receipt_id: str) -> None
         pass
 
 
+def record_lifecycle(hook: dict, cwd: str, session_id: str, harness='codex') -> None:
+    """Write a tiny local outbox record; never delay a Stop hook on network IO."""
+    if not session_id or hook.get('hook_event_name') not in {'SessionStart','UserPromptSubmit','SubagentStart','Stop','SessionEnd'}:
+        return
+    try:
+        from datetime import datetime, timezone
+        config = _installed_config()
+        if not config.get('data_dir'):
+            return
+        directory = Path(config['data_dir']) / 'agent-studio' / 'incoming'
+        directory.mkdir(parents=True,exist_ok=True)
+        event_id = 'hook-' + uuid.uuid4().hex
+        payload = {'event_id':event_id,'harness':harness,'session_id':session_id,'cwd':cwd,
+                   'kind':hook['hook_event_name'],'occurred_at':datetime.now(timezone.utc).isoformat()}
+        target = directory / (str(time.time_ns()) + '-' + event_id + '.json')
+        temporary = target.with_suffix('.tmp')
+        temporary.write_text(json.dumps(payload,ensure_ascii=False),encoding='utf8')
+        os.replace(temporary,target)
+    except (OSError,ValueError,TypeError):
+        pass
+
+
+def reset_closure_reminder(hook: dict, cwd: str, session_id: str) -> None:
+    if hook.get('hook_event_name') != 'UserPromptSubmit' or not session_id:
+        return
+    if str(hook.get('prompt') or '').lstrip().startswith('<hook_prompt'):
+        return
+    try:
+        cache_path(cwd, session_id).with_suffix('.closure-reminded.json').unlink(missing_ok=True)
+    except OSError:
+        pass
+
+
 def stop_hook_output(hook: dict, cwd: str, session_id: str) -> dict:
     """One local-only closure pass; never query/start a service while stopping."""
     if hook.get("stop_hook_active") or not session_id or os.environ.get("AP_VIBE_READONLY_CURATION") == "1":
@@ -359,6 +421,12 @@ def stop_hook_output(hook: dict, cwd: str, session_id: str) -> dict:
         marker = target.with_suffix(".maintained.json")
         if marker.exists() and json.loads(marker.read_text(encoding="utf-8")).get("receipt_id") == receipt["receipt_id"]:
             return {}
+        reminder = target.with_suffix('.closure-reminded.json')
+        if reminder.exists():
+            return {}
+        # Some desktop versions do not provide stop_hook_active on their
+        # continuation. Persist one reminder until the next real user prompt.
+        reminder.write_text(json.dumps({'session_id':session_id,'receipt_id':receipt['receipt_id']}),encoding='utf8')
     except (OSError, ValueError, TypeError):
         return {}
     return {"decision": "block", "reason": (
@@ -423,7 +491,8 @@ def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=["bootstrap", "feedback", "status", "hook", "knowledge", "update", "sessions", "session-read"])
+    parser.add_argument("action", choices=["bootstrap", "feedback", "status", "hook", "knowledge", "update", "sessions", "session-read", "tool"])
+    parser.add_argument("--name", help="Shared AP-Vibe MCP tool name for the shell fallback")
     parser.add_argument("--config", type=Path, help="Use this installation's local configuration")
     parser.add_argument("--harness", choices=['codex', 'claude'])
     parser.add_argument("--project-id")
@@ -462,13 +531,29 @@ def main() -> int:
             args.cwd = hook.get("cwd") or args.cwd
             args.session_id = hook.get("session_id") or hook.get("thread_id") or args.session_id
             args.goal = str(hook.get("prompt") or args.goal)[:2000]
+            reset_closure_reminder(hook,args.cwd,args.session_id)
+            record_lifecycle(hook,args.cwd,args.session_id)
             if event == "Stop":
                 print(json.dumps(stop_hook_output(hook, args.cwd, args.session_id), ensure_ascii=False))
                 return 0
             if event not in _HOOK_EVENTS:
                 print("{}")
                 return 0
-        if args.action in {'sessions', 'session-read'}:
+        if args.action == 'tool':
+            # The CLI uses exactly the MCP adapter, including its schemas and
+            # idempotent task writes. It is available without a running MCP host.
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+            from tools.ap_vibe_mcp import invoke
+            if not args.name:
+                raise ValueError('tool requires --name; arguments use an optional UTF-8 JSON --file')
+            payload = {}
+            if args.file:
+                path = Path(args.file)
+                if path.stat().st_size > 2 * 1024 * 1024:
+                    raise ValueError('tool argument file exceeds 2MB')
+                payload = json.loads(path.read_text(encoding='utf-8-sig'))
+            result = invoke(args.name, payload)
+        elif args.action in {'sessions', 'session-read'}:
             from urllib.parse import urlencode
             if args.action == 'sessions':
                 query = {'harness':args.harness, 'cwd':args.filter_cwd, 'session_id':args.filter_session_id,
@@ -496,6 +581,7 @@ def main() -> int:
             if args.action in {"bootstrap", "hook"}:
                 result = call("bootstrap", {"request_id": request_id, "cwd": args.cwd,
                                            "session_id": args.session_id, "goal": args.goal[:2000],
+                                           **({'lifecycle_event':event} if args.action=='hook' else {}),
                                            **({'include_history': True} if args.include_history else {})})
                 save_receipt(args.cwd, args.session_id, result)
             else:

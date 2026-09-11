@@ -13,6 +13,17 @@ from .product import redact_portable
 from .session_window import generation, read_records
 
 
+def assistant_model(record):
+    """Read a model identity from public response metadata, never from a prompt."""
+    message = record.get('message')
+    if record.get('type') != 'assistant' or record.get('isMeta') or not isinstance(message, dict):
+        return None
+    model = message.get('model')
+    if not isinstance(model, str) or not model.strip() or model.strip() == '<synthetic>':
+        return None
+    return redact_portable(model.strip()[:200])
+
+
 def visible(record, offset, *, preserve_local_paths=False):
     """Never project the full record, thinking, attachments or tool arguments."""
     kind = record.get('type')
@@ -110,6 +121,7 @@ class ClaudeSessions:
                     errors.append('一条Claude会话暂时无法读取，稍后自动刷新。'); continue
                 metadata = {'source_id': source_id, 'session_id': path.stem, 'title': '未命名 Claude 会话 · ' + path.stem[:8],
                             'title_source': 'session_id', 'cwd': '', 'updated_at': stat.st_mtime,
+                            'model': None, 'model_source': None, 'observed_models': [],
                             'generation': fingerprint[2], 'read_only': True, 'activity': 'recent_output' if time.time()-stat.st_mtime < 120 else 'historical',
                             'invalid_lines': invalid}
                 first = None
@@ -120,6 +132,11 @@ class ClaudeSessions:
                         metadata['cwd'] = record['cwd'][:2000]
                     if record.get('type') == 'custom-title' and isinstance(record.get('customTitle'), str):
                         metadata.update(title=redact_portable(record['customTitle'][:200]), title_source='claude_title')
+                    model = assistant_model(record)
+                    if model:
+                        metadata.update(model=model, model_source='assistant_message')
+                        if model not in metadata['observed_models']:
+                            metadata['observed_models'].append(model)
                     if first is None and record.get('type') == 'user':
                         texts = [e['text'] for e in visible(record, offset) if e['kind']=='user']
                         if texts:

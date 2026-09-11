@@ -1,0 +1,162 @@
+{
+  "schema_version": 1,
+  "characters": [
+    {
+      "appearance_id": "fufu-v1",
+      "display_name": "芙芙 · 工作室管理员",
+      "version": 1,
+      "atlas": "fufu-atlas.png",
+      "animations": {
+        "idle": {
+          "frames": [
+            32
+          ],
+          "fps": 0,
+          "loop": false
+        },
+        "walk": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_front": {
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_back": {
+          "frames": [
+            4,
+            5,
+            6,
+            7
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_left": {
+          "frames": [
+            16,
+            17,
+            18,
+            19
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "walk_right": {
+          "frames": [
+            20,
+            21,
+            22,
+            23
+          ],
+          "fps": 6,
+          "loop": true
+        },
+        "work": {
+          "frames": [
+            24,
+            25,
+            26,
+            27
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "read": {
+          "frames": [
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "talk": {
+          "frames": [
+            32,
+            33,
+            34,
+            35
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "rest": {
+          "frames": [
+            36,
+            37,
+            38,
+            39
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        "wait": {
+          "frames": [
+            28,
+            29,
+            30,
+            31
+          ],
+          "fps": 2,
+          "loop": true
+        }
+      },
+      "credit": "AP-Vibe original generated sprite assets, inspired by the user-requested Fufu/Furina fan persona; not officially endorsed.",
+      "generation_id": 130,
+      "alpha_threshold": 96,
+      "opaque_pixels": true,
+      "production": {
+        "method": "Three reviewed image2 sources, local alpha/chroma extraction and atlas composition",
+        "sources": [
+          {
+            "generation_id": 130,
+            "source_sha256": "dfa4acccb5168e5c96f5ca40032d68fe58b8155c643ba3068637c4e1f5e2996d",
+            "atlas_sha256": "aaa72516ec6ad212b8dc9ed6cd323b7e0b6724bbd36787efd98a07094bf9371c"
+          },
+          {
+            "generation_id": 131,
+            "source_sha256": "109328de0fcf6b517776bb400b2af378e7d39bfa5de431c673fdc35586e6f157",
+            "atlas_sha256": "c78fdc890519e5c0dafca7d8d87ba7527bf8032913cd6356322ecfa5e566e84c"
+          },
+          {
+            "generation_id": 132,
+            "source_sha256": "20028ec4f72f0011bbadd3bab31b600336a3178270c156f2196fada5382af03f",
+            "atlas_sha256": "1010b6fd24600af450c2b3127d807eca3e14ae1995bf2c9f5aa14b8cae1c2bbd"
+          }
+        ]
+      },
+      "chroma_key": [
+        0,
+        255,
+        0
+      ],
+      "chroma_tolerance": 105,
+      "chroma_dominance": 35,
+      "suppress_chroma_spill": true,
+      "frame_width": 96,
+      "frame_height": 96,
+      "atlas_width": 384,
+      "atlas_height": 960,
+      "anchor": {
+        "x": 48,
+        "y": 94
+      },
+      "sha256": "b551da41aec2a478e7cb6c83d33e722247499373d9b502c0e9f47cbdd4c752ca",
+      "missing_animations": []
+    }
+  ]
+}

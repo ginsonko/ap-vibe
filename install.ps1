@@ -13,6 +13,8 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = New-Object Text.UTF8Encoding($false)
+$OutputEncoding = [Console]::OutputEncoding
 $root = (Resolve-Path (Join-Path $PSScriptRoot ".")).Path
 $script = Join-Path $root "scripts\ap-vibe.ps1"
 if (-not (Test-Path -LiteralPath $script -PathType Leaf)) { throw "AP-Vibe 安装入口缺少 scripts/ap-vibe.ps1" }
@@ -33,6 +35,18 @@ if (-not (Test-Path -LiteralPath $studioBuild -PathType Leaf)) {
     } finally { Pop-Location }
 }
 
+$installedConfigDir = if ($ConfigDir) { $ConfigDir } else { Join-Path $env:LOCALAPPDATA 'AP-Vibe' }
+$previousConfigPath = Join-Path $installedConfigDir 'config.json'
+if (Test-Path -LiteralPath $previousConfigPath -PathType Leaf) {
+    $previous = Get-Content -LiteralPath $previousConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($previous.product -eq 'AP-Vibe') {
+        if (-not $PSBoundParameters.ContainsKey('ProjectRoot')) { $ProjectRoot = $previous.project_root }
+        if (-not $PSBoundParameters.ContainsKey('ProjectId')) { $ProjectId = $previous.project_id }
+        if (-not $PSBoundParameters.ContainsKey('Port')) { $Port = [int]$previous.port }
+        if (-not $PSBoundParameters.ContainsKey('DataDir')) { $DataDir = $previous.data_dir }
+        if (-not $PSBoundParameters.ContainsKey('CodexSessionsRoot')) { $CodexSessionsRoot = $previous.codex_sessions_root }
+    }
+}
 $arguments = @{
     Action = 'install'
     ProjectRoot = $ProjectRoot
@@ -49,16 +63,16 @@ if (-not $NoAutostart) { $arguments.RegisterAutostart = $true }
 
 & $script @arguments
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-$installedConfigDir = if ($ConfigDir) { $ConfigDir } else { Join-Path $env:LOCALAPPDATA 'AP-Vibe' }
 $installed = Get-Content -LiteralPath (Join-Path $installedConfigDir 'config.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-& $installed.python (Join-Path $root 'tools/install_task_context.py') --config (Join-Path $installedConfigDir 'config.json')
+$integrationRoot = $installed.product_root
+& $installed.python (Join-Path $integrationRoot 'tools/install_task_context.py') --config (Join-Path $installedConfigDir 'config.json')
 if ($LASTEXITCODE -ne 0) { throw '本地服务已安装，但 Codex 项目资料 Skill 安装失败。请根据错误修复后重新安装。' }
-& $installed.python (Join-Path $root 'tools/trust_hooks.py') --config (Join-Path $installedConfigDir 'config.json')
+& $installed.python (Join-Path $integrationRoot 'tools/trust_hooks.py') --config (Join-Path $installedConfigDir 'config.json')
 if ($LASTEXITCODE -ne 0) { Write-Warning 'Codex hook 信任登记未完成；Skill 仍可使用。请在 Codex 的 /hooks 中检查 AP-Vibe 条目。' }
-& $installed.python (Join-Path $root 'tools/install_mcp.py') --config (Join-Path $installedConfigDir 'config.json')
+& $installed.python (Join-Path $integrationRoot 'tools/install_mcp.py') --config (Join-Path $installedConfigDir 'config.json')
 if ($LASTEXITCODE -ne 0) { throw '本地服务与 Skill 已安装，MCP 注册未完成；可先使用 Skill，按错误说明修复后重试安装。' }
 if (-not $SkipClaude) {
-    & $installed.python (Join-Path $root 'tools/install_claude.py') --if-available --config (Join-Path $installedConfigDir 'config.json')
+    & $installed.python (Join-Path $integrationRoot 'tools/install_claude.py') --if-available --config (Join-Path $installedConfigDir 'config.json')
     if ($LASTEXITCODE -ne 0) { Write-Warning 'Claude 自动接入未完成；原设置和 Codex 接入保持可用。修复提示的问题后可重跑 tools/install_claude.py。' }
 }
 if ($OrganizeRecent) {
