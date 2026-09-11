@@ -23,9 +23,9 @@ jobs:
       - run: python -m pytest -q -n 4 --durations=15
       - run: npm ci --no-audit --no-fund
         working-directory: apps/studio
-      - run: node --test
-        working-directory: apps/studio
       - run: npm run build
+        working-directory: apps/studio
+      - run: node --test
         working-directory: apps/studio
       - run: |
           $version = (Get-Content ap-vibe-version.json -Raw | ConvertFrom-Json).version

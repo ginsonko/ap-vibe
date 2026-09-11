@@ -43,7 +43,7 @@ test('chapter request retries transient/mismatched responses and accepts only th
 });
 
 test('actual project component renders loading, absent and irregular dossier states without crashing', async () => {
-  const vite = await createServer({ server: { middlewareMode: true }, appType: 'custom' });
+  const vite = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' });
   try {
     const { ProjectKnowledge } = await vite.ssrLoadModule('/src/ProjectKnowledge.jsx');
     for (const manifest of [undefined, null, {}, { project_id: 'A', project: null, catalog: [null], assessment: [null, { key: 'intent', score: 'bad' }] }]) {

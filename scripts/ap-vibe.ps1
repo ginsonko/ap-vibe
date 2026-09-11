@@ -736,12 +736,23 @@ function Invoke-Action {
                 # Keep private config and original data identity; only sync integration files.
                 $integrationIssues = @()
                 if (Test-SamePath (Get-ResolvedConfigDir) (Get-DefaultConfigDir)) {
-                    foreach ($installer in @('install_task_context.py','install_mcp.py','install_claude.py')) {
-                        $sync = & ([string]$config.python) (Join-Path $candidate ('tools\' + $installer)) --config (Get-ConfigPath) 2>&1
-                        if ($LASTEXITCODE -ne 0) { $integrationIssues += $installer }
+                    $integrationResults = @()
+                    foreach ($installer in @('install_task_context.py','install_mcp.py','install_claude.py','trust_hooks.py')) {
+                        $syncArgs = @('--config', (Get-ConfigPath))
+                        if ($installer -eq 'install_claude.py') { $syncArgs += '--if-available' }
+                        $previousPreference = $ErrorActionPreference
+                        try {
+                            # Windows PowerShell treats native stderr as error
+                            # records. Capture the full diagnostic before handling
+                            # the exit status, rather than losing it to "Traceback".
+                            $ErrorActionPreference = 'Continue'
+                            $sync = & ([string]$config.python) (Join-Path $candidate ('tools\' + $installer)) @syncArgs 2>&1
+                            $syncExit = $LASTEXITCODE
+                        } finally { $ErrorActionPreference = $previousPreference }
+                        $integrationResults += [pscustomobject]@{ installer = $installer; exit_code = $syncExit; output = (($sync | ForEach-Object { [string]$_ }) -join "`n") }
+                        if ($syncExit -ne 0) { $integrationIssues += $installer }
                     }
-                    $trust = & ([string]$config.python) (Join-Path $candidate 'tools\trust_hooks.py') --config (Get-ConfigPath) 2>&1
-                    if ($LASTEXITCODE -ne 0) { $integrationIssues += 'trust_hooks.py' }
+                    Write-AtomicJson (Join-Path (Get-ResolvedConfigDir) 'update-integration.json') ([pscustomobject]@{version=$verified.version;results=$integrationResults})
                 }
                 return [pscustomobject]@{ok=$true;updated=$true;status='installed';version=$verified.version;pid=$started.pid;url=$started.receipt.url;backup=$backup.backup;integration_issues=$integrationIssues}
             } catch {

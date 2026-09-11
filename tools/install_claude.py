@@ -17,6 +17,7 @@ from ap_mind.mcp_catalog import allowed_tools
 
 def install(directory:Path,config_path:Path|None=None):
     default_config=Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'AppData/Local')))/'AP-Vibe/config.json'
+    resolved_config=(config_path or default_config).resolve()
     if config_path and config_path.resolve()==default_config.resolve():
         config_path=None
     directory=directory.resolve(); directory.mkdir(parents=True,exist_ok=True)
@@ -55,24 +56,48 @@ def install(directory:Path,config_path:Path|None=None):
     config_file=Path.home()/'.claude.json' if native_default else directory/'.claude.json'
     added=subprocess.run([exe,'mcp','add-json','--scope','user','ap-vibe',json.dumps(mcp)],env=env,capture_output=True,timeout=20,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
     if added.returncode:
-        # CLI refuses duplicate names. Read its config as data without printing
-        # credentials; reuse only the exact adapter command/config destination.
+        # The old version's adapter path changes during a verified upgrade.
+        # Recognize this installation's prior root, never an unrelated namesake.
         actual=json.loads(config_file.read_text(encoding='utf-8')).get('mcpServers',{}).get('ap-vibe') if config_file.exists() else None
-        if not actual or actual.get('command')!=mcp['command'] or actual.get('args')!=mcp['args']:
+        if not actual or actual.get('command')!=mcp['command']:
             raise ValueError('AP-Vibe MCP名称已被其它配置使用或注册失败；未覆盖现有连接。')
         old_env=actual.get('env',{})
-        if old_env.get('AP_VIBE_CONFIG_PATH')!=mcp['env'].get('AP_VIBE_CONFIG_PATH'):
+        if Path(old_env.get('AP_VIBE_CONFIG_PATH') or default_config).resolve()!=resolved_config:
             raise ValueError('现有MCP连接另一个工作台；请保留原配置或指定相同config。')
-        if old_env.get('AP_VIBE_CLIENT_KIND')!='claude':
+        old_root=None
+        if actual.get('args')!=mcp['args']:
+            roots=[]
+            installation=json.loads(resolved_config.read_text('utf-8-sig')) if resolved_config.exists() else {}
+            if installation.get('product')=='AP-Vibe' and Path(installation.get('product_root','')).resolve()==ROOT.resolve() and installation.get('previous_product_root'):
+                roots.append(Path(installation['previous_product_root']).resolve())
+            descriptor=skill/'references/installation.json'
+            if descriptor.exists():
+                previous=json.loads(descriptor.read_text('utf-8-sig'))
+                if Path(previous.get('config_path','')).resolve()==resolved_config and previous.get('product_root'):
+                    roots.append(Path(previous['product_root']).resolve())
+            old_args=actual.get('args',[])
+            old_root=next((r for r in roots if len(old_args)==1 and Path(old_args[0]).resolve()==r/'tools/ap_vibe_mcp.py'),None)
+            if not owned.exists() or owned.read_text('utf-8')!='ap-vibe-claude-v1' or old_root is None:
+                raise ValueError('AP-Vibe MCP名称已被其它配置使用或注册失败；未覆盖现有连接。')
+        if actual.get('args')!=mcp['args'] or old_env.get('AP_VIBE_CLIENT_KIND')!='claude':
             if not owned.exists():raise ValueError('现有MCP未被本安装器管理，未改动。')
             original=config_file.read_bytes();config=json.loads(original.decode('utf-8'))
-            config['mcpServers']['ap-vibe']={**actual,'env':{**old_env,**mcp['env']}}
+            config['mcpServers']['ap-vibe']={**actual,**mcp,'env':{**old_env,**mcp['env']}}
             backup=directory/'.ap-vibe-backups';backup.mkdir(exist_ok=True)
             (backup/(uuid.uuid4().hex+'-mcp.json')).write_bytes(original)
             temp=config_file.with_suffix('.'+uuid.uuid4().hex+'.tmp')
             temp.write_text(json.dumps(config,ensure_ascii=False,indent=2),encoding='utf-8')
             if config_file.read_bytes()!=original:raise ValueError('MCP配置同时变化，保留现场后重试。')
             os.replace(temp,config_file)
+        if old_root is not None:
+            old_command=f'"{Path(actual["command"]).as_posix()}" "{(old_root/"tools/claude_context_hook.py").as_posix()}"'
+            if old_env.get('AP_VIBE_CONFIG_PATH'):old_command+=f' --config "{Path(old_env["AP_VIBE_CONFIG_PATH"]).resolve().as_posix()}"'
+            for name in ['SessionStart','UserPromptSubmit','Stop']:
+                remaining=[]
+                for group in hooks[name]:
+                    kept=[h for h in group.get('hooks',[]) if h.get('command')!=old_command]
+                    if kept:remaining.append({**group,'hooks':kept})
+                hooks[name]=remaining
     actual=json.loads(config_file.read_text(encoding='utf-8')).get('mcpServers',{}).get('ap-vibe') if config_file.exists() else None
     if actual != mcp:
         # Extra user env is compatible; the adapter and required identity must match.
@@ -85,6 +110,7 @@ def install(directory:Path,config_path:Path|None=None):
         backup=directory/'.ap-vibe-backups';backup.mkdir(exist_ok=True)
         (backup/(uuid.uuid4().hex+'-settings.json')).write_bytes(prior)
     skill.mkdir(parents=True,exist_ok=True);(skill/'references').mkdir(exist_ok=True)
+    (skill/'references/installation.json').write_text(json.dumps({'config_path':str(resolved_config),'product_root':str(ROOT.resolve())}),encoding='utf8')
     (skill/'SKILL.md').write_text(source,encoding='utf-8');owned.write_text('ap-vibe-claude-v1',encoding='utf-8')
     references=ROOT/'skills/ap-vibe-task-context/references'
     for reference in references.rglob('*.md'):

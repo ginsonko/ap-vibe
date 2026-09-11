@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createServer } from 'vite';
 
-const server = await createServer({ server: { middlewareMode: true, hmr: false }, appType: 'custom' });
+const server = await createServer({ server: { middlewareMode: true, hmr: false, ws: false }, optimizeDeps: { noDiscovery: true, include: [] }, appType: 'custom' });
 after(() => server.close());
 const { TeacherEvidence } = await server.ssrLoadModule('/src/TeacherEvidence.jsx');
 const render = teacher => renderToStaticMarkup(createElement(TeacherEvidence, { teacher }));
