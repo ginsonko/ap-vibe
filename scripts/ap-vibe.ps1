@@ -736,7 +736,7 @@ function Invoke-Action {
                 # Keep private config and original data identity; only sync integration files.
                 $integrationIssues = @()
                 if (Test-SamePath (Get-ResolvedConfigDir) (Get-DefaultConfigDir)) {
-                    foreach ($installer in @('install_task_context.py','install_claude.py')) {
+                    foreach ($installer in @('install_task_context.py','install_mcp.py','install_claude.py')) {
                         $sync = & ([string]$config.python) (Join-Path $candidate ('tools\' + $installer)) --config (Get-ConfigPath) 2>&1
                         if ($LASTEXITCODE -ne 0) { $integrationIssues += $installer }
                     }
