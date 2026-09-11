@@ -50,7 +50,7 @@
 
 推荐用户允许整理最近七天活跃任务。用户已经明确授权自动整理时直接执行，不重复询问。普通短问答、公告或一次性介绍不用建立长期项目。
 
-首次安装时也要读取 `ap_vibe_agents` 的 `claude_available`。如果没有 Claude Code CLI，说明通过它执行的工作室伙伴暂不可用，并请求用户允许按[官方说明](https://code.claude.com/docs/en/setup)自动安装；已经明确授权该依赖时不重复询问。安装后核对 `claude --version`，再执行 `tools/install_claude.py --config <原config.json>` 并回读接入。该脚本只安装 AP-Vibe 接入，不负责下载 CLI。用户暂不安装时，监看、档案和可用的 Codex 执行器正常继续。
+首次安装时也要读取 `ap_vibe_agents` 的 `executors.claude_available`。如果没有 Claude Code CLI，说明通过它执行的工作室伙伴暂不可用，并请求用户允许按[官方说明](https://code.claude.com/docs/en/setup)自动安装；已经明确授权该依赖时不重复询问。安装后核对 `claude --version`，再执行 `tools/install_claude.py --config <原config.json>` 并回读接入。该脚本只安装 AP-Vibe 接入，不负责下载 CLI。用户暂不安装时，监看、档案和可用的 Codex 执行器正常继续。
 
 ## 自动接入的边界
 

@@ -33,7 +33,7 @@ task_list 对账，必要时用原文件重试，不新建重复任务。不把 
 
 ### 缺少 Claude Code CLI 时
 
-初次安装或进入工作室时，先读 `ap_vibe_agents` 的 `claude_available`，必要时运行 `claude --version` 核实。没有执行器时不要让用户反复填 Key 或反复启动失败任务。向用户说明：“工作室的 Claude、Grok、Gemini 等伙伴通过 Claude Code CLI 运行。你当前尚未安装，因此暂时无法使用这些伙伴协作。我可以按官方方式帮你安装，是否允许？监看、项目档案和可用的 Codex 执行器仍可使用。”
+初次安装或进入工作室时，先读 `ap_vibe_agents` 的 `executors.claude_available`，必要时运行 `claude --version` 核实。没有执行器时不要让用户反复填 Key 或反复启动失败任务。向用户说明：“工作室的 Claude、Grok、Gemini 等伙伴通过 Claude Code CLI 运行。你当前尚未安装，因此暂时无法使用这些伙伴协作。我可以按官方方式帮你安装，是否允许？监看、项目档案和可用的 Codex 执行器仍可使用。”
 
 用户此前已明确授权安装该依赖时直接完成，不重复询问；未授权时先等待回复，继续能做的原任务。用户拒绝时保留现有配置和入口，不每个任务重复询问。缺执行器不等于缺 Key，也不代表整个工作台不可用。
 
