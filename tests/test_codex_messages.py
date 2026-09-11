@@ -82,6 +82,7 @@ def test_enqueue_idempotency_cancel_and_restart_uncertain(tmp_path, monkeypatch)
 
 
 def test_busy_message_waits_and_cancel_prevents_execution(tmp_path, monkeypatch):
+    monkeypatch.setattr('ap_mind.codex_messages.codex_command', lambda:['fixture-codex'])
     monkeypatch.setattr('ap_mind.codex_messages.supports_queue', lambda _:False)
     queue, source = fixture(tmp_path)
     marker(source, "task_started")
