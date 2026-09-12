@@ -204,7 +204,14 @@ def _start(config):
         if belongs(live,cfg) and not saved:
             atomic(receipt_path(config),live);saved=True
         if child.poll() is not None:break
-        if saved and healthy(cfg):return ready(False)
+        if saved and healthy(cfg):
+            # macOS framework Python may exec its real interpreter during
+            # startup. Capture the final argv only after the service is ready,
+            # while this Popen child is still known to be alive.
+            final=process(child.pid)
+            if child.poll() is None and belongs(final,cfg):
+                atomic(receipt_path(config),final)
+                return ready(False)
         time.sleep(.15)
     return {'ok':False,'status':'start_failed','url':url(cfg),'pid':child.pid,'message':'服务未恢复健康，请查看本安装logs目录；已有进程和数据保留。'}
 
