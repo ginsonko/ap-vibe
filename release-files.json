@@ -96,7 +96,8 @@
     "docs/WORKBENCH-PAGE-READS-PLAN.md",
     "docs/WORKBENCH-PAGE-READS-RESULTS.md",
     "docs/WORKBENCH-STATUS-PROJECTION-PLAN.md",
-    "docs/PLATFORM-SUPPORT.md"
+    "docs/PLATFORM-SUPPORT.md",
+    "docs/BETA-4-ACCEPTANCE.md"
   ],
   "exclude": [
     ".local-*",

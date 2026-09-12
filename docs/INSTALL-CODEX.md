@@ -4,13 +4,15 @@
 
 ## 安装
 
+先识别系统。Windows 使用下文 PowerShell 命令。macOS / Linux 下载同版本完整包、校验清单后，在包根目录运行 `sh start.sh install`；见 [系统兼容说明](PLATFORM-SUPPORT.md)。完整包已含前端，无需为了安装再构建。已有安装先使用其原 config；不要创建第二个空工作台。POSIX 当前更新保留原路径、资料和配置，空闲时显式安装候选；自动检查尚不自动切换版本。
+
 仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
 
-本次固定版本：`v0.3.0-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.3.0-beta.1/docs/INSTALL-CODEX.md` 读取。
+本次固定版本：`v0.3.1-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.3.1-beta.1/docs/INSTALL-CODEX.md` 读取。
 
-下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.3.0-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.3.1-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
 
-首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.3.0-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.3.1-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
 
 ### 安装任务的最短完整路径
 
@@ -113,4 +115,4 @@ python .\tools\install_mcp.py
 如果电脑同时安装旧 CLI 和新版 Desktop，AP-Vibe 会按能力优先选择桌面版本。也可以使用 `AP_VIBE_CODEX_EXECUTABLE` 指定明确的可执行文件。网页消息发送依赖官方 `queue` 能力；旧版没有此能力时应明确回退，不强占任务写入者。
 # macOS 与 Linux
 
-当前源码提供 `sh start.sh install` 入口，系统目录、凭据加密及无图形环境的用法见 [PLATFORM-SUPPORT.md](PLATFORM-SUPPORT.md)。先检查用户下载的版本是否含 `start.sh`；旧的 Windows 发布包不能使用此入口。缺少某个客户端时只跳过对应接入，已可用的工作台和其它客户端仍保留。下文的 PowerShell 命令用于 Windows。
+当前源码提供 `sh start.sh install` 入口，系统目录、凭据加密及无图形环境的用法见 [PLATFORM-SUPPORT.md](PLATFORM-SUPPORT.md)。先检查用户下载的版本是否含 `start.sh`；旧的 Windows 发布包不能使用此入口。缺少某个客户端时只跳过对应接入，已可用的工作台和其它客户端仍保留。本文中的 PowerShell 命令用于 Windows。

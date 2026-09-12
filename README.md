@@ -8,9 +8,9 @@
 
 [安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-3-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.3.0-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1) 为准。
+**当前内测版本：v0.3.1-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1) 为准。
 
-本分支增加 macOS / Linux 基础安装入口与可编辑的伙伴分工简历。旧版 v0.3.0-beta.1 发布包仍是 Windows 入口；其它系统试用本分支源码时，请按 [系统兼容说明](docs/PLATFORM-SUPPORT.md) 构建前端，再运行 `sh start.sh install`。具体系统和客户端的已测范围以该说明及 CI 结果为准。
+本版增加 Windows、macOS / Linux 的统一应用包、可编辑的伙伴分工简历、同类战绩调度，以及 WorkBuddy 内置 CodeBuddy CLI 的公开会话读取与 Skill 工具桥。完整包自带前端：Windows 使用 PowerShell 安装，macOS / Linux 使用 `sh start.sh install`。各系统与客户端支持深度见 [系统兼容说明](docs/PLATFORM-SUPPORT.md) 和 [跨应用实测范围](docs/CROSS-APP-SUPPORT.md)。
 
 伙伴简历只是可修改的初始分工参考。管理员会结合同类任务的真实验收战绩，逐渐提高经验权重；普通工作倾向合适的经济伙伴，困难或关键任务仍可选择高价伙伴。网络故障不等于能力差，同一任务重试不重复增加战绩。实际是否省钱仍取决于任务难度、模型价格、上下文和返工量。
 
@@ -28,9 +28,10 @@ AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接
 ## 把这段话发给 Codex
 
 ~~~text
-请帮我安装 AP-Vibe Windows 个人内测版 v0.3.0-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
-先阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，
+请帮我安装 AP-Vibe 个人内测版 v0.3.1-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
+先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，
+下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，
@@ -62,7 +63,7 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
 
 ### 多应用接力
 
-会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
+会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。WorkBuddy 内置 CLI 另有真实记录和 Skill 工具桥验收，暂不提供其 GUI 唤醒或工作室托管。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
 
 ### 多个会话，共用一份项目档案
 

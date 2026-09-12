@@ -58,10 +58,10 @@ export function AgentBudget({agent, onClose, onSaved}) {
     <details><summary>参考价格与费用估算（可交给 Codex 填写）</summary>
       <p>告诉 Codex：“查看我的服务商公开价格页，为这位伙伴配置每百万 token 的参考价格。”不同分组可能价格不同，请提供正确页面。没有配置时金额记为 0 并标明未估算，功能照常使用。</p>
       <label>币种<input value={draft.currency} maxLength={12} onChange={e=>patch('currency',e.target.value)}/></label>
-      <label>价格依据<select value={draft.price_basis || 'per_token'} onChange={e=>patch('price_basis',e.target.value)}><option value="per_token">分别配置输入、输出和缓存价格</option><option value="blended">历史费用反推的混合参考价</option></select></label>
+      <label>价格依据<select aria-label="价格依据" value={draft.price_basis || 'per_token'} onChange={e=>patch('price_basis',e.target.value)}><option value="per_token">分别配置输入、输出和缓存价格</option><option value="blended">历史费用反推的混合参考价</option></select></label>
       {draft.price_basis==='blended' && <p>这是历史费用除以已记录 token 的混合估值，各类价格通常填相同值。它不代表服务商精确单价；缓存比例、用量缺失或渠道改变时会偏离，不能用来确认账户余额。</p>}
       {[['input','输入'],['output','输出'],['cache_read','缓存读取'],['cache_write','缓存写入']].map(([key,title])=><label key={key}>{title} / 百万 token<input type="number" min="0" step="any" value={draft.prices?.[key] ?? ''} onChange={e=>patch('prices',{...draft.prices,[key]:number(e.target.value)})}/></label>)}
-      <label>价格来源与备注<input value={draft.price_source || ''} onChange={e=>patch('price_source',e.target.value)} placeholder="公开页面地址、分组与查询日期"/></label>
+      <label>价格来源与备注<textarea rows={3} value={draft.price_source || ''} onChange={e=>patch('price_source',e.target.value)} placeholder="公开页面地址、分组与查询日期"/></label>
       <small>缓存价留空时按输入价估算。修改价格从后续请求起生效，保留历史记录。更换币种后分别累计，不自动换汇。</small>
     </details>
     <button className="primary-button" disabled={busy} onClick={()=>submit(false)}>{busy?'保存中…':'保存用量设置'}</button>
