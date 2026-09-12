@@ -220,11 +220,11 @@ class StudioPlans:
         if not self._allowed(plan): return
         if settings['enabled'] and settings.get('agent_id') and not plan.get('manager_issue'):
             if not plan.get('manager_request'):
-                catalog = [{k:p.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes','routing_profile')} for p in profiles]
+                catalog = [{k:p.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes','routing_profile','price_reference','budget')} for p in profiles]
                 with closing(self.registry._connect()) as c:
                     briefs = [{**n, **{k:t[k] for k in ('title','goal','acceptance','tags')}}
                         for n in plan['nodes'] for t in [self.studio.tasks._read(c,n['task_id'])]]
-                from .studio_routing_service import Router, POLICY
+                from .studio_routing_service import Router
                 router = Router(self.studio, profiles)
                 recommendations = {t['key']: router.recommend(t, t['requested_agents'] or None) for t in briefs}
                 prompt = (settings['persona']+'\n为已有工作计划选择执行伙伴和独立验收伙伴。不得改目标或依赖，不亲自执行工程。'
@@ -232,7 +232,7 @@ class StudioPlans:
                     '写manager-plan.json：{"message":"简短安排","assignments":[{"key":"节点key",'
                     '"agent_id":"候选ID","reviewer_agent_id":"不同候选ID或null","reason":"原因"}]}。'
                     '必须覆盖全部节点；requested_agents非空时作者只能从中选择，requested_reviewer非空时须沿用。\n'
-                    +POLICY+'\n'+encoded({'title':plan['title'],'goal':plan['goal'],'tasks':briefs,'partners':catalog,
+                    +router.policy+'\n'+encoded({'title':plan['title'],'goal':plan['goal'],'tasks':briefs,'partners':catalog,
                         'task_recommendations':recommendations,'history_coverage':router.coverage}))
                 plan = self._persist({**plan,'state':'planning','manager_settings_revision':settings['revision'],
                     'manager_deadline_seconds':settings['decision_timeout_seconds'],

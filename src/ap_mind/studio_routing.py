@@ -401,7 +401,7 @@ def _reason(routing, *, n, weight, upgrade, categories):
     return '；'.join(bits)
 
 
-def _score_profile(profile, task, observations, recognized):
+def _score_profile(profile, task, observations, recognized, policy):
     profile = profile or {}
     agent_id = profile.get('agent_id')
     if type(agent_id) is not str or not agent_id.strip():
@@ -412,11 +412,12 @@ def _score_profile(profile, task, observations, recognized):
     upgrade = _upgrade_task(tags)
     prior = _prior_score(routing['strengths'], categories)
     n, observed = _experience(agent_id, observations, categories)
-    weight = n / (n + routing['prior_strength']) if n else 0.0
+    scaled_n = n * policy.get('experience_scale', 1)
+    weight = scaled_n / (scaled_n + routing['prior_strength']) if scaled_n else 0.0
     blended = prior if observed is None else (1.0 - weight) * prior + weight * observed
     score = blended
     if routing['cost_tier'] == 'premium' and not upgrade:
-        score = blended - PREMIUM_ROUTINE_PENALTY
+        score = blended - policy.get('premium_routine_penalty', PREMIUM_ROUTINE_PENALTY)
     return {
         'agent_id': agent_id,
         'score': score,
@@ -424,13 +425,15 @@ def _score_profile(profile, task, observations, recognized):
         'prior_score': prior,
         'experience_weight': weight,
         'effective_samples': n,
+        'experience_scale': policy.get('experience_scale', 1),
         'observed_score': observed,
         'categories': list(categories),
-        'reason': _reason(routing, n=n, weight=weight, upgrade=upgrade, categories=categories),
+        'reason': _reason(routing, n=scaled_n, weight=weight, upgrade=upgrade, categories=categories) +
+                  ('；采用用户经验过渡倍率' if policy.get('experience_scale', 1) != 1 else ''),
     }
 
 
-def rank(profiles, task, observations):
+def rank(profiles, task, observations, policy=None):
     """Rank partners by smoothed same-class score. Explicit assignment stays with the caller.
 
     Equal scores keep input order after preferring economy over unknown. This
@@ -451,7 +454,7 @@ def rank(profiles, task, observations):
     recognized = _recognized_work_categories(profiles)
     ranked = []
     for index, profile in enumerate(profiles):
-        ranked.append((_score_profile(profile, task, observations, recognized), index))
+        ranked.append((_score_profile(profile, task, observations, recognized, policy or {}), index))
     ranked.sort(key=lambda item: (
         -item[0]['score'],
         COST_TIE_RANK.get(item[0]['cost_tier'], 9),

@@ -77,7 +77,12 @@ class StudioBudget:
 
     def _policy(self, c, agent_id):
         row = c.execute('SELECT * FROM studio_budget_policy WHERE agent_id=?', (agent_id,)).fetchone()
-        return {**policy({}), 'revision': 0} if not row else {**json.loads(row['payload_json']), 'revision': row['revision']}
+        if row:
+            return {**json.loads(row['payload_json']), 'revision': row['revision']}
+        from .studio_price_reference import budget_defaults
+        agent = c.execute('SELECT public_json FROM studio_agents WHERE agent_id=?', (agent_id,)).fetchone()
+        defaults = budget_defaults(json.loads(agent[0])) if agent else {}
+        return {**policy(defaults), 'revision': 0, 'reference_default': bool(defaults)}
 
     def status(self, agent_id, c=None):
         if c is None:

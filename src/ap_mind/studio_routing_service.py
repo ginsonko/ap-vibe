@@ -4,6 +4,7 @@ No model calls, no rewriting historical reviews, no hard model allowlist.
 """
 from contextlib import closing
 import json
+from statistics import median
 
 from .studio_metrics import observation, WINDOW
 from .studio_routing import rank
@@ -30,6 +31,8 @@ def compatible(sample, profile):
 
 class Router:
     def __init__(self, studio, profiles=None):
+        self.settings = studio.guidance.settings() if hasattr(studio, 'guidance') else {}
+        self.policy = studio.guidance.prompt() if hasattr(studio, 'guidance') else POLICY
         self.profiles = profiles if profiles is not None else studio.profiles()['agents']
         by_id = {p['agent_id']: p for p in self.profiles}
         with closing(studio.registry._connect()) as c:
@@ -55,11 +58,24 @@ class Router:
         if candidates is not None:
             order = {aid:i for i,aid in enumerate(candidates)}
             selected.sort(key=lambda p: order.get(p['agent_id'], len(order)))
-        return rank(selected, task, self.samples)
+        result = rank(selected, task, self.samples, self.settings)
+        tags = set(task.get('tags') or [])
+        for item in result:
+            samples = [s for s in self.samples if s['agent_id'] == item['agent_id'] and
+                       tags.intersection(s.get('tags') or []) and s.get('outcome') in
+                       {'recorded_accepted', 'independent_accepted', 'recorded_changes_requested', 'independent_changes_requested'}]
+            durations = [s['duration_ms'] for s in samples if s.get('duration_ms') is not None]
+            costs = [s['estimated_cost_usd'] for s in samples if s.get('estimated_cost_usd') is not None]
+            item['experience_evidence'] = {'run_ids': [s['run_id'] for s in samples[:8]],
+                'reviewed_attempts': len(samples), 'median_duration_ms': median(durations) if durations else None,
+                'median_reported_cost_usd': median(costs) if costs else None,
+                'boundary': '同类尝试的描述性趋势，任务规模可能不同；不把一次更快、更便宜当质量更高。'}
+            item['guidance_revision'] = self.settings.get('revision', 0)
+        return result
 
 
 def recommendations(studio, task):
     router = Router(studio)
     return {'ok': True, 'recommendations': router.recommend(task, task.get('eligible_agents')),
-            'coverage': router.coverage, 'policy': POLICY,
+            'coverage': router.coverage, 'policy': router.policy, 'guidance': router.settings,
             'boundary': '配置简历与同类裁决形成的软排序；不是能力保证。未激活伙伴仍可供查看，实际派发检查连接、忙碌和用户预算。'}

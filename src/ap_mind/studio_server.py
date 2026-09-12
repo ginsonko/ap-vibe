@@ -3037,6 +3037,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         body_limit = 2 * MAX_REQUEST_BYTES if urlsplit(self.path).path == "/v1/ap-vibe/portable/import/preview" else MAX_REQUEST_BYTES
         if urlsplit(self.path).path == "/v1/ap-vibe/studio/image-qa/create":
             body_limit = 16 * 1024 * 1024
+        if urlsplit(self.path).path in {"/v1/ap-vibe/agents/share/preview", "/v1/ap-vibe/agents/share/import"}:
+            body_limit = 33 * 1024 * 1024  # 32 MiB bundle plus request envelope.
         if length < 1 or length > body_limit:
             raise ContractError("request_body_size_out_of_bounds")
         raw = self.rfile.read(length)
@@ -3370,6 +3372,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                     self._query_value(split,'harness') or 'codex',self._query_value(split,'session_id'),
                     int(self._query_value(split,'after') or 0)))
                 return
+            if path == "/v1/ap-vibe/agents/routing-guidance":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.guidance.state())
+                return
             if path == "/v1/ap-vibe/agents/appearances":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.appearances.list(self._query_value(split, 'id')))
                 return
@@ -3566,6 +3571,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "/v1/ap-vibe/agents/save",
             "/v1/ap-vibe/agents/setup/templates", "/v1/ap-vibe/agents/setup/connections",
             "/v1/ap-vibe/agents/budget/save", "/v1/ap-vibe/agents/budget/feed",
+            "/v1/ap-vibe/agents/routing-guidance",
+            "/v1/ap-vibe/agents/share/export", "/v1/ap-vibe/agents/share/preview", "/v1/ap-vibe/agents/share/import",
             "/v1/ap-vibe/studio/participation", "/v1/ap-vibe/studio/lifecycle",
             "/v1/ap-vibe/studio/maintenance",
             "/v1/ap-vibe/updates",
@@ -3657,6 +3664,10 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "/v1/ap-vibe/agents/setup/templates": self.service.agent_studio.agent_setup.install,
                 "/v1/ap-vibe/agents/setup/connections": self.service.agent_studio.agent_setup.connections,
                 "/v1/ap-vibe/agents/budget/save": self.service.agent_studio.budget.save,
+                "/v1/ap-vibe/agents/routing-guidance": self.service.agent_studio.guidance.save,
+                "/v1/ap-vibe/agents/share/export": self.service.agent_studio.sharing.export,
+                "/v1/ap-vibe/agents/share/preview": self.service.agent_studio.sharing.preview,
+                "/v1/ap-vibe/agents/share/import": self.service.agent_studio.sharing.import_bundle,
                 "/v1/ap-vibe/agents/budget/feed": self.service.agent_studio.budget.feed,
                 "/v1/ap-vibe/studio/participation": self.service.agent_studio.sessions.configure,
                 "/v1/ap-vibe/studio/maintenance": self.service.agent_studio.maintenance.change,

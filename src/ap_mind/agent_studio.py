@@ -141,6 +141,10 @@ class AgentStudio:
         self.maintenance = StudioMaintenance(self)
         from .studio_agent_setup import StudioAgentSetup
         self.agent_setup = StudioAgentSetup(self)
+        from .studio_guidance import StudioGuidance
+        self.guidance = StudioGuidance(self)
+        from .studio_agent_sharing import StudioAgentSharing
+        self.sharing = StudioAgentSharing(self)
 
     def profiles(self):
         with closing(self.registry._connect()) as c:
@@ -158,6 +162,8 @@ class AgentStudio:
             agent.update(activation(agent))
             agent['management_reserved']=agent['agent_id']==manager_id
             agent['budget'] = self.budget.status(agent['agent_id'])
+            from .studio_price_reference import reference_for
+            agent['price_reference'] = reference_for(agent)
         return {'ok': True, 'agents': agents,
                 'features': {'buffered_upstream': True, 'request_retries': True, 'artifact_recovery_review': True,
                              'agent_setup': True, 'incomplete_agent_profiles': True},

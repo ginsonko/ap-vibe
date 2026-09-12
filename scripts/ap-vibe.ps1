@@ -373,8 +373,8 @@ function New-Receipt {
         [Parameter(Mandatory = $true)]$Config,
         [Parameter(Mandatory = $true)]$Process,
         [Parameter(Mandatory = $true)]$Health,
-        [Parameter(Mandatory = $true)][string]$StdoutPath,
-        [Parameter(Mandatory = $true)][string]$StderrPath
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$StdoutPath,
+        [Parameter(Mandatory = $true)][AllowEmptyString()][string]$StderrPath
     )
     [pscustomobject]@{
         schema = $script:ConfigSchema
@@ -398,6 +398,22 @@ function New-Receipt {
         }
         updated_at = [DateTime]::UtcNow.ToString("o")
     }
+}
+
+function Sync-OwnedReceipt {
+    param($Config, $Process, $Health)
+    # Call only after Test-OwnedProcess matched this installation. A healthy
+    # daemon may have been started outside the wrapper after the receipt died.
+    $previous = Read-JsonFile (Get-ReceiptPath)
+    $stdout = ''; $stderr = ''
+    if ($previous -and [int]$previous.pid -eq [int]$Process.pid -and
+        [string]$previous.started_at -eq [string]$Process.start_time) {
+        if ($previous.PSObject.Properties['stdout_path']) { $stdout = [string]$previous.stdout_path }
+        if ($previous.PSObject.Properties['stderr_path']) { $stderr = [string]$previous.stderr_path }
+    }
+    $receipt = New-Receipt $Config $Process $Health $stdout $stderr
+    Write-AtomicJson (Get-ReceiptPath) $receipt
+    return $receipt
 }
 
 function Stop-ExactOwnedProcess {
@@ -447,7 +463,8 @@ function Start-ManagedService {
         if ($owned) {
             $health = Invoke-Health $Config 2
             if ($health.reachable -and $health.body.status -eq "ok") {
-                return [pscustomobject]@{ ok = $true; replayed = $true; stage = "already_running"; pid = $existingPid; health = $health.body; receipt = (Read-JsonFile (Get-ReceiptPath)) }
+                $receipt = Sync-OwnedReceipt $Config $owned $health
+                return [pscustomobject]@{ ok = $true; replayed = $true; stage = "already_running"; pid = $existingPid; health = $health.body; receipt = $receipt }
             }
             $staleStop = Stop-ExactOwnedProcess $Config $existingPid
             if ($staleStop.status -notin @("stopped", "already_exited", "absent")) {
@@ -909,6 +926,12 @@ function Invoke-Action {
             if ($null -eq $config) { return [pscustomobject]@{ ok = $true; status = "not_installed"; stopped = $false } }
             Assert-ConfigIdentity $config
             $receipt = Read-JsonFile (Get-ReceiptPath)
+            $listenerPid = Get-ListeningPid ([int]$config.port)
+            if ($listenerPid) {
+                $listener = Test-OwnedProcess $config $listenerPid
+                if (-not $listener) { return (New-ResultError "port_conflict" "stop" "配置端口上的进程不属于当前安装，未停止任何进程。请查看 status 核对配置。") }
+                $receipt = Sync-OwnedReceipt $config $listener (Invoke-Health $config 2)
+            }
             $receiptPid = if ($receipt) { [int]$receipt.pid } else { 0 }
             if ($receiptPid -le 0) {
                 $portOwnerPid = Get-ListeningPid ([int]$config.port)

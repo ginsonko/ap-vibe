@@ -1,0 +1,611 @@
+/* ==========================================================================
+   AgentSharing 样式规范 - 伙伴分享：选择导出与预览导入
+   采用 AP-Vibe Studio 核心调色板与排版规范，适配暗亮与窄屏
+   ========================================================================== */
+
+.agent-sharing-section {
+  margin-bottom: 20px;
+  padding: 0;
+  border: 1px solid var(--line, #dce7e4);
+  border-radius: 16px;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(22, 60, 48, 0.03);
+}
+
+/* Keep row controls independent from the host page's generic form labels. */
+.agent-studio .agent-sharing-section .sharing-agent-item,
+.agent-studio .agent-sharing-section .sharing-preview-item-label,
+.agent-studio .agent-sharing-section .sharing-file-label { display: flex; }
+.agent-studio .agent-sharing-section .sharing-agent-item input,
+.agent-studio .agent-sharing-section .sharing-preview-item-label input {
+  width: 16px; height: 16px; padding: 0; flex: 0 0 16px;
+}
+.agent-studio .agent-sharing-section .agent-sharing-summary { padding: 16px 20px; }
+.agent-studio .agent-sharing-section button:disabled { cursor: not-allowed; }
+
+.agent-sharing-details {
+  width: 100%;
+}
+
+.agent-sharing-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, #f7faf8, #ffffff);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid transparent;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.agent-sharing-details[open] .agent-sharing-summary {
+  border-bottom-color: var(--line, #dce7e4);
+}
+
+.agent-sharing-summary:hover {
+  background: #f1f7f4;
+}
+
+.agent-sharing-summary-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #214337;
+}
+
+.agent-sharing-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: #e3f2ec;
+  color: #1a634e;
+  letter-spacing: 0.02em;
+}
+
+.agent-sharing-summary-hint {
+  font-size: 13px;
+  color: var(--muted, #647a72);
+}
+
+.agent-sharing-content {
+  padding: 20px;
+}
+
+.agent-sharing-lead {
+  margin: 0 0 18px 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #4b6158;
+}
+
+.agent-sharing-lead strong {
+  color: #1b5341;
+}
+
+/* 左右分栏栅格 */
+.agent-sharing-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 1fr) minmax(340px, 1.25fr);
+  gap: 20px;
+  align-items: start;
+}
+
+/* 导出卡片与导入卡片容器 */
+.sharing-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--line, #e2eae6);
+  border-radius: 14px;
+  background: #fcfdfc;
+  min-width: 0;
+}
+
+.sharing-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sharing-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #1e3f34;
+}
+
+.sharing-subhead {
+  font-size: 12px;
+  color: #71857d;
+}
+
+/* 批量操作条 */
+.sharing-actions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.sharing-link-btn {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #1e6d58;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sharing-link-btn:hover:not(:disabled) {
+  color: #12493a;
+}
+
+.sharing-link-btn:disabled {
+  color: #a4b4ad;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.sharing-divider {
+  color: #d1ded7;
+  font-size: 11px;
+}
+
+.sharing-selection-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: #5c7269;
+  font-weight: 500;
+}
+
+/* 伙伴多选列表 */
+.sharing-agent-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.sharing-agent-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid #e1e9e5;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  user-select: none;
+}
+
+.sharing-agent-item:hover {
+  background: #f7faf8;
+}
+
+.sharing-agent-item.selected {
+  border-color: #277963;
+  background: #f1f8f5;
+}
+
+.sharing-agent-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #1a6f59;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.sharing-item-avatar {
+  flex-shrink: 0;
+}
+
+.sharing-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sharing-agent-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e392f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sharing-agent-meta {
+  font-size: 11px;
+  color: #687f75;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 文件选择条 */
+.sharing-file-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sharing-file-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid #236f5b;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #1a634e;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.sharing-file-label:hover {
+  background: #eef7f3;
+}
+
+.sharing-file-label input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sharing-current-filename {
+  font-size: 12px;
+  color: #4b665c;
+  word-break: break-all;
+}
+
+/* 状态加载条 */
+.sharing-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #f1f7f4;
+  border-radius: 8px;
+  color: #2b5747;
+  font-size: 12px;
+}
+
+.sharing-spin {
+  animation: sharing-rotate 1.2s linear infinite;
+}
+
+@keyframes sharing-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 导入预览容器 */
+.sharing-preview-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid #e2ece7;
+}
+
+.sharing-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sharing-preview-header h4 {
+  margin: 0;
+  font-size: 14px;
+  color: #214336;
+}
+
+.sharing-preview-batch-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sharing-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.sharing-preview-item {
+  border: 1px solid #e1ebe6;
+  border-radius: 10px;
+  background: #ffffff;
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.sharing-preview-item.selected {
+  border-color: #24755f;
+  background: #f2f9f5;
+}
+
+.sharing-preview-item.duplicate {
+  opacity: 0.72;
+  background: #f8faf9;
+}
+
+.sharing-preview-item-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  margin: 0;
+}
+
+.sharing-preview-item.duplicate .sharing-preview-item-label {
+  cursor: default;
+}
+
+.sharing-preview-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: #1a6f59;
+  flex-shrink: 0;
+}
+
+.sharing-preview-avatar {
+  flex-shrink: 0;
+}
+
+.sharing-preview-item-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.sharing-preview-item-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.sharing-preview-name {
+  font-size: 13px;
+  color: #1b3a30;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sharing-tag-duplicate {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #eeeae4;
+  color: #79664e;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.sharing-tag-new {
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #e2f4eb;
+  color: #1c6d4f;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.sharing-preview-details {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #637a71;
+}
+
+.sharing-preview-details code {
+  font-family: inherit;
+  background: #edf3f0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #1f473b;
+}
+
+/* 导入说明与警告框 */
+.sharing-import-advisory {
+  padding: 12px 14px;
+  background: #fff8eb;
+  border: 1px solid #f2e3c6;
+  border-radius: 9px;
+  color: #7b5d2c;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.sharing-import-advisory p {
+  margin: 0 0 4px 0;
+}
+
+.sharing-import-advisory small {
+  display: block;
+  color: #927546;
+}
+
+/* 底部操作与按钮 */
+.sharing-action-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.sharing-primary-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 0;
+  cursor: pointer;
+  background: #206853;
+  color: #ffffff;
+  transition: background 0.15s ease;
+}
+
+.sharing-primary-btn:hover:not(:disabled) {
+  background: #175241;
+}
+
+.sharing-primary-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.sharing-footnote {
+  font-size: 11px;
+  color: #748a80;
+  line-height: 1.5;
+}
+
+.sharing-footnote code {
+  background: #ebf2ee;
+  padding: 2px 4px;
+  border-radius: 4px;
+  color: #244b3e;
+}
+
+/* 警告与通知反馈条 */
+.sharing-warnings {
+  padding: 10px 14px;
+  background: #fffbe8;
+  border: 1px solid #f0e4b8;
+  border-radius: 8px;
+  color: #7d6523;
+  font-size: 12px;
+}
+
+.sharing-warnings ul {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
+
+.sharing-warnings li {
+  line-height: 1.6;
+}
+
+.sharing-error-box {
+  margin-top: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sharing-error-box button {
+  padding: 4px 8px;
+  border: 1px solid #f0cac1;
+  background: #ffffff;
+  border-radius: 6px;
+  color: #914334;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sharing-notice-box {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.agent-sharing-empty {
+  font-size: 13px;
+  color: #687e74;
+  padding: 12px 0;
+  margin: 0;
+}
+
+/* ==========================================================================
+   响应式与无障碍 (窄屏与 Reduced Motion)
+   ========================================================================== */
+
+@media (max-width: 860px) {
+  .agent-sharing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sharing-card {
+    padding: 16px;
+  }
+
+  .agent-sharing-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sharing-preview-item-label {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .sharing-preview-details {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .sharing-file-picker-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sharing-file-label {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sharing-spin {
+    animation: none;
+  }
+  .agent-sharing-summary,
+  .sharing-agent-item,
+  .sharing-primary-btn {
+    transition: none;
+  }
+}

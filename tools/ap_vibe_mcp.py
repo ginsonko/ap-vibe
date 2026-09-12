@@ -40,6 +40,29 @@ def invoke(name, args):
             if set(args)!={'run_id'}:raise ValueError('只读验收记录时仅填写run_id；提交时需要accepted和实际验收依据')
             return task_client.call('agents/runs?' + urlencode(args))
         return task_client.call('agents/review',args)
+    if name == 'ap_vibe_routing_guidance':
+        return task_client.call('agents/routing-guidance')
+    if name == 'ap_vibe_routing_guidance_save':
+        return task_client.call('agents/routing-guidance', args)
+    if name == 'ap_vibe_agent_share_export':
+        path = Path(args['output_path']).expanduser().resolve()
+        if path.exists() or not path.parent.is_dir():
+            raise ValueError('请使用已存在目录内的新文件名，避免覆盖原文件')
+        result = task_client.call('agents/share/export', {'agent_ids': args['agent_ids']})
+        if result.get('ok'):
+            bundle = result.pop('bundle')
+            with path.open('x', encoding='utf-8') as handle:
+                json.dump(bundle, handle, ensure_ascii=False, separators=(',', ':'))
+            result.update(file_path=str(path), agent_count=len(bundle['agents']), appearance_count=len(bundle['appearances']))
+        return result
+    if name in {'ap_vibe_agent_share_preview', 'ap_vibe_agent_share_import'}:
+        path = Path(args['file_path']).expanduser().resolve()
+        if not path.is_file() or path.stat().st_size > 32*1024*1024:
+            raise ValueError('请选择存在且不超过32MiB的伙伴分享JSON文件')
+        bundle = json.loads(path.read_text(encoding='utf-8-sig'))
+        payload = {k:v for k,v in args.items() if k != 'file_path'}
+        payload['bundle'] = bundle
+        return task_client.call('agents/share/' + ('preview' if name.endswith('_preview') else 'import'), payload)
     if name == 'ap_vibe_agent_templates':
         return task_client.call('agents/setup')
     if name == 'ap_vibe_agent_templates_install':
