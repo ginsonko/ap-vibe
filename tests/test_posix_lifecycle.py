@@ -23,6 +23,9 @@ def installation(tmp_path,monkeypatch):
         'auto_monitor':False,'auto_onboard_workspaces':False,'custom_user_field':{'preserved':True},'auto_start':True})
     monkeypatch.setenv('AP_VIBE_CONFIG_PATH',str(cfg))
     yield cfg
+    if life.status(cfg)['status']!='running':
+        for log in (cfg.parent/'logs').glob('*.log'):
+            print(log.name,log.read_text(errors='replace')[-12000:])
     live=life.owned(cfg,life.read(cfg))
     if live:
         result=life.stop(cfg)
