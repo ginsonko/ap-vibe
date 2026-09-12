@@ -283,6 +283,9 @@ class StudioNativeRecovery:
             return
         value['project_id'] = project
         candidates = self.candidates(c)
+        if len(candidates) > 1:
+            from .studio_routing_service import Router
+            candidates = [a['agent_id'] for a in Router(self.studio).recommend({'tags':['research']}, candidates)]
         if not candidates:
             value.update(state='waiting_candidates', reason='暂无可用执行器的合适候选，保留事故。')
             return

@@ -1,10 +1,13 @@
 """Shared local installation identity and safely quoted lifecycle commands."""
 from pathlib import Path
 import os
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'src'))
+from ap_mind.platform_paths import config_dir
 
 
 def default_config_path() -> Path:
-    return Path(os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData/Local'))) / 'AP-Vibe/config.json'
+    return config_dir() / 'config.json'
 
 
 def custom_config_path(config_path: Path | None) -> Path | None:

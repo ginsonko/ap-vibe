@@ -15,7 +15,8 @@ from .knowledge_correction import NullKnowledgeCorrectionInterpreter
 
 def protect(raw: bytes, decrypt=False) -> bytes:
     if os.name != "nt":
-        raise ContractError("teacher_secure_storage_unavailable")
+        from .posix_secrets import protect as posix_protect
+        return posix_protect(raw, decrypt=decrypt)
     class Blob(ctypes.Structure):
         _fields_ = [("size", wintypes.DWORD), ("data", ctypes.POINTER(ctypes.c_ubyte))]
     buffer = ctypes.create_string_buffer(raw)

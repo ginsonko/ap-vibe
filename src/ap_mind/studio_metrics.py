@@ -58,6 +58,7 @@ def observation(run, task):
     usage = result.get('usage') or {}
     return {
         'run_id': run['run_id'], 'agent_id': run['agent_id'], 'profile_revision': run.get('profile_revision'),
+        'capability_revision': run.get('capability_revision'),
         'model': run.get('model', ''), 'executor_kind': run.get('executor_kind', 'claude'),
         'task_id': run.get('logical_task_id'), 'title': meta.get('title') or run.get('prompt', '')[:160],
         'tags': meta.get('tags') or [], 'metadata_source': 'run_snapshot' if run.get('task_snapshot') else 'current_task' if task else 'run',
@@ -122,13 +123,14 @@ def snapshot(studio, *, agent_id=None, project_id=None, days=0, tag=None, config
         rows = c.execute('SELECT run_id,state,payload_json FROM studio_runs ' + where + ' ORDER BY rowid DESC LIMIT ?', [*values, WINDOW]).fetchall()
         tasks = {row['task_id']: json.loads(row['payload_json']) for row in c.execute('''SELECT task_id,payload_json FROM studio_tasks
             WHERE task_id IN (SELECT json_extract(payload_json,'$.logical_task_id') FROM studio_runs ''' + where + ' ORDER BY rowid DESC LIMIT ?)', [*values, WINDOW]).fetchall()}
-    revisions = {profile['agent_id']: profile['revision'] for profile in profiles}
+    by_id = {profile['agent_id']: profile for profile in profiles}
     samples, invalid = [], 0
     for row in rows:
         try:
             run = {**json.loads(row['payload_json']), 'run_id': row['run_id'], 'state': row['state']}
             item = observation(run, tasks.get(run.get('logical_task_id')))
-            item['current_configuration'] = item['profile_revision'] == revisions.get(item['agent_id'])
+            from .studio_routing_service import compatible
+            item['current_configuration'] = compatible(item, by_id.get(item['agent_id'], {}))
             samples.append(item)
         except (ValueError, TypeError, AttributeError, KeyError):
             invalid += 1

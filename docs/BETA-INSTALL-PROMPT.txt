@@ -1,7 +1,8 @@
-请帮我安装 AP-Vibe Windows 个人内测版 v0.3.0-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
+请帮我安装 AP-Vibe 个人内测版 v0.3.1-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
 
-先阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
+先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装。校验后完成本机服务、Skill、MCP 和已支持客户端的自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，保留旧决定和人工修改。AP 外部认知先保持关闭，不替我配置付费模型。
 装好后用简单三步告诉我如何看进度、换会话继续项目和按需开启伙伴协作。
+如果缺少 Claude Code CLI，请先说明哪些工作室伙伴需要它，并询问我是否允许自动安装；不要因此阻止项目记忆和会话监看。

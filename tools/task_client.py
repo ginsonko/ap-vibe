@@ -18,6 +18,7 @@ import sys
 import time
 from urllib import request, error
 import uuid
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 MAX_HOOK_CONTEXT_BYTES = 1800
@@ -31,7 +32,8 @@ _HOOK_EVENTS = {"SessionStart", "UserPromptSubmit", "SubagentStart"}
 def _config_path() -> Path:
     if os.environ.get('AP_VIBE_CONFIG_PATH'):
         return Path(os.environ['AP_VIBE_CONFIG_PATH']).expanduser().resolve()
-    return Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData/Local"))) / "AP-Vibe/config.json"
+    from tools.installation import default_config_path
+    return default_config_path()
 
 
 def _installed_config() -> dict:
@@ -116,6 +118,15 @@ def _start_daemon(installed: dict) -> dict:
     if installed.get('auto_start') is False:
         return {"status": "unavailable", "url": url, "started": False,
                 "reason": "此客户端绑定独立服务实例，失联后等待该实例恢复，不启动其它工作台。"}
+    if os.name != 'nt':
+        from tools.posix_lifecycle import start
+        try:
+            result = start(_config_path())
+            return {'status': 'online' if result.get('ok') else 'unavailable',
+                    'url': result.get('url', url), 'started': not result.get('replayed', False),
+                    'reason': result.get('message')}
+        except (OSError, ValueError, RuntimeError) as exc:
+            return {'status':'unavailable','url':url,'started':False,'reason':str(exc)}
     script = Path(str(installed.get("script_path") or ""))
     if not script.is_file():
         root = Path(str(installed.get("product_root") or ""))
@@ -260,7 +271,8 @@ def call(route: str, payload: dict | None = None) -> dict:
 
 
 def cache_path(cwd: str, session_id: str, client_kind: str | None = None) -> Path:
-    root = Path(os.environ.get("LOCALAPPDATA", str(Path.home() / "AppData/Local"))) / "AP-Vibe/task-clients"
+    from tools.installation import default_config_path
+    root = default_config_path().parent / 'task-clients'
     identity = os.path.normcase(str(Path(cwd).resolve())) + "\0" + session_id
     kind = client_kind or os.environ.get('AP_VIBE_CLIENT_KIND', 'codex')
     if kind != 'codex':

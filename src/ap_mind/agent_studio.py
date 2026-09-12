@@ -141,6 +141,10 @@ class AgentStudio:
         self.maintenance = StudioMaintenance(self)
         from .studio_agent_setup import StudioAgentSetup
         self.agent_setup = StudioAgentSetup(self)
+        from .studio_guidance import StudioGuidance
+        self.guidance = StudioGuidance(self)
+        from .studio_agent_sharing import StudioAgentSharing
+        self.sharing = StudioAgentSharing(self)
 
     def profiles(self):
         with closing(self.registry._connect()) as c:
@@ -152,9 +156,14 @@ class AgentStudio:
         agents = [json.loads(r[0]) for r in rows]
         manager_id=self.manager.settings().get('agent_id') if hasattr(self,'manager') else None
         for agent in agents:
+            from .studio_routing import default_routing
+            agent.setdefault('routing_profile', default_routing(agent))
+            agent.setdefault('capability_revision', agent['revision'])
             agent.update(activation(agent))
             agent['management_reserved']=agent['agent_id']==manager_id
             agent['budget'] = self.budget.status(agent['agent_id'])
+            from .studio_price_reference import reference_for
+            agent['price_reference'] = reference_for(agent)
         return {'ok': True, 'agents': agents,
                 'features': {'buffered_upstream': True, 'request_retries': True, 'artifact_recovery_review': True,
                              'agent_setup': True, 'incomplete_agent_profiles': True},
@@ -205,6 +214,7 @@ class AgentStudio:
             if raw.get('expected_revision', 0) != revision:
                 raise ContractError('agent_revision_conflict')
             inherited = json.loads(prior['public_json']) if prior else {}
+            old_key = protect(prior['secret'], decrypt=True).decode('utf-8') if prior and prior['secret'] else ''
             key = raw.get('api_key')
             if key is not None:
                 if not isinstance(key, str) or len(key) > 4096 or any(x in key for x in '\r\n\x00'):
@@ -214,7 +224,7 @@ class AgentStudio:
             if type(clear_key) is not bool or (clear_key and key):
                 raise ContractError('agent_clear_api_key_invalid')
             if not key and prior and prior['secret'] and not local_login and not clear_key:
-                key = protect(prior['secret'], decrypt=True).decode('utf-8')
+                key = old_key
             if not key and raw.get('copy_from_agent_id') and not prior and not local_login and not clear_key:
                 source = c.execute('SELECT * FROM studio_agents WHERE agent_id=?', (raw['copy_from_agent_id'],)).fetchone()
                 if source is None or source['revision'] != raw.get('copy_from_revision'):
@@ -256,6 +266,14 @@ class AgentStudio:
                       'request_timeout_seconds': request_timeout,
                       'verification': 'not_tested'}
             public.update(connection_fields)
+            from .studio_routing import default_routing, normalize_routing
+            public['routing_profile'] = normalize_routing(raw.get('routing_profile', inherited.get('routing_profile', default_routing(public))))
+            # Cosmetic edits must not erase learning. Model, transport and actual
+            # credential changes create a new experience cohort without exposing Key.
+            connection_changed = bool(prior and (key != old_key or any(public.get(k) != inherited.get(k)
+                for k in ('model', 'base_url', 'protocol', 'executor_kind', 'auth_mode', 'upstream_mode'))))
+            public['capability_revision'] = revision + 1 if connection_changed or not prior else inherited.get('capability_revision', revision)
+            public['capability_legacy_revision'] = None if connection_changed else inherited.get('capability_legacy_revision', revision if prior else None)
             for field in ('template_id', 'template_version', 'template_evidence'):
                 if field in inherited:
                     public[field] = inherited[field]
@@ -336,7 +354,8 @@ class AgentStudio:
             if agent_id and profile['agent_id'] != agent_id:
                 continue
             public = {key: profile.get(key) for key in ('agent_id','name','role','persona','budget','model','executor_kind','archived','revision',
-                'activated','configuration_state','missing_configuration','template_id','template_evidence')}
+                'activated','configuration_state','missing_configuration','template_id','template_evidence',
+                'connection_label','capability_notes','routing_profile','capability_revision')}
             public['runs'] = [run for run in presence['runs'] if run['agent_id'] == profile['agent_id']]
             public['busy'] = any(run['active'] for run in public['runs'])
             public['role_source'] = 'user_configured_preference'
@@ -527,7 +546,7 @@ class AgentStudio:
                      'connection_label':profile.get('connection_label',''),
                      'capability_notes':profile.get('capability_notes',''),
                      'appearance_id': profile.get('appearance_id', ''),
-                     'profile_revision': profile['revision'], 'model': profile['model'],
+                     'profile_revision': profile['revision'], 'capability_revision': profile.get('capability_revision', profile['revision']), 'model': profile['model'],
                      'base_url': profile['base_url'], 'protocol': profile['protocol'],
                      'upstream_mode': profile.get('upstream_mode', 'stream'),
                      'max_request_retries':profile.get('max_request_retries',5),
@@ -935,8 +954,9 @@ class AgentStudio:
                         if block.get('type') == 'text':
                             self._event(run_id, 'assistant', {'text': redact(block.get('text', ''), key)[:64000]})
                         elif block.get('type') == 'tool_use':
+                            from .studio_activity import tool_activity
                             tool_names[block.get('id')] = block.get('name')
-                            self._event(run_id, 'tool', {'text': '调用工具：' + str(block.get('name', '未知')), 'tool_id': block.get('id'), 'tool': block.get('name')})
+                            self._event(run_id, 'tool', {'text': '调用工具：' + str(block.get('name', '未知')), 'tool_id': block.get('id'), 'tool': block.get('name'), 'activity': tool_activity(block.get('name'), block.get('input'))})
                         # Thinking blocks and raw tool arguments never enter public events.
                 elif kind == 'user':
                     content = event.get('message', {}).get('content', [])

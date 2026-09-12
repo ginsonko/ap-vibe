@@ -21,6 +21,7 @@ from .product import redact_portable
 from .session_window import generation, public_window, read_records
 from .native_json_sessions import GenericAgentFiles
 from . import hermes_sessions
+from . import codebuddy_sessions
 from .dsh_sessions import DshFiles, log_paths as dsh_paths
 
 
@@ -144,6 +145,11 @@ class ExternalSessions:
                                     found.extend(self._opencode_sources(path, files, kind))
                                 elif storage == 'hermes':
                                     found.extend(hermes_sessions.sources(path,files,self.max_sources))
+                                elif storage == 'codebuddy':
+                                    item = codebuddy_sessions.snapshot(path)
+                                    key = kind + '-' + hashlib.sha256(os.path.normcase(str(path)).encode()).hexdigest()[:32]
+                                    found.append({**item, 'source_id': key})
+                                    files[key] = (kind, path, item['session_id'])
                                 elif storage in {'ga-json', 'dsh'}:
                                     record = (self._dsh if storage == 'dsh' else self._ga).snapshot(path)
                                     key = kind + '-' + hashlib.sha256((os.path.normcase(str(path)) + ':' + record['session_id']).encode()).hexdigest()[:32]
@@ -264,7 +270,7 @@ class ExternalSessions:
             kind, path, session = self._files[source_id]
             try:
                 storage = HARNESS[kind]['storage']
-                window = self._dsh.read(path, **options) if storage == 'dsh' else hermes_sessions.read(path,session,**options) if storage=='hermes' else self._ga.read(path, **options) if storage == 'ga-json' else self._opencode_read(path, session, **options) if storage == 'opencode' else public_window(path, pi_desktop_event if storage == 'pi-desktop' else pi_event, **options)
+                window = codebuddy_sessions.read(path, session, **options) if storage == 'codebuddy' else self._dsh.read(path, **options) if storage == 'dsh' else hermes_sessions.read(path,session,**options) if storage=='hermes' else self._ga.read(path, **options) if storage == 'ga-json' else self._opencode_read(path, session, **options) if storage == 'opencode' else public_window(path, pi_desktop_event if storage == 'pi-desktop' else pi_event, **options)
                 return {**source, **window}
             except (OSError, sqlite3.Error):
                 raise ContractError('session_source_unavailable_retry') from None

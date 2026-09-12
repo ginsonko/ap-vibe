@@ -18,14 +18,16 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'src'))
+from ap_mind.platform_paths import config_dir
 OWNED = 'ap-vibe-harness-v1'
 SKILL_NAME = 'ap-vibe-native-context'
 MCP_NAME = 'ap-vibe'
-HARNESSES = ('hermes', 'opencode', 'mimocode', 'zcode')
+HARNESSES = ('hermes', 'opencode', 'mimocode', 'zcode', 'workbuddy')
 
 
 def default_config_path() -> Path:
-    return Path(os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData/Local'))) / 'AP-Vibe/config.json'
+    return config_dir() / 'config.json'
 
 
 def custom_config_path(config_path: Path | None) -> Path | None:
@@ -533,12 +535,25 @@ def install_zcode(home: Path, root: Path, config_path: Path | None) -> dict:
     return install_json_client('zcode', home, root, config_path, home / 'skills', [config], Path('cli') / 'config.json', 'servers')
 
 
+def install_workbuddy(home: Path, root: Path, config_path: Path | None) -> dict:
+    # The bundled CLI uses .codebuddy, independently of WorkBuddy's GUI DB.
+    # Keep native login/MCP/permissions untouched. This version uses the same
+    # tool API via the installed Skill's shell bridge; MCP connected alone did
+    # not prove that the model received the tools in the measured client.
+    skill = install_skill(home / 'skills', 'workbuddy', root, config_path)
+    return _result('workbuddy', home, skill, {
+        'status': 'skipped_missing', 'reason': '使用已安装 Skill 的本地工具桥；原生 MCP 调用尚未验收。',
+    }, {'tool_fallback': True, 'gui_sessions_tested': False, 'existing_settings_preserved': True})
+
+
 # --- discovery -------------------------------------------------------------
 
 def hermes_home_default() -> Path:
     env = os.environ.get('HERMES_HOME', '').strip()
     if env:
         return Path(env)
+    if os.name != 'nt':
+        return Path.home() / '.hermes'
     local = os.environ.get('LOCALAPPDATA', '').strip()
     base = Path(local) if local else Path.home() / 'AppData' / 'Local'
     return base / 'hermes'
@@ -565,6 +580,10 @@ def zcode_home_default() -> Path:
     return Path.home() / '.zcode'
 
 
+def workbuddy_home_default() -> Path:
+    return Path(os.environ.get('CODEBUDDY_CONFIG_DIR') or Path.home() / '.codebuddy')
+
+
 def is_discovered(harness: str, home: Path) -> bool:
     if harness in {'opencode','mimocode'} and home.resolve()==DEFAULT_HOMES[harness]().resolve():
         binary='mimo' if harness=='mimocode' else harness
@@ -583,6 +602,8 @@ def is_discovered(harness: str, home: Path) -> bool:
         ) or (home / 'config' / 'mimocode.jsonc').exists() or (home / 'config' / 'mimocode.json').exists()
     if harness == 'zcode':
         return True
+    if harness == 'workbuddy':
+        return any((home / name).exists() for name in ('projects', 'skills', 'settings.json'))
     return False
 
 
@@ -591,6 +612,7 @@ INSTALLERS = {
     'opencode': install_opencode,
     'mimocode': install_mimocode,
     'zcode': install_zcode,
+    'workbuddy': install_workbuddy,
 }
 
 DEFAULT_HOMES = {
@@ -598,6 +620,7 @@ DEFAULT_HOMES = {
     'opencode': opencode_home_default,
     'mimocode': mimocode_home_default,
     'zcode': zcode_home_default,
+    'workbuddy': workbuddy_home_default,
 }
 
 

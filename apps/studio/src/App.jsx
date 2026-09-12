@@ -222,7 +222,7 @@ function HomePage({ health, sessions, events, state, loading = false, onRefresh,
   const ranking = populated.slice().sort((a, b) => b.message_count - a.message_count).slice(0, 5);
   const maxCount = Math.max(1, ...ranking.map(item => item.message_count));
   return <div className="page-stack home-page">
-    <PageHeader eyebrow="本机实时监看 · 每 10 秒自动更新" title="每一条任务，都在眼前" description="先看谁有新进展，再点标题查看上下文。其他功能在左侧各自的页面里。" action={<div className="page-header-actions"><button className="secondary-button" onClick={onRefresh}><ArrowClockwise size={17} />刷新现场</button><button className="text-action launcher-action" onClick={onInstallLauncher} title="在 Windows 桌面创建 AP-Vibe 启动快捷方式"><Desktop size={16} />添加桌面启动器</button></div>} />
+    <PageHeader eyebrow="本机实时监看 · 每 10 秒自动更新" title="每一条任务，都在眼前" description="先看谁有新进展，再点标题查看上下文。其他功能在左侧各自的页面里。" action={<div className="page-header-actions"><button className="secondary-button" onClick={onRefresh}><ArrowClockwise size={17} />刷新现场</button><button className="text-action launcher-action" disabled={health?.platform_capabilities?.desktop_launcher === false} onClick={onInstallLauncher} title={health?.platform_capabilities?.desktop_launcher === false ? "此系统请使用 start.sh 启动，并收藏当前工作台地址" : "在 Windows 桌面创建 AP-Vibe 启动快捷方式"}><Desktop size={16} />添加桌面启动器</button></div>} />
     <WorkbenchUpdates />
     <section className="stats-grid">
       <StatCard icon={Broadcast} label="本地服务" value={healthLabel(health?.status, true)} detail="本机运行 · 无需云端上传" tone="teal" />

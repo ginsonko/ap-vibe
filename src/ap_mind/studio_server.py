@@ -10,12 +10,14 @@ episode after a process crash.
 from __future__ import annotations
 
 import argparse
+import sys
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from .local_http import LocalThreadingHTTPServer as ThreadingHTTPServer
 import json
 import mimetypes
 import os
@@ -150,6 +152,9 @@ class StudioServiceHealth:
             "product": dict(self.product or {}),
             "registry": {"ready": self.registry_ready, "request_count": self.request_count},
             "studio": {"built": self.studio_built},
+            "platform_capabilities": {"system": sys.platform, "desktop_launcher": os.name == 'nt',
+                "credential_storage": 'windows_dpapi' if os.name == 'nt' else 'posix_authenticated_encryption',
+                "automatic_update_switch": os.name == 'nt'},
             "ap_vibe": {
                 "ready": self.registry_ready and self.learning_ready and self.knowledge_ready,
                 "request_count": self.project_request_count,
@@ -3032,6 +3037,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
         body_limit = 2 * MAX_REQUEST_BYTES if urlsplit(self.path).path == "/v1/ap-vibe/portable/import/preview" else MAX_REQUEST_BYTES
         if urlsplit(self.path).path == "/v1/ap-vibe/studio/image-qa/create":
             body_limit = 16 * 1024 * 1024
+        if urlsplit(self.path).path in {"/v1/ap-vibe/agents/share/preview", "/v1/ap-vibe/agents/share/import"}:
+            body_limit = 33 * 1024 * 1024  # 32 MiB bundle plus request envelope.
         if length < 1 or length > body_limit:
             raise ContractError("request_body_size_out_of_bounds")
         raw = self.rfile.read(length)
@@ -3307,6 +3314,13 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/agents/directory":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.directory(self._query_value(split, 'agent_id')))
                 return
+            if path == "/v1/ap-vibe/agents/recommendations":
+                from .studio_routing_service import recommendations
+                task = {k: json.loads(self._query_value(split, k)) for k in ('tags','eligible_agents') if self._query_value(split,k)}
+                if any(not isinstance(v,list) or any(not isinstance(x,str) for x in v) for v in task.values()):
+                    raise ContractError('agent_routing_task_invalid')
+                self._write_json(HTTPStatus.OK, recommendations(self.service.agent_studio, task))
+                return
             if path == "/v1/ap-vibe/agents/setup":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.agent_setup.catalog())
                 return
@@ -3357,6 +3371,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.sessions.inbox(
                     self._query_value(split,'harness') or 'codex',self._query_value(split,'session_id'),
                     int(self._query_value(split,'after') or 0)))
+                return
+            if path == "/v1/ap-vibe/agents/routing-guidance":
+                self._write_json(HTTPStatus.OK, self.service.agent_studio.guidance.state())
                 return
             if path == "/v1/ap-vibe/agents/appearances":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.appearances.list(self._query_value(split, 'id')))
@@ -3554,6 +3571,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "/v1/ap-vibe/agents/save",
             "/v1/ap-vibe/agents/setup/templates", "/v1/ap-vibe/agents/setup/connections",
             "/v1/ap-vibe/agents/budget/save", "/v1/ap-vibe/agents/budget/feed",
+            "/v1/ap-vibe/agents/routing-guidance",
+            "/v1/ap-vibe/agents/share/export", "/v1/ap-vibe/agents/share/preview", "/v1/ap-vibe/agents/share/import",
             "/v1/ap-vibe/studio/participation", "/v1/ap-vibe/studio/lifecycle",
             "/v1/ap-vibe/studio/maintenance",
             "/v1/ap-vibe/updates",
@@ -3645,6 +3664,10 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "/v1/ap-vibe/agents/setup/templates": self.service.agent_studio.agent_setup.install,
                 "/v1/ap-vibe/agents/setup/connections": self.service.agent_studio.agent_setup.connections,
                 "/v1/ap-vibe/agents/budget/save": self.service.agent_studio.budget.save,
+                "/v1/ap-vibe/agents/routing-guidance": self.service.agent_studio.guidance.save,
+                "/v1/ap-vibe/agents/share/export": self.service.agent_studio.sharing.export,
+                "/v1/ap-vibe/agents/share/preview": self.service.agent_studio.sharing.preview,
+                "/v1/ap-vibe/agents/share/import": self.service.agent_studio.sharing.import_bundle,
                 "/v1/ap-vibe/agents/budget/feed": self.service.agent_studio.budget.feed,
                 "/v1/ap-vibe/studio/participation": self.service.agent_studio.sessions.configure,
                 "/v1/ap-vibe/studio/maintenance": self.service.agent_studio.maintenance.change,

@@ -1,4 +1,4 @@
-name: Verify Windows beta
+name: Verify AP-Vibe compatibility
 on:
   push:
     branches: [main]
@@ -6,6 +6,26 @@ on:
 permissions:
   contents: read
 jobs:
+  posix:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install pytest pillow "cryptography>=43,<47" "zstandard>=0.22,<1" "PyYAML>=6,<7"
+      - run: python -m pytest -q tests/test_local_http.py tests/test_platform_compatibility.py tests/test_posix_lifecycle.py tests/test_studio_routing.py tests/test_routing_integration.py tests/test_studio_guidance.py tests/test_studio_agent_sharing.py tests/test_agent_share_mcp.py tests/test_studio_artifacts.py tests/test_studio_budget.py tests/test_studio_usage.py tests/test_install_harness.py tests/test_install_native_extras.py tests/test_codebuddy_sessions.py tests/test_studio_activity.py tests/test_studio_presence.py --durations=8 --basetemp .ci-temp
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: posix-fixture-logs-${{ matrix.os }}
+          path: .ci-temp/**/logs/*.log
+      - run: sh start.sh --help
   contracts:
     runs-on: windows-latest
     timeout-minutes: 45

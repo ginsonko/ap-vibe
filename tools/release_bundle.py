@@ -51,7 +51,7 @@ def build(root, output, version):
             entry=zipfile.ZipInfo(name,date_time=(1980,1,1,0,0,0))
             entry.compress_type=zipfile.ZIP_DEFLATED
             entry.create_system=3
-            entry.external_attr=0o100644 << 16
+            entry.external_attr=(0o100755 if name.endswith('.sh') else 0o100644) << 16
             z.writestr(entry,data,compresslevel=6)
     manifest={'schema':'ap-vibe.release.v1','version':version,'repository':'ginsonko/ap-vibe',
         'storage_contract':'ap-vibe-additive-v1','archive':'ap-vibe-app.zip',

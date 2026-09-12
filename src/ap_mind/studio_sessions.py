@@ -197,6 +197,7 @@ class StudioSessions:
                 timestamp(observed_at) is not None and timestamp(observed_at) >= (timestamp(prior_at) or 0)):
                 items[identity].update(state=observed['state'],status_basis=observed['status_basis'],lifecycle_at=observed_at)
             items[identity]['last_tool']=observed.get('tool')
+            items[identity]['last_activity']=observed.get('activity')
         actors=[]
         for identity,item in items.items():
             if (item['harness'],item['session_id']) in managed:continue
@@ -211,7 +212,7 @@ class StudioSessions:
                 item={**item,'last_known_state':'running','status_basis':'old_lifecycle_without_recent_activity'}
                 state='unknown'
             from .studio_presence import location
-            room,label,animation=location({'state':state},{'kind':'tool','tool':item.get('last_tool')})
+            room,label,animation=location({'state':state},{'kind':'tool','tool':item.get('last_tool'),'activity':item.get('last_activity')})
             if state=='idle':room,label,animation='rest','本轮已结束','rest'
             if state=='unknown':room,label,animation='waiting','已发现 · 状态待确认','idle'
             actors.append({**item,'state':state,'active':state=='running',

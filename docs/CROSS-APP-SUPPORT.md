@@ -29,7 +29,7 @@ AP-Vibe 的四项基础能力仍是任务监看、项目档案与记忆、逻辑
 | GenericAgent Admin 0.3.6 | 实际会话回读通过；便携目录需指定 | 原生任务通过 | 本版未提供工作室执行端 | 可通过通用本地工具桥接；未宣称原生 Skill 自动触发通过 |
 | ZCode | 本机 55 条已有记录发现与阅读通过 | 未新建任务验收 | 本版未提供工作室执行端 | 按已核实的配置格式接入；未宣称模型自然触发通过 |
 | PI CLI | 具备公开 JSONL 格式适配 | 本轮未实测 | 本版未提供工作室执行端 | 可使用通用桥接 |
-| WorkBuddy | 尚未完成可靠接入 | 已安装，登录与任务执行状态尚未确认 | 未提供 | 本版不声称支持 |
+| WorkBuddy 5.5.6 / bundled CodeBuddy CLI 2.137.1 | CLI 公开 JSONL 的标题、回复与实际模型读取通过；GUI 会话库未验收 | 本机已有登录下，CLI 的 glm-5.3 短请求及 glm-5.1 本地工具桥查询通过 | 本版未提供工作室执行端或 GUI 唤醒 | 安装 Skill，本地工具桥真实调用通过；原生 MCP 虽连接成功，模型实际调用未通过 |
 
 MiMo Desktop 需要内测资格；本轮使用可获得的官方 MiMo Code CLI，不将两者混为一款桌面产品。其它客户端无需全部安装；AP-Vibe 不会为了显示更多来源而替用户批量安装它们。
 
@@ -40,6 +40,13 @@ MiMo Desktop 需要内测资格；本轮使用可获得的官方 MiMo Code CLI�
 常见入口：Hermes 是包含 `state.db` 的目录；DSH 是 `DSH_HOME/sessions`；PI Desktop 是其数据目录中的 `sessions`；GenericAgent Admin 是实际 `chat_data_dir/chat_sessions`。使用运行配置确认路径，不能按窗口标题猜目录。这里只修改 AP-Vibe 的监看设置，不搬动或改写第三方原始会话。
 
 DSH 压缩会话需要 `zstandard`。安装器会尝试补齐；离线缺失时明确提示此来源缺依赖，其它应用继续可用。未知格式、正在追加的不完整尾部和损坏记录局部降级，不把旧格式冒充最新会话。
+
+WorkBuddy 的内置 CodeBuddy CLI 使用 `~/.codebuddy/projects`（可在来源管理中改目录）。
+它与 `~/.workbuddy/workbuddy.db` 的 GUI 会话不是同一来源。在会话筛选中选择
+“WorkBuddy / CodeBuddy CLI”。当前接入安装到 CLI 的 `.codebuddy/skills`，
+不修改桌面登录、连接器密钥或原生权限。CLI 查询走与其它应用相同的本地工具 API；
+原客户端要求审批时仍使用其正常审批。一次短任务成功不保证每个模型都自然触发 Skill，
+也不代表零成本；原生返回的 `total_cost_usd=0` 不能代替供应商账单。
 
 ## 安装与接续边界
 

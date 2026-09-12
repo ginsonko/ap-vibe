@@ -3,13 +3,11 @@ from contextlib import closing
 import json
 
 from .contracts import utc_now
+from .studio_activity import event_activity
 
 
 ACTIVE = ('waiting', 'starting', 'running', 'cancelling')
-READ_TOOLS = {'Read', 'Glob', 'Grep', 'WebFetch', 'WebSearch', 'web_search',
-              'ap_vibe_context', 'ap_vibe_read', 'ap_vibe_projects'}
-WRITE_TOOLS = {'Write', 'Edit', 'MultiEdit', 'file_change', 'apply_patch',
-               'ap_vibe_update', 'ap_vibe_update_file', 'ap_vibe_classify'}
+
 
 
 def location(run, event, review=False):
@@ -24,28 +22,36 @@ def location(run, event, review=False):
         return 'review', '成果待验收', 'wait'
     if state in {'completed', 'cancelled'}:
         return 'rest', '已验收' if state == 'completed' else '已停止', 'rest'
-    if review:
-        return 'review', '独立检查中', 'work'
     if state == 'starting':
         return 'planning', '正在启动', 'wait'
     if state != 'running':
         return 'waiting', '状态待确认', 'wait'
-    if event and event['kind'] == 'tool':
-        tool = (event.get('tool') or '').rsplit('__', 1)[-1]
-        if tool in READ_TOOLS:
-            return 'library', '正在查阅', 'read'
-        if tool in WRITE_TOOLS:
-            return 'engineering', '正在写入', 'work'
+    activity = event_activity(event)
+    if activity == 'read':
+        return 'library', '正在查阅', 'read'
+    if activity == 'write':
+        return 'engineering', '正在编写', 'work'
+    if activity == 'test':
+        return 'review', '正在测试', 'work'
+    if activity == 'discuss':
+        return 'planning', '正在交流', 'work'
+    if review:
+        return 'review', '独立检查中', 'work'
     return 'planning', '执行中', 'work'
 
 
 def snapshot(studio):
     with closing(studio.registry._connect()) as c:
+        c.create_function('spatial_activity', 2, lambda kind, raw: event_activity({**json.loads(raw), 'kind': kind}))
         # History limits must never hide an older still-active run.
         rows = c.execute('''SELECT r.*, e.seq, e.kind, e.created_at AS event_at,
-                           e.payload_json AS event_json
+                           e.payload_json AS event_json, a.seq AS activity_seq,
+                           a.created_at AS activity_at, a.payload_json AS activity_json, a.kind AS activity_kind
             FROM studio_runs r LEFT JOIN studio_events e ON e.seq=(
                 SELECT MAX(seq) FROM studio_events WHERE run_id=r.run_id)
+            LEFT JOIN studio_events a ON a.seq=(
+                SELECT MAX(seq) FROM studio_events WHERE run_id=r.run_id
+                AND kind IN ('tool','tool_result') AND spatial_activity(kind,payload_json) IS NOT NULL)
             WHERE r.state IN ('waiting','starting','running','cancelling')
                OR r.rowid IN (SELECT source_row FROM (
                    SELECT rowid AS source_row, ROW_NUMBER() OVER (
@@ -71,7 +77,13 @@ def snapshot(studio):
                      'text': str(payload.get('text', ''))[:500], 'tool': payload.get('tool')}
         task = tasks.get(run.get('logical_task_id'), {})
         run['title'] = task.get('title') or ('协调工作安排' if value.get('coordination_only') else '')
-        run['room'], run['activity_label'], run['animation'] = location(run, event, bool(task.get('review_of_task_id')))
+        activity = None
+        if row['activity_json']:
+            payload = json.loads(row['activity_json'])
+            activity = {'kind': row['activity_kind'], 'tool': payload.get('tool'), 'activity': event_activity({**payload, 'kind': row['activity_kind']}),
+                        'seq': row['activity_seq'], 'created_at': row['activity_at']}
+        run['room'], run['activity_label'], run['animation'] = location(run, activity, bool(task.get('review_of_task_id')))
+        run['last_activity'] = activity
         run['last_event'] = event
         run['active'] = row['state'] in ACTIVE
         runs.append(run)

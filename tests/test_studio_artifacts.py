@@ -92,6 +92,17 @@ def test_symlink_escape_is_not_followed(files):
         artifacts.read('fixture-run', 'link.txt')
 
 
+def test_empty_key_examples_remain_empty_while_secrets_are_hidden(files):
+    artifacts, root = files
+    text = "config = {'api_key': '', 'password': \"\"}\n"
+    (root/'example.py').write_bytes(text.encode('utf8'))
+    preview=artifacts.read('fixture-run','example.py')
+    assert preview['text']==text and not preview['redacted']
+    (root/'example.py').write_bytes((text+"secret='do-not-export-this'\n").encode('utf8'))
+    preview=artifacts.read('fixture-run','example.py')
+    assert text in preview['text'] and 'do-not-export-this' not in preview['text']
+
+
 def test_listing_stops_at_budget_and_marks_partial(files, monkeypatch):
     artifacts, root = files
     for index in range(4): (root / f'{index}.txt').write_text('file')

@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 
 from .contracts import ContractError
+from .studio_activity import tool_activity
 
 
 def inspect(path, harness, session_id):
@@ -59,6 +60,8 @@ def inspect(path, harness, session_id):
         if harness == 'codex':
             if kind == 'response_item' and payload.get('type') in ('function_call', 'custom_tool_call'):
                 result['tool'] = str(payload.get('name') or '')[:200]
+                activity = tool_activity(result['tool'], payload.get('arguments') or payload.get('input'))
+                if activity: result['activity'] = activity
                 state, basis = 'running', 'tool_call'
             states = {'task_complete': 'idle', 'turn_aborted': 'cancelled',
                       'task_started': 'running', 'task_failed': 'failed', 'turn_failed': 'failed'}
@@ -77,6 +80,9 @@ def inspect(path, harness, session_id):
                              if isinstance(b, dict) and b.get('type') == 'tool_use'), None)
                 if tool:
                     result['tool'] = tool
+                    block = next(b for b in reversed(content) if isinstance(b, dict) and b.get('type') == 'tool_use' and b.get('name') == tool)
+                    activity = tool_activity(tool, block.get('input'))
+                    if activity: result['activity'] = activity
                     state, basis = 'running', 'claude_tool_use'
             if kind == 'assistant' and message.get('stop_reason') == 'end_turn':
                 state, basis = 'idle', 'claude_end_turn'

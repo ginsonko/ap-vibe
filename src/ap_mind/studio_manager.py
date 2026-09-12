@@ -111,6 +111,11 @@ class StudioManager:
                     a['agent_id'] not in {settings['agent_id'],task.get('reviewer_agent_id')} and activation(a)['activated']]
                 candidates=[a for a in profiles if a['agent_id']!=task.get('owner') and
                     a['agent_id'] not in task.get('takeover_tried_agents',[])]
+                from .studio_routing_service import Router
+                router = Router(self.studio, candidates)
+                ranked = router.recommend(task)
+                by_id = {a['agent_id']: a for a in candidates}
+                candidates = [by_id[a['agent_id']] for a in ranked]
                 retry_agent=next((a for a in profiles if a['agent_id']==task.get('owner')),None)
                 retry_allowed=bool(retry_agent and used<limit)
                 if not candidates and not retry_allowed:return {'action':'fallback'}
@@ -129,7 +134,8 @@ class StudioManager:
                         'profile_changed':bool(retry_agent and retry_agent['revision']!=run.get('profile_revision'))},
                     'attempts':task.get('attempts',[])[-8:],
                     'recent_public_events':self.studio.public_events(run['run_id'],limit=8),
-                    'candidates':[{k:a.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes')} for a in candidates]}
+                    'candidates':[{k:a.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes','routing_profile')} for a in candidates],
+                    'recommendations':ranked,'routing_policy':router.policy,'guidance_revision':router.settings.get('revision',0)}
                 value['prompt']=(settings['persona']+'\n根据以下已确认停止且执行失败或验收需要修改的任务，决定原伙伴恢复一次、由候选接手，或暂缓。'
                     '不得执行原工程；不得重放结果未知的外部请求。写manager-decision.json，格式为'
                     '{"action":"retry|takeover|hold","agent_id":"原伙伴ID或候选ID或null","reason":"证据和理由","message":"给用户的一句简短说明"}。'
@@ -152,11 +158,15 @@ class StudioManager:
             return value['decision']
         if value is None:
             profiles = [a for a in self.studio.profiles()['agents'] if a['agent_id'] in candidates]
+            from .studio_routing_service import Router
+            router = Router(self.studio, profiles)
+            ranked = router.recommend({'tags':['research']}, candidates)
             brief = {'incident_id':incident['incident_id'], 'source':incident['source'],
                 'harness':incident['harness'], 'session_id':incident['session_id'],
                 'process_stopped':None, 'project_id':incident['project_id'],
                 'scope':'仅独立成果目录；原目标和历史按需恢复；不修改原目录、不重放未知外部动作。',
-                'candidates':[{k:a.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes')} for a in profiles]}
+                'candidates':[{k:a.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes','routing_profile')} for a in profiles],
+                'recommendations':ranked,'routing_policy':router.policy,'guidance_revision':router.settings.get('revision',0)}
             value = {'created_at':utc_now(), 'state':'registered', 'candidate_ids':candidates,
                 'settings_revision':settings['revision'],
                 'prompt':settings['persona']+'\n普通会话明确失败，但原进程是否停止未知。请选择一个候选在独立成果目录诊断和继续可完成的工作。'

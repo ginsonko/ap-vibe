@@ -12,7 +12,7 @@ async function read(path, signal) {
   return value;
 }
 const mergeEvents=(left,right)=>[...new Map([...left,...right].map(e=>[e.offset+':'+e.id,e])).values()].sort((a,b)=>a.offset-b.offset);
-const harnessName=h=>({codex:'Codex',claude:'Claude Code',opencode:'OpenCode',openclaw:'OpenClaw',pi:'PI CLI','pi-desktop':'PI Desktop',mimocode:'MiMo Code',zcode:'ZCode','ga-admin':'GenericAgent Admin',hermes:'Hermes',dsh:'DSH Desktop'}[h]||h);
+const harnessName=h=>({codex:'Codex',claude:'Claude Code',opencode:'OpenCode',openclaw:'OpenClaw',pi:'PI CLI','pi-desktop':'PI Desktop',mimocode:'MiMo Code',zcode:'ZCode','ga-admin':'GenericAgent Admin',hermes:'Hermes',dsh:'DSH Desktop',workbuddy:'WorkBuddy / CodeBuddy CLI'}[h]||h);
 const stateName=s=>({starting:'正在启动',running:'执行中',waiting:'等待依赖',awaiting_review:'成果待验收',completed:'已验收',uncertain:'执行中断 · 结果待核对',failed:'执行失败',interrupted:'已中断',cancelled:'已停止',cancelling:'正在停止',changes_requested:'需要修改',budget_paused:'等待投喂'}[s]||s);
 const readableSource=source=>source?{...source,...(source.sources?.find(s=>s.source_id===source.source_id&&s.available)||source.sources?.find(s=>s.managed&&s.available)||source.sources?.find(s=>s.available))}:null;
 const sameSession=(left,right)=>left?.harness===right?.harness&&left?.session_id===right?.session_id;

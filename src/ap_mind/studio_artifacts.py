@@ -27,8 +27,15 @@ def preview_text(text):
     text = re.sub(r'-----BEGIN [^-]*PRIVATE KEY-----[\s\S]*?(?:-----END [^-]*PRIVATE KEY-----|$)',
                   '[私钥内容已隐藏]', text)
     text = re.sub(r'\bsk-[A-Za-z0-9_-]{10,}', '[凭据已隐藏]', text)
+    def hide_value(match):
+        value = match.group(0)[len(match.group(1)):]
+        # An explicit empty string contains no credential. Replacing it with
+        # a nonempty placeholder changes the meaning of installation examples.
+        if value in ("''", '""'):
+            return match.group(0)
+        return match.group(1) + '"[凭据已隐藏]"'
     return re.sub(r'''(?im)(["']?(?:api[_ -]?key|authorization|password|secret|access[_ -]?token)["']?\s*[:=]\s*)(?:["'][^"'\r\n]*["']|[^\r\n,;]+)''',
-                  r'\1"[凭据已隐藏]"', text)
+                  hide_value, text)
 
 
 class StudioArtifacts:

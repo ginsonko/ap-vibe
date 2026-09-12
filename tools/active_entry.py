@@ -14,7 +14,14 @@ def forward(current_file):
             config_file = sys.argv[i + 1]
         elif arg.startswith('--config='):
             config_file = arg.split('=', 1)[1]
-    config_path = Path(config_file) if config_file else Path(os.environ.get('LOCALAPPDATA', str(Path.home()/'AppData/Local')))/'AP-Vibe/config.json'
+    if config_file:
+        config_path=Path(config_file)
+    else:
+        # An old absolute entry can forward with only this file and an explicit
+        # config. Load installation dependencies only for default discovery.
+        sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+        from tools.installation import default_config_path
+        config_path=default_config_path()
     try:
         config = json.loads(config_path.read_text(encoding='utf-8-sig'))
         if config.get('product') != 'AP-Vibe':

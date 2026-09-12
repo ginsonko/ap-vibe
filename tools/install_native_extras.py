@@ -13,6 +13,8 @@ import sys
 import uuid
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'src'))
+from ap_mind.platform_paths import config_dir
 
 
 def atomic(path, data):
@@ -87,7 +89,7 @@ def defaults():
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser()
-    parser.add_argument('--config',type=Path,default=Path(os.environ.get('LOCALAPPDATA') or Path.home()/'AppData/Local')/'AP-Vibe/config.json')
+    parser.add_argument('--config',type=Path,default=config_dir()/'config.json')
     parser.add_argument('--client',choices=['dsh','pi-desktop','openclaw'])
     parser.add_argument('--home',type=Path)
     parser.add_argument('--agents-home',type=Path)

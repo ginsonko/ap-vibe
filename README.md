@@ -4,13 +4,19 @@
 
 给 Codex、Claude Code 与更多编程客户端一个共同的项目工作台：看见任务在做什么，留下重要决定，换个会话继续工作。你的项目不必每次从头解释。
 
-> Windows 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
+> 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
-[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-3-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
+[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-4-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.3.0-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1) 为准。
+**当前内测版本：v0.3.1-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1) 为准。
+
+本版增加 Windows、macOS / Linux 的统一应用包、可编辑的伙伴分工简历、同类战绩调度，以及 WorkBuddy 内置 CodeBuddy CLI 的公开会话读取与 Skill 工具桥。完整包自带前端：Windows 使用 PowerShell 安装，macOS / Linux 使用 `sh start.sh install`。各系统与客户端支持深度见 [系统兼容说明](docs/PLATFORM-SUPPORT.md) 和 [跨应用实测范围](docs/CROSS-APP-SUPPORT.md)。
+
+伙伴简历只是可修改的初始分工参考。管理员会结合同类任务的真实验收战绩，逐渐提高经验权重；普通工作倾向合适的经济伙伴，困难或关键任务仍可选择高价伙伴。网络故障不等于能力差，同一任务重试不重复增加战绩。实际是否省钱仍取决于任务难度、模型价格、上下文和返工量。
 
 第一次先做自己的个人项目，换个会话试着继续；愿意体验协作时再给推荐伙伴填 Key。AP 外部认知默认关闭。旧版图片/视频不作为本版教程，新版宣传材料另行审核。
+
+伙伴与配置新增可编辑的**分工指导纲领**与**多个伙伴分享**：按难度、能力、费用、效率和同类战绩分工，用户可修改默认习惯；选择伙伴导出人设、职责、URL、模型和像素动作，接收人导入后补自己的 Key 即可。分享包不携带连接凭据、运行记录、实际用量和战绩。截图价格按渠道作为近似参考，不能当成供应商原始单价。
 
 ## 你是不是也遇到过
 
@@ -24,14 +30,17 @@ AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接
 ## 把这段话发给 Codex
 
 ~~~text
-请帮我安装 AP-Vibe Windows 个人内测版 v0.3.0-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
-先阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，下载完整应用包及清单，
+请帮我安装 AP-Vibe 个人内测版 v0.3.1-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
+先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，
+下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，
 保留旧决定和人工修改。AP 外部认知先保持关闭，不替我配置付费模型。
 装好后用简单三步告诉我如何看进度、换会话继续项目和按需开启伙伴协作。
+如果缺少 Claude Code CLI，请先说明哪些工作室伙伴需要它，并询问我是否允许自动安装；
+不要因此阻止项目记忆和会话监看。
 ~~~
 
 安装需要 Codex 能访问 GitHub、执行本地命令，以及电脑已有或可以安装 Python 3.11+。完整包自带前端，通常不需要 Node。网络或本机策略阻止安装时，Codex 会说明实际失败环节和下一步；不要把只下载源码当成安装完成。
@@ -58,7 +67,7 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1
 
 ### 多应用接力
 
-会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
+会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。WorkBuddy 内置 CLI 另有真实记录和 Skill 工具桥验收，暂不提供其 GUI 唤醒或工作室托管。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
 
 ### 多个会话，共用一份项目档案
 

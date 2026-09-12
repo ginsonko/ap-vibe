@@ -30,6 +30,8 @@ context的studio_context.policy.enabled=true时，合适的独立子任务优先
 
 目录列出有哪些信息；只用 `ap_vibe_read` 读取需要的章节（每次最多3章），不一次灌入整个历史。先核实项目名称、用户目标和当前状态。不同项目不得因为名字相似而合并；归属冲突可以读取，写入应使用正确归属。尚无可维护项目时如实说明，不能伪造绑定。
 
+协作分工时按任务类别查询 `ap_vibe_agent_recommendations`。常规任务优先适合的经济伙伴；Astra/Codex主要做关键规划和最终确认，CC Max留给困难或核心可靠性。尊重用户指定；简历可改，实际同类战绩平滑提高权重。小事直接做，无独立工作时交接后正常休息。
+
 ## 未归类的长期任务
 
 context 返回 `organization.classification_advisory=true` 时，当前回退项目仅供阅读，不代表你的项目。先完成以下工具流程，不必让用户手动绑定。托管任务返回 selected_project_id 时沿用用户已选项目，不另行归类。

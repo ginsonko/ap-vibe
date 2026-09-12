@@ -13,10 +13,11 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'src'))
 from ap_mind.agent_studio import claude_executable
 from ap_mind.mcp_catalog import allowed_tools
+from ap_mind.platform_paths import config_dir
 
 
 def install(directory:Path,config_path:Path|None=None):
-    default_config=Path(os.environ.get('LOCALAPPDATA',str(Path.home()/'AppData/Local')))/'AP-Vibe/config.json'
+    default_config=config_dir()/'config.json'
     resolved_config=(config_path or default_config).resolve()
     if config_path and config_path.resolve()==default_config.resolve():
         config_path=None
