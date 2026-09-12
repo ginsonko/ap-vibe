@@ -18,6 +18,8 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT/'src'))
+from ap_mind.platform_paths import config_dir
 OWNED = 'ap-vibe-harness-v1'
 SKILL_NAME = 'ap-vibe-native-context'
 MCP_NAME = 'ap-vibe'
@@ -25,7 +27,7 @@ HARNESSES = ('hermes', 'opencode', 'mimocode', 'zcode')
 
 
 def default_config_path() -> Path:
-    return Path(os.environ.get('LOCALAPPDATA', str(Path.home() / 'AppData/Local'))) / 'AP-Vibe/config.json'
+    return config_dir() / 'config.json'
 
 
 def custom_config_path(config_path: Path | None) -> Path | None:
@@ -539,6 +541,8 @@ def hermes_home_default() -> Path:
     env = os.environ.get('HERMES_HOME', '').strip()
     if env:
         return Path(env)
+    if os.name != 'nt':
+        return Path.home() / '.hermes'
     local = os.environ.get('LOCALAPPDATA', '').strip()
     base = Path(local) if local else Path.home() / 'AppData' / 'Local'
     return base / 'hermes'

@@ -425,6 +425,9 @@ class StudioTasks:
             for task in self._scheduled():
                 if task['state'] == 'queued' and (task.get('auto_run') or task.get('rework_pending')):
                     candidates = [task['budget_resume_agent']] if task.get('budget_resume_agent') else task['eligible_agents']
+                    if len(candidates) > 1 and not task.get('plan_id'):
+                        from .studio_routing_service import Router
+                        candidates = [a['agent_id'] for a in Router(self.studio).recommend(task, candidates)]
                     if task.get('recovery_preferred_agent') in candidates:
                         candidates=[task['recovery_preferred_agent'],*[a for a in candidates if a!=task['recovery_preferred_agent']]]
                     if task.get('rework_pending') and task.get('rework_agent_id') in candidates:

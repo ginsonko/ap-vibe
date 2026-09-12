@@ -17,6 +17,10 @@ def encoded(value):
 
 def policy(raw):
     result = {}
+    basis = raw.get('price_basis', 'per_token')
+    if basis not in {'per_token', 'blended'}:
+        raise ContractError('agent_budget_price_basis_invalid')
+    result['price_basis'] = basis
     for field in ('token_limit', 'amount_limit'):
         value = raw.get(field)
         if value is not None and number(value) is None:
@@ -132,7 +136,7 @@ class StudioBudget:
                             raise ContractError('agent_budget_feed_requires_limit')
                         updated[field] += extra
             else:
-                updated = policy(raw)
+                updated = policy({**raw, 'price_basis': raw.get('price_basis', current.get('price_basis', 'per_token'))})
             updated['updated_at'] = utc_now()
             c.execute('INSERT OR REPLACE INTO studio_budget_policy VALUES (?,?,?)',
                       (agent_id, current['revision'] + 1, encoded(updated)))
@@ -160,6 +164,7 @@ class StudioBudget:
                 return
             amount, state = estimate(usage, snapshot['prices'])
             value = {'usage': usage, 'prices': snapshot['prices'], 'currency': snapshot['currency'],
+                     'price_basis': snapshot.get('price_basis', 'per_token'), 'price_source': snapshot.get('price_source', ''),
                      'amount': amount, 'estimate_state': state, 'updated_at': utc_now()}
             c.execute('INSERT OR REPLACE INTO studio_usage_ledger VALUES (?,?,?,?)',
                       (request_id, agent_id, run_id, encoded(value)))

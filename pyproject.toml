@@ -12,6 +12,7 @@ license = {text = "LicenseRef-AP-Vibe-Personal-Noncommercial-1.0"}
 
 [project.optional-dependencies]
 sessions = ["zstandard>=0.22,<1", "PyYAML>=6,<7"]
+posix = ["cryptography>=43,<47", "zstandard>=0.22,<1", "PyYAML>=6,<7"]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
@@ -21,4 +22,4 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "src"]

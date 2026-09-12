@@ -9,6 +9,8 @@ Use the installed AP-Vibe tools at the start of substantive work, after context
 compression, and before delivering a maintainable project change. One-off
 questions and announcements need no project document.
 
+协作分工时按任务类别查询 `ap_vibe_agent_recommendations`。常规任务优先适合的经济伙伴；Astra/Codex主要做关键规划和最终确认，CC Max留给困难或核心可靠性。尊重用户指定；简历可改，实际同类战绩平滑提高权重。小事直接做，无独立工作时交接后正常休息。
+
 ## Locate this installation and the real session
 
 Read `references/installation.json` beside this Skill. It contains `config_path`,

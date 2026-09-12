@@ -85,7 +85,7 @@ def test_filters_paging_versions_archives_and_no_secret(studio):
     assert current['samples'][0]['title'] == 'Task84'
     assert len(snapshot(studio, offset=50, limit=50)['samples']) == 35
     saved = studio.save({**agent, 'expected_revision': 1, 'name': 'Renamed', 'api_key': ''})['agent']
-    assert snapshot(studio, configuration='current')['total'] == 0
+    assert snapshot(studio, configuration='current')['total'] == 85
     assert snapshot(studio)['summary']['attempts'] == 85
     studio.archive({'agent_id': agent['agent_id'], 'expected_revision': saved['revision']})
     data = snapshot(studio, tag='code', days=7)

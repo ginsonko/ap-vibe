@@ -1,0 +1,610 @@
+/* ==========================================================================
+   Agent Routing 组件样式表
+   命名空间限制于 .agent-routing-* 前缀，杜绝全局样式污染
+   ========================================================================== */
+
+/* --- 统一配色变量（优先继承工作台 CSS 变量或回退到默认） --- */
+.agent-routing-editor,
+.agent-routing-summary {
+  --ar-primary: #28624d;
+  --ar-primary-light: #eff7f2;
+  --ar-border: #dce6e0;
+  --ar-border-hover: #b8cfc3;
+  --ar-text: #233f33;
+  --ar-text-muted: #6b7c73;
+  --ar-bg-card: #ffffff;
+  --ar-bg-subtle: #f8faf9;
+  --ar-focus-ring: #77bda1;
+  --ar-font: inherit;
+  box-sizing: border-box;
+  font-family: var(--ar-font);
+  color: var(--ar-text);
+}
+
+.agent-routing-editor *,
+.agent-routing-summary * {
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   1. 伙伴卡片紧凑摘要组件 (AgentRoutingSummary)
+   -------------------------------------------------------------------------- */
+.agent-routing-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  background: var(--ar-bg-subtle);
+  border: 1px solid var(--ar-border);
+  border-radius: 10px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.agent-routing-summary-empty {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  color: var(--ar-text-muted);
+}
+
+.agent-routing-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.agent-routing-summary-tier-name {
+  font-weight: 600;
+  color: var(--ar-text);
+}
+
+.agent-routing-summary-prior {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--ar-text-muted);
+  background: #edf3f0;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.agent-routing-summary-strengths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-routing-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #ffffff;
+  border: 1px solid var(--ar-border);
+  border-radius: 6px;
+  font-size: 11.5px;
+  color: #2c4e40;
+}
+
+.agent-routing-tag b {
+  color: var(--ar-primary);
+  font-weight: 600;
+}
+
+.agent-routing-tag-empty {
+  color: var(--ar-text-muted);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.agent-routing-summary-source {
+  font-size: 11px;
+  color: var(--ar-text-muted);
+  border-top: 1px dashed var(--ar-border);
+  padding-top: 5px;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   2. 费用档位徽章 (Badges)
+   -------------------------------------------------------------------------- */
+.agent-routing-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* 经济伙伴：清爽温和的绿色 */
+.agent-routing-badge.tier-economy {
+  background: #eaf6ee;
+  color: #1a6d45;
+  border: 1px solid #bce2cb;
+}
+
+/* 标准伙伴：均衡深沉的蓝绿中性色 */
+.agent-routing-badge.tier-standard {
+  background: #eef4f8;
+  color: #255a7a;
+  border: 1px solid #c7dae7;
+}
+
+/* 高价攻坚：醒目的金棕/紫褐色，提示谨慎调度与攻关 */
+.agent-routing-badge.tier-premium {
+  background: #fdf5ea;
+  color: #8c5314;
+  border: 1px solid #f3d7af;
+}
+
+/* 未知档位：温和的中性灰色 */
+.agent-routing-badge.tier-unknown {
+  background: #f2f4f3;
+  color: #616e68;
+  border: 1px solid #d8dedb;
+}
+
+/* --------------------------------------------------------------------------
+   3. 伙伴简历主编辑组件 (AgentRoutingEditor)
+   -------------------------------------------------------------------------- */
+.agent-routing-editor {
+  display: grid;
+  gap: 18px;
+  margin: 12px 0;
+}
+
+/* 提示与透明度说明栏 */
+.agent-routing-notice {
+  padding: 12px 14px;
+  background: #f1f8f4;
+  border-left: 4px solid var(--ar-primary);
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #2b4c3e;
+}
+
+.agent-routing-notice strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 2px;
+  color: var(--ar-primary);
+}
+
+.agent-routing-notice p {
+  margin: 0;
+}
+
+/* 章节容器与标题 */
+.agent-routing-section {
+  display: grid;
+  gap: 8px;
+}
+
+.agent-routing-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-routing-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ar-text);
+  margin: 0;
+}
+
+.agent-routing-subtext {
+  font-size: 11.5px;
+  color: var(--ar-text-muted);
+}
+
+.agent-routing-field-desc {
+  font-size: 11.5px;
+  color: var(--ar-text-muted);
+  line-height: 1.5;
+}
+
+/* 表单输入框基础样式 */
+.agent-routing-editor input[type="text"],
+.agent-routing-editor input[type="number"] {
+  border: 1px solid var(--ar-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: var(--ar-text);
+  background: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.agent-routing-editor input:focus-visible {
+  outline: 3px solid var(--ar-focus-ring);
+  outline-offset: 2px;
+  border-color: var(--ar-primary);
+}
+
+/* --------------------------------------------------------------------------
+   4. 费用档位卡片网格 (Tier Grid)
+   -------------------------------------------------------------------------- */
+.agent-routing-tier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.agent-routing-tier-card {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid var(--ar-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-routing-tier-card:hover {
+  border-color: var(--ar-border-hover);
+  background: #fafdfb;
+}
+
+.agent-routing-tier-card:focus-visible {
+  outline: 3px solid var(--ar-focus-ring);
+  outline-offset: 2px;
+}
+
+.agent-routing-tier-card.selected {
+  border-color: var(--ar-primary);
+  background: var(--ar-primary-light);
+  box-shadow: 0 0 0 1px var(--ar-primary);
+}
+
+.agent-routing-tier-card input[type="radio"] {
+  margin: 3px 0 0 0;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  accent-color: var(--ar-primary);
+  cursor: pointer;
+}
+
+.agent-routing-tier-card-body {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-routing-tier-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.agent-routing-tier-card-header b {
+  font-size: 13px;
+  color: var(--ar-text);
+}
+
+.agent-routing-tier-card-body p {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ar-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   5. 类别列表与滑动条交互 (Categories & Sliders)
+   -------------------------------------------------------------------------- */
+.agent-routing-categories-list {
+  display: grid;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--ar-border);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.agent-routing-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid #edf2ef;
+}
+
+.agent-routing-category-row:last-child {
+  border-bottom: none;
+}
+
+.agent-routing-category-info {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.agent-routing-category-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ar-text);
+  cursor: pointer;
+}
+
+.agent-routing-category-code {
+  font-size: 11px;
+  color: var(--ar-text-muted);
+  background: #f0f4f2;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 400;
+}
+
+.agent-routing-category-desc {
+  font-size: 11.5px;
+  color: var(--ar-text-muted);
+  line-height: 1.4;
+}
+
+.agent-routing-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.agent-routing-slider-wrap input[type="range"] {
+  width: 140px;
+  height: 6px;
+  accent-color: var(--ar-primary);
+  cursor: pointer;
+}
+
+.agent-routing-number-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  background: #ffffff;
+  border: 1px solid var(--ar-border);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.agent-routing-number-input-wrap:focus-within {
+  outline: 3px solid var(--ar-focus-ring);
+  outline-offset: 1px;
+  border-color: var(--ar-primary);
+}
+
+.agent-routing-number-input-wrap input {
+  width: 44px;
+  border: none !important;
+  padding: 2px 0 !important;
+  text-align: right;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ar-primary);
+  outline: none !important;
+}
+
+.agent-routing-number-input-wrap span {
+  font-size: 11.5px;
+  color: var(--ar-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   6. 自定义与未知类别扩展 (Custom & Unknown Categories)
+   -------------------------------------------------------------------------- */
+.agent-routing-custom-categories {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.agent-routing-custom-title {
+  font-size: 12.5px;
+  margin: 4px 0 0 0;
+  color: #3b5f50;
+  font-weight: 600;
+}
+
+.agent-routing-category-row.custom-row {
+  background: #fbfdfc;
+  padding: 8px 6px;
+  border-radius: 6px;
+}
+
+.agent-routing-custom-pill {
+  font-size: 10.5px;
+  background: #e1ede6;
+  color: #245842;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.agent-routing-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: #924036;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-routing-remove-btn:hover {
+  background: #faebe8;
+  border-color: #f1cfc9;
+}
+
+.agent-routing-remove-btn:focus-visible {
+  outline: 3px solid #e28e82;
+  outline-offset: 1px;
+}
+
+/* 添加新类别区域 */
+.agent-routing-add-box {
+  margin-top: 10px;
+  padding: 12px;
+  background: var(--ar-bg-subtle);
+  border: 1px dashed var(--ar-border);
+  border-radius: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.agent-routing-add-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.agent-routing-inline-field {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ar-text);
+}
+
+.agent-routing-inline-field input[type="text"] {
+  width: 160px;
+}
+
+.agent-routing-inline-field.ar-score-field .agent-routing-number-input-wrap {
+  height: 35px;
+  padding: 4px 8px;
+}
+
+.agent-routing-inline-field.ar-score-field input[type="number"] {
+  width: 44px;
+}
+
+.agent-routing-btn-secondary {
+  height: 35px;
+  padding: 0 14px;
+  background: #ffffff;
+  border: 1px solid var(--ar-border);
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ar-primary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.agent-routing-btn-secondary:hover {
+  background: var(--ar-primary-light);
+  border-color: var(--ar-focus-ring);
+}
+
+.agent-routing-btn-secondary:focus-visible {
+  outline: 3px solid var(--ar-focus-ring);
+  outline-offset: 2px;
+}
+
+.agent-routing-error-text {
+  margin: 0;
+  font-size: 12px;
+  color: #b33927;
+}
+
+/* --------------------------------------------------------------------------
+   7. 经验过渡设置与辅助文字
+   -------------------------------------------------------------------------- */
+.agent-routing-field-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.agent-routing-field-help {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--ar-text-muted);
+}
+
+.agent-routing-field-help b {
+  color: var(--ar-text);
+}
+
+.agent-routing-field-help code {
+  font-size: 11px;
+  background: #edf3f0;
+  padding: 1px 4px;
+  border-radius: 4px;
+  color: #1e4d3c;
+}
+
+/* --------------------------------------------------------------------------
+   8. 响应式与窄屏适配 (Responsive Design)
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .agent-routing-tier-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-routing-category-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .agent-routing-slider-wrap {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .agent-routing-slider-wrap input[type="range"] {
+    flex: 1;
+    width: auto;
+  }
+
+  .agent-routing-add-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .agent-routing-inline-field input[type="text"] {
+    width: 100%;
+  }
+
+  .agent-routing-btn-secondary {
+    width: 100%;
+  }
+
+  .agent-routing-field-row {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+}

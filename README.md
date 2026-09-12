@@ -4,11 +4,15 @@
 
 给 Codex、Claude Code 与更多编程客户端一个共同的项目工作台：看见任务在做什么，留下重要决定，换个会话继续工作。你的项目不必每次从头解释。
 
-> Windows 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
+> 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
 [安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-3-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
 **当前内测版本：v0.3.0-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.0-beta.1) 为准。
+
+本分支增加 macOS / Linux 基础安装入口与可编辑的伙伴分工简历。旧版 v0.3.0-beta.1 发布包仍是 Windows 入口；其它系统试用本分支源码时，请按 [系统兼容说明](docs/PLATFORM-SUPPORT.md) 构建前端，再运行 `sh start.sh install`。具体系统和客户端的已测范围以该说明及 CI 结果为准。
+
+伙伴简历只是可修改的初始分工参考。管理员会结合同类任务的真实验收战绩，逐渐提高经验权重；普通工作倾向合适的经济伙伴，困难或关键任务仍可选择高价伙伴。网络故障不等于能力差，同一任务重试不重复增加战绩。实际是否省钱仍取决于任务难度、模型价格、上下文和返工量。
 
 第一次先做自己的个人项目，换个会话试着继续；愿意体验协作时再给推荐伙伴填 Key。AP 外部认知默认关闭。旧版图片/视频不作为本版教程，新版宣传材料另行审核。
 

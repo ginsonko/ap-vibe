@@ -6,6 +6,7 @@ installation leaves the core workbench usable and reports a repair command.
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -13,6 +14,8 @@ import sys
 
 def ensure(*, check=False):
     requirements={'zstandard':'zstandard>=0.22,<1','yaml':'PyYAML>=6,<7'}
+    if os.name != 'nt':
+        requirements['cryptography'] = 'cryptography>=43,<47'
     missing=[module for module in requirements if importlib.util.find_spec(module) is None]
     if not missing:
         return {'ok': True, 'status': 'available', 'capabilities': ['dsh_compressed_sessions','hermes_config_merge']}

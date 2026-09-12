@@ -135,6 +135,8 @@ def invoke(name, args):
                 'manifest':manifest,'attribution':attribution}
         normalize(body)
         return task_client.call('agents/appearances/save', body)
+    if name == 'ap_vibe_agent_recommendations':
+        return task_client.call('agents/recommendations?' + urlencode({k:json.dumps(v) for k,v in args.items()}))
     if name in {'ap_vibe_agents','ap_vibe_task_list','ap_vibe_artifacts','ap_vibe_agent_metrics'}:
         route = {'ap_vibe_agents':'agents/directory','ap_vibe_task_list':'studio/tasks','ap_vibe_artifacts':'agents/artifacts','ap_vibe_agent_metrics':'agents/metrics'}[name]
         query = {**args, 'compact':'true'} if name == 'ap_vibe_task_list' and not args.get('task_id') else args

@@ -25,7 +25,8 @@
     "apps/studio/package.json",
     "apps/studio/package-lock.json",
     "apps/studio/vite.config.mjs",
-    "apps/studio/dist/client/*"
+    "apps/studio/dist/client/*",
+    "*.sh"
   ],
   "documents": [
     "docs/AGENT-CAPABILITY-PLAN.md",
@@ -94,7 +95,8 @@
     "docs/USER-GUIDE.md",
     "docs/WORKBENCH-PAGE-READS-PLAN.md",
     "docs/WORKBENCH-PAGE-READS-RESULTS.md",
-    "docs/WORKBENCH-STATUS-PROJECTION-PLAN.md"
+    "docs/WORKBENCH-STATUS-PROJECTION-PLAN.md",
+    "docs/PLATFORM-SUPPORT.md"
   ],
   "exclude": [
     ".local-*",

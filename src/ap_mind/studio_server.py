@@ -10,6 +10,7 @@ episode after a process crash.
 from __future__ import annotations
 
 import argparse
+import sys
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -150,6 +151,9 @@ class StudioServiceHealth:
             "product": dict(self.product or {}),
             "registry": {"ready": self.registry_ready, "request_count": self.request_count},
             "studio": {"built": self.studio_built},
+            "platform_capabilities": {"system": sys.platform, "desktop_launcher": os.name == 'nt',
+                "credential_storage": 'windows_dpapi' if os.name == 'nt' else 'posix_authenticated_encryption',
+                "automatic_update_switch": os.name == 'nt'},
             "ap_vibe": {
                 "ready": self.registry_ready and self.learning_ready and self.knowledge_ready,
                 "request_count": self.project_request_count,
@@ -3306,6 +3310,13 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 return
             if path == "/v1/ap-vibe/agents/directory":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.directory(self._query_value(split, 'agent_id')))
+                return
+            if path == "/v1/ap-vibe/agents/recommendations":
+                from .studio_routing_service import recommendations
+                task = {k: json.loads(self._query_value(split, k)) for k in ('tags','eligible_agents') if self._query_value(split,k)}
+                if any(not isinstance(v,list) or any(not isinstance(x,str) for x in v) for v in task.values()):
+                    raise ContractError('agent_routing_task_invalid')
+                self._write_json(HTTPStatus.OK, recommendations(self.service.agent_studio, task))
                 return
             if path == "/v1/ap-vibe/agents/setup":
                 self._write_json(HTTPStatus.OK, self.service.agent_studio.agent_setup.catalog())

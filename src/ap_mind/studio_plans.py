@@ -166,6 +166,8 @@ class StudioPlans:
         return [p for p in self.studio.profiles()['agents'] if activation(p)['activated'] and not p.get('management_reserved')]
 
     def _assignments(self,plan,profiles,proposal=None):
+        from .studio_routing_service import Router
+        router = Router(self.studio, profiles)
         available = {p['agent_id']:p for p in profiles}
         needed = {dep for n in plan['nodes'] for dep in n['dependencies']}
         supplied = {}
@@ -182,6 +184,9 @@ class StudioPlans:
         assignments=[]
         for node in plan['nodes']:
             candidates = [a for a in (node['requested_agents'] or list(available)) if a in available]
+            task = self.studio.tasks.list(node['task_id'])['tasks'][0]
+            ranked = router.recommend(task, candidates)
+            candidates = [a['agent_id'] for a in ranked]
             fixed = node.get('requested_reviewer')
             if fixed and fixed not in available: raise ContractError('studio_plan_reviewer_unavailable')
             candidates = [a for a in candidates if a!=fixed]
@@ -192,10 +197,11 @@ class StudioPlans:
             if author not in candidates: raise ContractError('studio_plan_author_unavailable')
             if fixed and reviewer!=fixed: raise ContractError('studio_plan_reviewer_changed')
             if not item and node['key'] in needed and not reviewer:
-                reviewer = next((a for a in available if a!=author),None)
+                review_ranked = router.recommend({**task, 'tags': ['review', *task.get('tags', [])]}, exclude=[author])
+                reviewer = next((a['agent_id'] for a in review_ranked),None)
             if (reviewer and (reviewer not in available or reviewer==author)) or (node['key'] in needed and not reviewer):
                 raise ContractError('studio_plan_independent_review_required')
-            reason = item.get('reason') if item else '按本计划候选顺序分配，并由不同伙伴检查上游成果。'
+            reason = item.get('reason') if item else next(a['reason'] for a in ranked if a['agent_id']==author)
             if not isinstance(reason,str) or not reason.strip() or len(reason)>4000: raise ContractError('studio_plan_reason_invalid')
             assignments.append({'key':node['key'],'agent_id':author,'reviewer_agent_id':reviewer,'reason':reason,
                 'candidates':[author,*[a for a in candidates if a not in {author,reviewer}]]})
@@ -214,21 +220,20 @@ class StudioPlans:
         if not self._allowed(plan): return
         if settings['enabled'] and settings.get('agent_id') and not plan.get('manager_issue'):
             if not plan.get('manager_request'):
-                catalog = [{k:p.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes')} for p in profiles]
+                catalog = [{k:p.get(k) for k in ('agent_id','name','model','role','connection_label','capability_notes','routing_profile')} for p in profiles]
                 with closing(self.registry._connect()) as c:
                     briefs = [{**n, **{k:t[k] for k in ('title','goal','acceptance','tags')}}
                         for n in plan['nodes'] for t in [self.studio.tasks._read(c,n['task_id'])]]
-                from .studio_metrics import snapshot
-                evidence = snapshot(self.studio,configuration='current',limit=1)
-                observations = [{key:a.get(key) for key in ('agent_id','metrics')} for a in evidence['agents']
-                    if a['agent_id'] in {p['agent_id'] for p in profiles}]
+                from .studio_routing_service import Router, POLICY
+                router = Router(self.studio, profiles)
+                recommendations = {t['key']: router.recommend(t, t['requested_agents'] or None) for t in briefs}
                 prompt = (settings['persona']+'\n为已有工作计划选择执行伙伴和独立验收伙伴。不得改目标或依赖，不亲自执行工程。'
                     '优先参考候选职责及同类历史；未知能力不编造。每项有下游的工作必须指定不同的验收者。'
                     '写manager-plan.json：{"message":"简短安排","assignments":[{"key":"节点key",'
                     '"agent_id":"候选ID","reviewer_agent_id":"不同候选ID或null","reason":"原因"}]}。'
                     '必须覆盖全部节点；requested_agents非空时作者只能从中选择，requested_reviewer非空时须沿用。\n'
-                    +encoded({'title':plan['title'],'goal':plan['goal'],'tasks':briefs,'partners':catalog,
-                        'current_configuration_history':observations,'history_boundary':evidence['boundary']}))
+                    +POLICY+'\n'+encoded({'title':plan['title'],'goal':plan['goal'],'tasks':briefs,'partners':catalog,
+                        'task_recommendations':recommendations,'history_coverage':router.coverage}))
                 plan = self._persist({**plan,'state':'planning','manager_settings_revision':settings['revision'],
                     'manager_deadline_seconds':settings['decision_timeout_seconds'],
                     'manager_request':{'request_id':plan['plan_id']+':manager','agent_id':settings['agent_id'],

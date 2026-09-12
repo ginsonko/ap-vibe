@@ -16,7 +16,7 @@ from .teacher_settings import protect
 
 
 DEFAULT_URL = 'https://api.yinziapi.top/v1'
-TEMPLATE_VERSION = 2
+TEMPLATE_VERSION = 3
 TEMPLATES = [
     {'template_id': 'grok-manager', 'name': '芙芙 · 协作管理员', 'model': 'grok-4.6',
      'appearance_id': 'fufu-v1', 'avatar': 'bird', 'recommended': True, 'setup_default_manager': True,
@@ -66,8 +66,18 @@ TEMPLATES = [
      'template_evidence': '可选实验模板；历史渠道曾失败，当前连接和管理任务能力尚需验证。'},
     {'template_id': 'deepseek-worker', 'name': '大肥鱼 · 资料与实现', 'model': 'DeepSeek-V4-Pro-0813',
      'appearance_id': 'deepseek-v3', 'avatar': 'fish', 'recommended': False,
-     'role': '可选的资料整理和边界明确的实现伙伴。先核实连接与工具使用能力，再安排合适难度的任务。',
-     'template_evidence': '可选实验模板；尚无足够本项目质量验收记录。'}
+     'role': '经济型推理、数学、任务规划与拆解伙伴；用可核对步骤和结果交付，关键决策交回主任务。',
+     'template_evidence': '用户初始分工印象；尚无足够本项目同类质量验收记录。'},
+    {'template_id':'gemini-writer','name':'小闪 · 文案与体验','model':'gemini-3.8-flash-high',
+     'appearance_id':'gemini-v3','avatar':'bird','recommended':True,
+     'role':'经济型文案、社科资料、友好表达和体验说明伙伴。让说明清晰、讨喜，保留证据与不确定性。',
+     'template_evidence':'分工为用户初始印象；本项目已有此模型的工具交付，具体同类表现按真实裁决积累。'},
+    {'template_id':'kimi-frontend','name':'Kimi · 前端伙伴','model':'','avatar':'cat','recommended':False,
+     'role':'经济型前端、美化、布局与交互实现候选；优先交付可运行页面，保持原功能。',
+     'template_evidence':'用户初始分工印象；本机尚未配置验证具体型号，请填写服务商支持的模型名与Key后使用。'},
+    {'template_id':'glm-coder','name':'GLM · 编码伙伴','model':'','avatar':'robot','recommended':False,
+     'role':'经济型明确代码任务、脚本与小范围修复候选；不猜需求，提供真实修改和验证。',
+     'template_evidence':'用户初始分工印象；本机尚未配置验证具体型号，请填写服务商支持的模型名与Key后使用。'}
 ]
 
 
@@ -91,10 +101,11 @@ class StudioAgentSetup:
 
     def catalog(self):
         """Public catalog can be read without credentials or secure-storage I/O."""
+        from .studio_routing import default_routing
         return {'ok': True, 'version': TEMPLATE_VERSION, 'default_url': DEFAULT_URL,
                 'templates': [{'executor_kind':'claude', 'auth_mode':'api_key',
                     'base_url':DEFAULT_URL, 'protocol':'openai', 'request_timeout_seconds':300,
-                    **entry} for entry in TEMPLATES],
+                    **entry, 'routing_profile':default_routing(entry)} for entry in TEMPLATES],
                 'paid_request': False,
                 'help': '角色简历是初始分工建议；历史记录和当前配置的实测结果优先。模板不含 Key，保存不调用模型。'}
 

@@ -111,3 +111,6 @@ python .\tools\install_mcp.py
 实际 Python 路径以安装配置为准；系统没有 `python` 命令时不要反复执行同一条失败命令。
 
 如果电脑同时安装旧 CLI 和新版 Desktop，AP-Vibe 会按能力优先选择桌面版本。也可以使用 `AP_VIBE_CODEX_EXECUTABLE` 指定明确的可执行文件。网页消息发送依赖官方 `queue` 能力；旧版没有此能力时应明确回退，不强占任务写入者。
+# macOS 与 Linux
+
+当前源码提供 `sh start.sh install` 入口，系统目录、凭据加密及无图形环境的用法见 [PLATFORM-SUPPORT.md](PLATFORM-SUPPORT.md)。先检查用户下载的版本是否含 `start.sh`；旧的 Windows 发布包不能使用此入口。缺少某个客户端时只跳过对应接入，已可用的工作台和其它客户端仍保留。下文的 PowerShell 命令用于 Windows。
