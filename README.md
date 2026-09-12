@@ -6,7 +6,7 @@
 
 > 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
-[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-3-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
+[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-4-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
 **当前内测版本：v0.3.1-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1) 为准。
 
@@ -37,6 +37,8 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，
 保留旧决定和人工修改。AP 外部认知先保持关闭，不替我配置付费模型。
 装好后用简单三步告诉我如何看进度、换会话继续项目和按需开启伙伴协作。
+如果缺少 Claude Code CLI，请先说明哪些工作室伙伴需要它，并询问我是否允许自动安装；
+不要因此阻止项目记忆和会话监看。
 ~~~
 
 安装需要 Codex 能访问 GitHub、执行本地命令，以及电脑已有或可以安装 Python 3.11+。完整包自带前端，通常不需要 Node。网络或本机策略阻止安装时，Codex 会说明实际失败环节和下一步；不要把只下载源码当成安装完成。
