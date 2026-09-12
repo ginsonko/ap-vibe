@@ -16,7 +16,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 import hashlib
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from .local_http import LocalThreadingHTTPServer as ThreadingHTTPServer
 import json
 import mimetypes
 import os

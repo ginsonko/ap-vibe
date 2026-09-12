@@ -7,7 +7,8 @@ from the API key; private reasoning is not published to the event ledger.
 from __future__ import annotations
 
 import hmac
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from .local_http import LocalThreadingHTTPServer as ThreadingHTTPServer
 import json
 import math
 import secrets
