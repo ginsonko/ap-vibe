@@ -14,6 +14,7 @@ import sys
 import threading
 
 from .contracts import ContractError
+from .studio_activity import tool_activity
 from .external_sessions import pi_event
 from .session_window import read_records
 
@@ -55,7 +56,7 @@ class OpenClawTail:
                         for block in message.get('content', []) if isinstance(message.get('content'), list) else []:
                             if isinstance(block, dict) and block.get('type') == 'toolCall':
                                 name = str(block.get('name') or '')[:200]
-                                self.emit('tool', {'tool': name, 'text': '调用工具：' + name})
+                                self.emit('tool', {'tool': name, 'text': '调用工具：' + name, 'activity': tool_activity(name, block.get('arguments'))})
                         raw = message.get('usage')
                         if isinstance(raw, dict):
                             fields = {k: v for k, v in raw.items() if k in {'input', 'output', 'cacheRead', 'cacheWrite'} and type(v) in {int, float} and v >= 0}
@@ -291,7 +292,7 @@ def execute(studio, run_id, value, profile, key, project):
             if event.get('type') == 'text':
                 studio._event(run_id, 'assistant', {'text': redact(str(part.get('text', '')), key)[:64000]})
             elif event.get('type') == 'tool_use':
-                studio._event(run_id, 'tool', {'tool': str(part.get('tool', ''))[:200], 'text': '调用工具：' + str(part.get('tool', ''))[:200]})
+                studio._event(run_id, 'tool', {'tool': str(part.get('tool', ''))[:200], 'text': '调用工具：' + str(part.get('tool', ''))[:200], 'activity': tool_activity(part.get('tool'), (part.get('state') or {}).get('input'))})
             elif event.get('type') == 'step_finish':
                 complete = part.get('reason') == 'stop'
                 tokens = part.get('tokens') or {}; cache = tokens.get('cache') or {}

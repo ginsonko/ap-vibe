@@ -72,7 +72,7 @@ def test_openclaw_final_flush_preserves_public_tools_and_usage_without_replaying
         stream.write('\n')
     tail.flush()  # Represents the flush after the child has exited.
     tail.flush()
-    assert events == [('assistant', {'text': 'public result'}), ('tool', {'tool': 'read', 'text': '调用工具：read'})]
+    assert events == [('assistant', {'text': 'public result'}), ('tool', {'tool': 'read', 'text': '调用工具：read', 'activity': 'read'})]
     assert len(usages) == 1
     assert usages[0][1] == {'input_tokens': 10, 'output_tokens': 3, 'cache_read_input_tokens': 20, 'cache_creation_input_tokens': 5}
     assert 'private' not in json.dumps([events, usages])

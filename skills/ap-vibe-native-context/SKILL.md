@@ -49,7 +49,18 @@ No MCP in this client: use the same local tool API through
 `python tools/native_client.py --installation <installation.json> --harness
 <actual-application> tool --name <tool> --file <UTF-8-arguments.json>`.
 Here `python` and `tools/native_client.py` are the configured absolute paths.
+For empty arguments, omit `--file` completely; do not create a temporary file
+or pass `/dev/null`. The script is exactly `product_root/tools/native_client.py`,
+so no recursive file search is needed. On Windows PowerShell, use `&` before
+the quoted Python path; in Bash use forward slashes in Windows paths. Keep
+the client's normal tool permissions; report a denied command without trying
+to disable its sandbox. Interactive clients can approve this local read command.
 The fallback uses the same service and never substitutes another workbench.
+WorkBuddy's bundled CodeBuddy CLI uses this shell bridge when native MCP tools
+are absent from the current model. Its public history is in `.codebuddy/projects`;
+the WorkBuddy GUI is a separate source. A successful CLI request does not prove
+GUI history or remote wake-up support. Read `installation.json` for the bridge
+paths; do not search the user's credential files to establish the connection.
 Read/status/session queries remain usable without a receipt or classification.
 When bootstrap starts the service, show its returned actual frontend URL.
 

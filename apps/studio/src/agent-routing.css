@@ -396,7 +396,7 @@
 }
 
 .agent-routing-number-input-wrap input {
-  width: 44px;
+  width: 64px;
   border: none !important;
   padding: 2px 0 !important;
   text-align: right;
@@ -505,7 +505,7 @@
 }
 
 .agent-routing-inline-field.ar-score-field input[type="number"] {
-  width: 44px;
+  width: 64px;
 }
 
 .agent-routing-btn-secondary {

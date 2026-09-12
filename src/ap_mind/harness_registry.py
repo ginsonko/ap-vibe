@@ -22,6 +22,7 @@ HARNESS = {
     'ga-admin': {'name': 'GenericAgent Admin', 'storage': 'ga-json', 'executor': None, 'resume': False},
     'hermes': {'name': 'Hermes Desktop / CLI', 'storage': 'hermes', 'executor': 'hermes', 'resume': True},
     'dsh': {'name': 'DSH Desktop', 'storage': 'dsh', 'executor': None, 'resume': False},
+    'workbuddy': {'name': 'WorkBuddy / CodeBuddy CLI', 'storage': 'codebuddy', 'executor': None, 'resume': False},
 }
 
 
@@ -45,6 +46,7 @@ def default_roots():
         'hermes': [str(Path(os.environ.get('HERMES_HOME') or
                     (Path(os.environ.get('LOCALAPPDATA') or home/'AppData/Local')/'hermes' if os.name=='nt' else home/'.hermes')))],
         'dsh': [str(Path(os.environ.get('DSH_HOME') or home/'.dsh')/'sessions')],
+        'workbuddy': [str(Path(os.environ.get('CODEBUDDY_CONFIG_DIR') or home/'.codebuddy')/'projects')],
     }
 
 
@@ -60,7 +62,9 @@ def executable(kind):
     if override and Path(override).is_file() and Path(override).suffix.lower() not in {'.cmd', '.bat', '.ps1'}:
         return [str(Path(override).resolve())]
     if kind=='hermes':
-        home=Path(os.environ.get('LOCALAPPDATA') or Path.home()/'.local/share')/'hermes'
+        home=Path(os.environ.get('HERMES_HOME') or
+                  (Path(os.environ.get('LOCALAPPDATA') or Path.home()/'AppData/Local')/'hermes'
+                   if os.name=='nt' else Path.home()/'.hermes'))
         python=home/'hermes-agent/venv'/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
         if python.is_file():return [str(python),'-X','utf8','-m','hermes_cli.main']
     binary = 'mimo' if kind == 'mimocode' else kind

@@ -334,3 +334,27 @@ def test_different_workbench_does_not_split_skill_and_mcp_identity(tmp_path,monk
     result=harness.install(['opencode'],home=home,config_path=second,root=harness.ROOT)
     assert not result['ok']
     assert {str(p):p.read_bytes() for p in home.rglob('*') if p.is_file()}==files
+
+
+def test_workbuddy_skill_bridge_preserves_native_login_and_settings(tmp_path, monkeypatch):
+    isolate_env(tmp_path,monkeypatch)
+    home=tmp_path/'workbuddy-cli'; home.mkdir()
+    settings=home/'settings.json'; settings.write_text('{"permissions":{"allow":["Read"]},"model":"auto"}')
+    before=settings.read_bytes()
+    result=harness.install(['workbuddy'],home,root=harness.ROOT)
+    assert result['ok'] and result['results'][0]['tool_fallback']
+    assert settings.read_bytes()==before
+    assert_skill(home,'workbuddy',harness.ROOT)
+    again=harness.install(['workbuddy'],home,root=harness.ROOT)
+    assert again['results'][0]['skill']['changed']==[]
+
+
+def test_hermes_executor_respects_same_custom_home_as_monitor(tmp_path, monkeypatch):
+    from ap_mind import harness_registry
+    home=tmp_path/'custom-hermes'
+    python=home/'hermes-agent/venv'/('Scripts/python.exe' if os.name=='nt' else 'bin/python')
+    python.parent.mkdir(parents=True);python.write_bytes(b'fixture')
+    monkeypatch.setenv('HERMES_HOME',str(home))
+    monkeypatch.delenv('AP_VIBE_HERMES_EXE',raising=False)
+    assert harness_registry.default_roots()['hermes']==[str(home)]
+    assert harness_registry.executable('hermes')[:3]==[str(python),'-X','utf8']

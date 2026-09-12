@@ -263,10 +263,12 @@ def execute(studio, run_id, value, profile, key, project):
                     studio._event(run_id, 'assistant', {'text': redact(item.get('text', ''), key)[:64000]})
                 elif item_type in {'mcp_tool_call', 'command_execution', 'file_change', 'web_search'}:
                     # Do not publish command strings, arguments, raw tool outputs, or reasoning.
+                    from .studio_activity import tool_activity
                     tool = item.get('tool') if item_type == 'mcp_tool_call' else item_type
                     studio._event(run_id, 'tool_result' if kind == 'item.completed' else 'tool', {
                         'text': ('工具执行结束：' if kind == 'item.completed' else '正在使用：') + str(tool),
-                        'tool_id': item.get('id'), 'tool': tool, 'status': item.get('status')})
+                        'tool_id': item.get('id'), 'tool': tool, 'status': item.get('status'),
+                        'activity': tool_activity(tool, item.get('arguments') or item)})
                     if item_type == 'mcp_tool_call' and kind == 'item.completed':
                         receipt = item.get('result') or {}
                         if isinstance(receipt, dict):

@@ -948,8 +948,9 @@ class AgentStudio:
                         if block.get('type') == 'text':
                             self._event(run_id, 'assistant', {'text': redact(block.get('text', ''), key)[:64000]})
                         elif block.get('type') == 'tool_use':
+                            from .studio_activity import tool_activity
                             tool_names[block.get('id')] = block.get('name')
-                            self._event(run_id, 'tool', {'text': '调用工具：' + str(block.get('name', '未知')), 'tool_id': block.get('id'), 'tool': block.get('name')})
+                            self._event(run_id, 'tool', {'text': '调用工具：' + str(block.get('name', '未知')), 'tool_id': block.get('id'), 'tool': block.get('name'), 'activity': tool_activity(block.get('name'), block.get('input'))})
                         # Thinking blocks and raw tool arguments never enter public events.
                 elif kind == 'user':
                     content = event.get('message', {}).get('content', [])
