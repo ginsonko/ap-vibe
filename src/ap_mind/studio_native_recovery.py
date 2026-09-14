@@ -115,12 +115,13 @@ class StudioNativeRecovery:
         profiles = self.studio.profiles()
         settings = self.studio.manager.settings()
         candidates = []
+        available = {item['id']:item.get('available',False) for item in profiles.get('executors',[])}
         for agent in profiles['agents']:
             aid, executor = agent['agent_id'], agent.get('executor_kind', 'claude')
             from .agent_studio import activation
-            if not activation(agent)['activated'] or aid == settings.get('agent_id') or executor not in {'codex', 'claude'}:
+            if not activation(agent)['activated'] or aid == settings.get('agent_id'):
                 continue
-            if not profiles.get(executor + '_available') or self.studio.budget.check(aid, c):
+            if not available.get(executor, profiles.get(executor + '_available',False)) or self.studio.budget.check(aid, c):
                 continue
             recent = c.execute('SELECT state,payload_json FROM studio_runs WHERE agent_id=? ORDER BY rowid DESC LIMIT 1', (aid,)).fetchone()
             if (recent and recent['state'] in {'failed', 'uncertain', 'interrupted', 'budget_paused'}

@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import re
 
 from .contracts import ContractError
 from .studio_activity import tool_activity
@@ -111,6 +112,9 @@ def native_state_path(value, directory):
 
 
 def settings(kind, profile, state, workspace, mcp):
+    if kind == 'grok':
+        from .grok_runner import settings as grok_settings
+        return grok_settings(profile, mcp)
     model = profile['model']
     if kind=='hermes':
         result={'model':{'default':model,'provider':'apvibe'},
@@ -138,6 +142,9 @@ def settings(kind, profile, state, workspace, mcp):
 
 
 def command(value, profile):
+    if value['executor_kind'] == 'grok':
+        from .grok_runner import command as grok_command
+        return grok_command(value, profile)
     prefix = value['executor_command']
     if value['executor_kind']=='hermes':
         args=[*prefix,'chat','--cli','-Q','--provider','apvibe','-m',profile['model'],'--query-file','AP-VIBE-TASK.md']
@@ -174,6 +181,7 @@ def execute(studio, run_id, value, profile, key, project):
     diagnostics = []
     stop_watch = threading.Event()
     watchers = []
+    transport = None
     try:
         directory = studio.root / run_id
         directory.mkdir(parents=True, exist_ok=True)
@@ -193,12 +201,25 @@ def execute(studio, run_id, value, profile, key, project):
                    'AP_VIBE_AGENT_ID': value['agent_id'], 'AP_VIBE_RUN_ID': run_id}
         if endpoint:
             mcp_env['AP_VIBE_CONFIG_PATH'] = str(client_config)
-        env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'CLAUDE_', 'CODEX_', 'OPENAI_', 'OPENCLAW_', 'OPENCODE_', 'MIMOCODE_', 'HERMES_', 'CUSTOM_', 'AP_VIBE_'))}
+        env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'CLAUDE_', 'CODEX_', 'OPENAI_', 'OPENCLAW_', 'OPENCODE_', 'MIMOCODE_', 'HERMES_', 'GROK_', 'XAI_', 'CUSTOM_', 'AP_VIBE_'))}
         env.update(mcp_env, AP_VIBE_NATIVE_KEY=key, PYTHONUTF8='1')
         mcp = {'command': sys.executable, 'args': [str(product / 'tools/ap_vibe_mcp.py')], 'env': mcp_env}
+        runtime_profile = profile
+        if kind == 'grok' and profile.get('protocol') == 'openai':
+            from .grok_transport import GrokTransport
+            transport = GrokTransport(profile, key,
+                lambda identity, usage: studio.budget.observe(value['agent_id'], run_id, run_id+':'+identity, usage, 'openai'),
+                lambda: studio.budget.check(value['agent_id'])).start()
+            runtime_profile = {**profile, 'base_url': transport.url}
+            env['AP_VIBE_NATIVE_KEY'] = transport.token
         config_path = state / ('config.yaml' if kind=='hermes' else 'config/mimocode.json' if kind == 'mimocode' else kind + '.json')
         config_path.parent.mkdir(parents=True, exist_ok=True)
-        dump(config_path, settings(kind, profile, state, workspace, mcp))
+        if kind == 'grok':
+            from .native_toml import dumps
+            config_path = state / 'config.toml'
+            config_path.write_text(dumps(settings(kind, runtime_profile, state, workspace, mcp)), encoding='utf-8')
+        else:
+            dump(config_path, settings(kind, profile, state, workspace, mcp))
         if kind == 'opencode':
             env.update(OPENCODE_CONFIG=str(config_path), OPENCODE_DISABLE_DEFAULT_PLUGINS='true',
                 XDG_DATA_HOME=str(state / 'data'), XDG_CONFIG_HOME=str(state / 'config'),
@@ -207,6 +228,8 @@ def execute(studio, run_id, value, profile, key, project):
             env.update(MIMOCODE_HOME=str(state), MIMOCODE_DISABLE_CLAUDE_CODE='true', MIMOCODE_DISABLE_CODEX_SKILLS='true')
         elif kind=='hermes':
             env.update(HERMES_HOME=str(state))
+        elif kind == 'grok':
+            env.update(GROK_HOME=str(state), XAI_API_KEY=transport.token if transport else key, GROK_MODELS_BASE_URL=runtime_profile['base_url'])
         else:
             env.update(OPENCLAW_STATE_DIR=str(state), OPENCLAW_CONFIG_PATH=str(config_path))
         for name, context in [('handoff', studio.handoff_context(value)), ('dependency', studio.dependency_context(value))]:
@@ -218,6 +241,9 @@ def execute(studio, run_id, value, profile, key, project):
         skill = workspace / ('skills' if kind == 'openclaw' else '.agents/skills') / 'ap-vibe-task-context'
         shutil.copytree(product / 'skills/ap-vibe-task-context', skill, dirs_exist_ok=True)
         if kind=='hermes':shutil.copytree(product/'skills/ap-vibe-task-context',state/'skills/ap-vibe-task-context',dirs_exist_ok=True)
+        if kind == 'grok':
+            from tools.install_harness import install_skill
+            install_skill(state / 'skills', kind, product, client_config if endpoint else None)
         context = {'session_id': value['session_id'], 'run_id': run_id, 'agent_id': value['agent_id'],
                    'project_id': project.project_id, 'project_root': str(project.root_path), 'harness': kind}
         context_path = workspace / 'ap-vibe-run.json'
@@ -261,6 +287,9 @@ def execute(studio, run_id, value, profile, key, project):
         def stderr():
             for line in iter(lambda: process.stderr.readline(65536), b''):
                 text = redact(line.decode('utf-8', errors='replace'), key).strip()
+                if kind == 'grok':
+                    text = re.sub(r'\x1b\[[0-9;]*m', '', text)
+                    text = text.split('raw_data', 1)[0].rstrip()
                 if text:
                     diagnostics.append(text[:1200]); del diagnostics[:-12]
                     studio._event(run_id, 'diagnostic', {'text': text[:1200]})
@@ -270,6 +299,12 @@ def execute(studio, run_id, value, profile, key, project):
         process.stdin.write(value['prompt'].encode('utf-8') if kind in {'opencode', 'mimocode'} else b'')
         process.stdin.close()
         complete = False
+        grok = None
+        if kind == 'grok':
+            from .grok_runner import GrokStream
+            grok = GrokStream(lambda event, data: studio._event(run_id, event,
+                {k: redact(v, key) if isinstance(v, str) else v for k, v in data.items()}),
+                lambda identity, usage: None if transport else studio.budget.observe(value['agent_id'], run_id, run_id + ':' + identity, usage, 'openai'))
         output = []
         for line in iter(lambda: process.stdout.readline(1024 * 1024 + 1), b''):
             if len(line) > 1024 * 1024:
@@ -283,6 +318,9 @@ def execute(studio, run_id, value, profile, key, project):
             try:
                 event = json.loads(line)
             except ValueError:
+                continue
+            if grok:
+                grok.feed(event)
                 continue
             session = event.get('sessionID')
             if session and context['session_id'] != session:
@@ -303,6 +341,11 @@ def execute(studio, run_id, value, profile, key, project):
             elif event.get('type') == 'error':
                 errors.append(redact(json.dumps(event.get('error'), ensure_ascii=False), key)[:1500])
         code = process.wait()
+        if grok:
+            grok.flush()
+            complete = grok.complete
+            if grok.error:
+                errors.append(grok.error)
         if kind=='hermes':
             stop_watch.set();watcher.join(timeout=5);tail.flush()
             complete=tail.completed_text
@@ -325,6 +368,10 @@ def execute(studio, run_id, value, profile, key, project):
                 errors.append('OpenClaw 未返回可核对的最终 JSON。')
         current = studio.runs(run_id)['runs'][0]['state']
         terminal = 'cancelled' if current == 'cancelling' else 'interrupted' if current == 'interrupted' else 'awaiting_review' if code == 0 and complete and not errors else 'uncertain'
+        if transport:
+            studio._event(run_id, 'status', {'text':'Grok 原生请求已结束。', 'normalized_empty_chunks':transport.normalized_chunks})
+            if transport.exhausted and terminal not in {'cancelled','interrupted'}:
+                terminal = 'budget_paused'
         studio._state(run_id, terminal, exit_code=code, error=completion_error(code, complete, errors, diagnostics))
         studio.service.collaboration.finish(run_id, value['agent_id'], terminal)
         if terminal == 'awaiting_review':
@@ -337,6 +384,8 @@ def execute(studio, run_id, value, profile, key, project):
         studio._state(run_id, 'uncertain' if process else 'failed', error=redact(str(exc), key)[:1500], exit_code=process.poll() if process else None)
         studio.service.collaboration.finish(run_id, value['agent_id'], 'uncertain' if process else 'failed')
     finally:
+        if transport:
+            transport.close()
         stop_watch.set()
         for watcher in watchers:
             watcher.join(timeout=2)

@@ -74,3 +74,23 @@ def test_invalid_target_retains_issue_without_endless_retry(studio,monkeypatch):
     monkeypatch.setattr(studio_returns.time,'time',lambda:99999999999)
     studio.returns.tick()
     assert len(calls)==1 and studio.returns.list('plan')[0]['wake_retry_blocked']
+
+
+@pytest.mark.parametrize('status',['submitted','uncertain','failed'])
+def test_grok_return_truthful_status_and_ack_loss_no_repeat(studio,monkeypatch,status):
+    from types import SimpleNamespace
+    records={};calls=[]
+    def send(raw):
+        calls.append(raw)
+        records[raw['request_id']]={'status':status,'request_id':raw['request_id']}
+        raise OSError('ack lost')
+    studio.service.grok_messages=SimpleNamespace(
+        read_delivery=lambda sid,rid:records.get(rid),enqueue=send,shutdown=lambda:None)
+    studio.returns.enqueue('return:grok','grok-plan',{'harness':'grok','session_id':'desktop','wake':True},'Result')
+    studio.returns.tick()
+    studio.returns=studio_returns.StudioReturns(studio)
+    studio.returns.tick()
+    result=studio.returns.list('grok-plan')[0]
+    assert len(calls)==1 and result['wake_status']==status
+    assert result['state']==('wake_queued' if status=='submitted' else 'wake_attempted')
+    assert len(studio.sessions.inbox('grok','desktop')['messages'])==1

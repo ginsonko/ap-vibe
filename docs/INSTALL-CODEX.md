@@ -56,7 +56,9 @@
 
 ## 其它客户端接入
 
-安装器同时检查已存在的 Hermes、OpenCode、MiMo Code、ZCode、OpenClaw、PI Desktop、DSH 和 WorkBuddy 内置 CodeBuddy CLI，按各自已核实的配置格式安装通用 Skill / MCP；WorkBuddy 使用 Skill 本地工具桥。未安装的应用直接跳过；只有 Claude Code CLI 缺失时按上方说明提示是否安装。第三方执行器、普通终端唤醒及真实验收范围见[跨应用支持](CROSS-APP-SUPPORT.md)。
+安装器同时检查已存在的 Grok Desktop / CLI、Hermes、OpenCode、MiMo Code、ZCode、OpenClaw、PI Desktop、DSH 和 WorkBuddy 内置 CodeBuddy CLI，按各自已核实的配置格式安装通用 Skill / MCP；WorkBuddy 使用 Skill 本地工具桥。Grok 的 CLI 与桌面 agent-home 分别接入，仅安装桌面端也可发现。未安装的应用直接跳过；只有 Claude Code CLI 缺失时按上方说明提示是否安装。第三方执行器、普通终端唤醒及真实验收范围见[跨应用支持](CROSS-APP-SUPPORT.md)。
+
+后安装 Grok 时，用当前 AP-Vibe 配置中的 Python 执行 `tools/install_harness.py --harness grok --config <原config.json>`，即可补齐接入。默认 CLI 为 `~/.grok`；桌面数据目录可通过 `GROK_DESKTOP_DATA_DIR` 指定，CLI 可通过 `GROK_HOME` 指定。已有会话在自然阶段重连 MCP 或新建会话后加载，无需中断正在运行的任务。
 
 便携目录可用 `tools/install_harness.py --harness opencode --home <客户端配置目录> --config <工作台config.json>`，或 `tools/install_native_extras.py --client dsh --home <DSH_HOME> --config <工作台config.json>`。PI Desktop 可另传 `--agents-home <实际.agents目录>`。均使用安装配置中的 Python 运行。来源日志目录在“会话 → 管理会话来源”修改；接入配置与日志目录是两项不同设置。
 

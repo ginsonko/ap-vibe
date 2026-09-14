@@ -57,6 +57,31 @@ class StudioReturns:
             value.update(state='inbox_saved',message_id=receipt['message_id'])
             self._save(return_id,value)
         if not target.get('wake'):return
+        if target['harness']=='grok':
+            messages=self.studio.service.grok_messages
+            request_id=return_id+':wake'
+            delivery=messages.read_delivery(target['session_id'],request_id)
+            if delivery:
+                value.update(state='wake_queued' if delivery.get('status')=='submitted' else 'wake_attempted',
+                             delivery=delivery)
+                value.pop('wake_retry_at',None)
+                value.pop('wake_issue',None)
+                self._save(return_id,value)
+                return
+            if value['state'] in {'wake_queued','wake_attempted'} or time.time()<value.get('wake_retry_at',0):return
+            value['wake_retry_at']=time.time()+30
+            self._save(return_id,value)
+            try:
+                receipt=messages.enqueue({'request_id':request_id,
+                    'session_id':target['session_id'],'message':value['message']})
+                delivery=receipt['delivery']
+                value.update(state='wake_queued' if delivery.get('status')=='submitted' else 'wake_attempted',
+                             delivery=delivery)
+                value.pop('wake_issue',None)
+            except Exception:
+                value['wake_issue']='Grok桌面原会话暂不可送达；交接已保存到收件箱。'
+            self._save(return_id,value)
+            return
         if target['harness']!='codex':
             if not value.get('wake_issue'):
                 value['wake_issue']='当前普通应用通过下次 Hook/Skill 读取收件箱；未启动同会话的第二个写入进程。'
@@ -143,10 +168,11 @@ class StudioReturns:
                        c.execute('SELECT * FROM studio_returns WHERE task_id=?',(task_id,))]
         for value in records:
             target = value.get('target') or {}
-            if value.get('state') == 'wake_queued' and target.get('harness') == 'codex':
+            if value.get('state') in {'wake_queued','wake_attempted'} and target.get('harness') in {'codex','grok'}:
                 # The stored state records the enqueue event; delivery is a
                 # live readback and must never enqueue again from a GET.
-                delivery = self.studio.service.codex_messages.read_delivery(
+                messages = getattr(self.studio.service,target['harness']+'_messages')
+                delivery = messages.read_delivery(
                     target['session_id'], value['return_id'] + ':wake')
                 if delivery:
                     value['delivery'] = delivery

@@ -387,7 +387,7 @@ def mark_document_maintained(cwd: str, session_id: str, receipt_id: str) -> None
 
 def record_lifecycle(hook: dict, cwd: str, session_id: str, harness='codex') -> None:
     """Write a tiny local outbox record; never delay a Stop hook on network IO."""
-    if not session_id or hook.get('hook_event_name') not in {'SessionStart','UserPromptSubmit','SubagentStart','Stop','SessionEnd'}:
+    if not session_id or hook.get('hook_event_name') not in {'SessionStart','UserPromptSubmit','SubagentStart','Stop','SessionEnd','failure','cancelled'}:
         return
     try:
         from datetime import datetime, timezone

@@ -6,9 +6,11 @@
 
 > 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
-[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-4-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
+[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-5-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.3.1-beta.1。** 本次扩展跨应用会话与原生执行端。在任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力上，加入可选的多模型工作室：管理分工、依赖接力、独立检查、四层像素地图与故事回放。完整安装包以 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1) 为准。
+**当前内测版本：v0.4.0-beta.1。** Grok Desktop / CLI 现已加入共同工作台：读取公开会话、复用项目档案、参与像素工作室，在原生会话中执行与接续任务，并向正在运行的 Grok 桌面窗口留言。完整安装包见 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.1)，上手方法见 [Grok 接入指南](docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md)。
+
+任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力继续保留；多模型工作室提供管理分工、依赖接力、独立检查、四层像素地图与故事回放。本版沿用既有安装和数据目录，新安装与升级会自动检查已存在的 Grok 桌面端及 CLI。
 
 本版增加 Windows、macOS / Linux 的统一应用包、可编辑的伙伴分工简历、同类战绩调度，以及 WorkBuddy 内置 CodeBuddy CLI 的公开会话读取与 Skill 工具桥。完整包自带前端：Windows 使用 PowerShell 安装，macOS / Linux 使用 `sh start.sh install`。各系统与客户端支持深度见 [系统兼容说明](docs/PLATFORM-SUPPORT.md) 和 [跨应用实测范围](docs/CROSS-APP-SUPPORT.md)。
 
@@ -30,12 +32,13 @@ AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接
 ## 把这段话发给 Codex
 
 ~~~text
-请帮我安装 AP-Vibe 个人内测版 v0.3.1-beta.1：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
+请帮我安装或更新 AP-Vibe 个人内测版 v0.4.0-beta.1：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.1
 先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，
 下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
+若已安装 Grok Desktop / CLI，也接入它的 Skill、MCP 和会话目录，保留原有模型与其它工具配置。
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，
 保留旧决定和人工修改。AP 外部认知先保持关闭，不替我配置付费模型。
 装好后用简单三步告诉我如何看进度、换会话继续项目和按需开启伙伴协作。
@@ -58,7 +61,7 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.3.1-beta.1
 | 页面 | 什么时候用 | 可以看到或操作什么 |
 | --- | --- | --- |
 | 首页 | 想知道任务有没有继续 | 活跃任务优先、活动曲线、时间范围、图表具体值、服务状态、桌面启动器 |
-| 会话 | 想看一条任务的完整过程 | 真实标题、历史分页与搜索、Markdown、保持阅读位置；向支持的 Codex 任务发消息 |
+| 会话 | 想看一条任务的完整过程 | 按应用筛选、真实标题与模型、历史分页与搜索、Markdown、保持阅读位置；向支持的 Codex 任务与 Grok 桌面会话发消息 |
 | 项目与记忆 | 想知道项目的来龙去脉 | 多会话共用档案、11 章资料、十维评估、手工纠错、当前/全部更新、导出导入 |
 | Agent 工作室 | 想让伙伴分工或接力 | 模型配置、任务池、依赖认领、公开消息、成果、独立验收、像素地图与角色动作 |
 | 逻辑观察 | 想理解代码关系或变更 | 源码入口、观察结果、历史上下文、交给 Codex 继续分析 |
@@ -93,7 +96,7 @@ Skill 要求长期任务开始时读取目录，结束时维护变化的章节�
 
 ### 让模型团队的工作看得见
 
-新增伙伴时填写名称、URL、API Key 和模型，并选择可用的执行端；同一个模型可以承担不同角色。除 Claude Code 外，也支持已安装的 OpenCode、OpenClaw、MiMo Code 和 Hermes CLI。各执行端的接口需具备兼容能力，应完成连接与工具实测。目录里有模型名不代表它一定能正确完成任务。
+新增伙伴时填写名称、URL、API Key 和模型，并选择可用的执行端；同一个模型可以承担不同角色。除 Claude Code 外，也支持已安装的 Grok、OpenCode、OpenClaw、MiMo Code 和 Hermes CLI。各执行端的接口需具备兼容能力，应完成连接与工具实测。目录里有模型名不代表它一定能正确完成任务。
 
 Codex 伙伴使用本机 Codex 登录与配置。工作室保存认领、依赖、交接、消息和成果；上游完成后启动满足依赖的下游；独立验收可以通过、要求返工或保留未知结论。
 

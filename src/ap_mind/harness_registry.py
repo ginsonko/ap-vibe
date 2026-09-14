@@ -22,6 +22,7 @@ HARNESS = {
     'ga-admin': {'name': 'GenericAgent Admin', 'storage': 'ga-json', 'executor': None, 'resume': False},
     'hermes': {'name': 'Hermes Desktop / CLI', 'storage': 'hermes', 'executor': 'hermes', 'resume': True},
     'dsh': {'name': 'DSH Desktop', 'storage': 'dsh', 'executor': None, 'resume': False},
+    'grok': {'name': 'Grok Desktop / CLI', 'storage': 'grok', 'executor': 'grok', 'resume': True},
     'workbuddy': {'name': 'WorkBuddy / CodeBuddy CLI', 'storage': 'codebuddy', 'executor': None, 'resume': False},
 }
 
@@ -31,6 +32,7 @@ def valid_kind(value):
 
 
 def default_roots():
+    from .grok_sessions import cli_home, desktop_home
     home = Path.home()
     return {
         'opencode': [str(Path(os.environ.get('XDG_DATA_HOME') or home / '.local/share') / 'opencode')],
@@ -46,6 +48,7 @@ def default_roots():
         'hermes': [str(Path(os.environ.get('HERMES_HOME') or
                     (Path(os.environ.get('LOCALAPPDATA') or home/'AppData/Local')/'hermes' if os.name=='nt' else home/'.hermes')))],
         'dsh': [str(Path(os.environ.get('DSH_HOME') or home/'.dsh')/'sessions')],
+        'grok': list(dict.fromkeys([str(desktop_home()), str(cli_home())])),
         'workbuddy': [str(Path(os.environ.get('CODEBUDDY_CONFIG_DIR') or home/'.codebuddy')/'projects')],
     }
 
@@ -53,6 +56,7 @@ def default_roots():
 def catalog():
     return [{'harness': key, 'name': value['name'], 'session_discovery': True,
              'configured_executor': value['executor'], 'resume_command': value['resume'],
+             'ordinary_desktop_wake': key == 'grok',
              'ordinary_terminal_wake': key == 'codex'} for key, value in HARNESS.items()]
 
 
@@ -61,6 +65,12 @@ def executable(kind):
     override = os.environ.get('AP_VIBE_' + kind.upper().replace('-', '_') + '_EXE')
     if override and Path(override).is_file() and Path(override).suffix.lower() not in {'.cmd', '.bat', '.ps1'}:
         return [str(Path(override).resolve())]
+    if kind == 'grok':
+        from .grok_sessions import cli_home
+        for home in dict.fromkeys([cli_home(), Path.home() / '.grok']):
+            binary = home / 'bin' / ('grok.exe' if os.name == 'nt' else 'grok')
+            if binary.is_file():
+                return [str(binary)]
     if kind=='hermes':
         home=Path(os.environ.get('HERMES_HOME') or
                   (Path(os.environ.get('LOCALAPPDATA') or Path.home()/'AppData/Local')/'hermes'
