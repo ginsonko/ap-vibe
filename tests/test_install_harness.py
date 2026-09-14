@@ -33,6 +33,8 @@ def isolate_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(Path, 'home', lambda: tmp_path / 'home')
     (tmp_path / 'home').mkdir()
     monkeypatch.setenv('LOCALAPPDATA', str(tmp_path / 'local'))
+    monkeypatch.setenv('GROK_HOME', str(tmp_path / 'home/.grok'))
+    monkeypatch.setenv('GROK_DESKTOP_DATA_DIR', str(tmp_path / 'grok-desktop'))
     monkeypatch.setenv('XDG_CONFIG_HOME', str(tmp_path / 'xdg-config'))
     monkeypatch.delenv('HERMES_HOME', raising=False)
     monkeypatch.delenv('OPENCODE_CONFIG_DIR', raising=False)

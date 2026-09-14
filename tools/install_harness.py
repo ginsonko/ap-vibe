@@ -18,12 +18,13 @@ import uuid
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT/'src'))
 from ap_mind.platform_paths import config_dir
 OWNED = 'ap-vibe-harness-v1'
 SKILL_NAME = 'ap-vibe-native-context'
 MCP_NAME = 'ap-vibe'
-HARNESSES = ('hermes', 'opencode', 'mimocode', 'zcode', 'workbuddy')
+HARNESSES = ('hermes', 'opencode', 'mimocode', 'zcode', 'workbuddy', 'grok')
 
 
 def default_config_path() -> Path:
@@ -227,6 +228,9 @@ def merge_env(existing: dict, wanted: dict) -> dict:
 
 
 def fragment_for(harness: str, root: Path, config_path: Path | None) -> dict:
+    if harness == 'grok':
+        from tools.install_grok import fragment
+        return {'format': 'toml', 'path': 'config.toml', 'key': 'mcp_servers', 'text': fragment(root, config_path)}
     spec = stdio_spec(harness, root, config_path)
     python, script, env = spec['command'], spec['args'][0], spec['env']
     if harness == 'hermes':
@@ -604,10 +608,16 @@ def is_discovered(harness: str, home: Path) -> bool:
         return True
     if harness == 'workbuddy':
         return any((home / name).exists() for name in ('projects', 'skills', 'settings.json'))
+    if harness == 'grok':
+        return any((home / name).exists() for name in ('config.toml', 'bin', 'sessions'))
     return False
 
 
+from tools.install_grok import install_grok
+from ap_mind.grok_sessions import cli_home as grok_home_default
+
 INSTALLERS = {
+    'grok': install_grok,
     'hermes': install_hermes,
     'opencode': install_opencode,
     'mimocode': install_mimocode,
@@ -616,6 +626,7 @@ INSTALLERS = {
 }
 
 DEFAULT_HOMES = {
+    'grok': grok_home_default,
     'hermes': hermes_home_default,
     'opencode': opencode_home_default,
     'mimocode': mimocode_home_default,
@@ -641,6 +652,11 @@ def install(
     results = []
     for name in selected:
         target = (home or DEFAULT_HOMES[name]()).expanduser()
+        if name == 'grok' and home is None and not is_discovered(name, target):
+            from ap_mind.grok_sessions import desktop_home
+            desktop_agent_home = desktop_home() / 'agent-home'
+            if desktop_agent_home.is_dir():
+                target = desktop_agent_home
         if require_discovered and not is_discovered(name, target):
             results.append({
                 'ok': True,
@@ -671,7 +687,7 @@ def install(
 def main() -> None:
     if hasattr(sys.stdout, 'reconfigure'):
         sys.stdout.reconfigure(encoding='utf-8')
-    parser = argparse.ArgumentParser(description='为已发现的 Hermes/OpenCode/MiMo/ZCode 安装 AP-Vibe Skill 与已核实的 MCP。')
+    parser = argparse.ArgumentParser(description='为已发现的编程客户端（含 Grok Desktop / CLI）安装 AP-Vibe Skill 与已核实的 MCP。')
     parser.add_argument('--harness', action='append', choices=list(HARNESSES), help='可重复；默认处理全部已发现客户端')
     parser.add_argument('--home', type=Path, help='单个客户端的自定义目录，需同时指定一个 --harness')
     parser.add_argument('--config', type=Path, help='AP-Vibe 工作台 config.json；默认 %LOCALAPPDATA%/AP-Vibe/config.json')

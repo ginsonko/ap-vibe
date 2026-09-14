@@ -23,6 +23,7 @@ from .native_json_sessions import GenericAgentFiles
 from . import hermes_sessions
 from . import codebuddy_sessions
 from .dsh_sessions import DshFiles, log_paths as dsh_paths
+from .grok_sessions import GrokFiles
 
 
 def stamp(value):
@@ -93,6 +94,7 @@ class ExternalSessions:
         self._scanned = 0
         self._ga = GenericAgentFiles()
         self._dsh = DshFiles()
+        self._grok = GrokFiles(max_sources)
 
     def _settings(self):
         roots = default_roots() if self.roots_override is None else dict(self.roots_override)
@@ -135,6 +137,8 @@ class ExternalSessions:
                         candidates = ([root] if root.is_file() else list(root.glob('state.db')) + list(root.glob('profiles/*/state.db'))) if storage == 'hermes' else ([root] if root.is_file() else list(root.glob('*.db')) + list(root.glob('*.sqlite'))) if storage == 'opencode' else ([root] if root.is_file() else list(root.glob(pattern)))
                         if storage == 'dsh':
                             candidates = dsh_paths(root)
+                        elif storage == 'grok':
+                            candidates = self._grok.paths(root)
                         for path in candidates:
                             path = path.resolve()
                             if path in seen or (root.is_dir() and not path.is_relative_to(root)):
@@ -150,11 +154,11 @@ class ExternalSessions:
                                     key = kind + '-' + hashlib.sha256(os.path.normcase(str(path)).encode()).hexdigest()[:32]
                                     found.append({**item, 'source_id': key})
                                     files[key] = (kind, path, item['session_id'])
-                                elif storage in {'ga-json', 'dsh'}:
-                                    record = (self._dsh if storage == 'dsh' else self._ga).snapshot(path)
+                                elif storage in {'ga-json', 'dsh', 'grok'}:
+                                    record = (self._grok if storage == 'grok' else self._dsh if storage == 'dsh' else self._ga).snapshot(path)
                                     key = kind + '-' + hashlib.sha256((os.path.normcase(str(path)) + ':' + record['session_id']).encode()).hexdigest()[:32]
                                     item = {k: v for k, v in record.items() if k not in {'events', 'signature', 'generation'}}
-                                    found.append({**item, 'source_id': key, 'harness': kind, 'available': True, 'model_source': 'native_message' if record.get('model') else None})
+                                    found.append({**item, 'source_id': key, 'harness': kind, 'available': True, 'model_source': (record.get('model_source') or 'native_message') if record.get('model') else None})
                                     files[key] = (kind, path, record['session_id'])
                                 else:
                                     if storage == 'pi-desktop' and path.name.endswith('.revisions.jsonl'):
@@ -167,6 +171,9 @@ class ExternalSessions:
                                 warnings.append(HARNESS[kind]['name'] + ' 的一条记录暂不可读，其它记录继续显示。')
                     except (OSError, sqlite3.Error, ValueError, KeyError, TypeError):
                         warnings.append(HARNESS[kind]['name'] + ' 的一个会话目录暂不可读，其它来源继续显示。')
+                if kind == 'grok':
+                    desktop_native = {s.get('agent_session_id') for s in found if s.get('native_surface')=='desktop'} - {None}
+                    found = [s for s in found if s.get('native_surface')!='cli' or s['session_id'] not in desktop_native]
                 found.sort(key=lambda s: s['modified_at'], reverse=True)
                 coverage[kind] = {'available_root_count': existing, 'total_discovered': len(found),
                                   'has_more_sources': len(found) > self.max_sources}
@@ -270,6 +277,8 @@ class ExternalSessions:
             kind, path, session = self._files[source_id]
             try:
                 storage = HARNESS[kind]['storage']
+                if storage == 'grok':
+                    return {**source, **self._grok.read(path, **options)}
                 window = codebuddy_sessions.read(path, session, **options) if storage == 'codebuddy' else self._dsh.read(path, **options) if storage == 'dsh' else hermes_sessions.read(path,session,**options) if storage=='hermes' else self._ga.read(path, **options) if storage == 'ga-json' else self._opencode_read(path, session, **options) if storage == 'opencode' else public_window(path, pi_desktop_event if storage == 'pi-desktop' else pi_event, **options)
                 return {**source, **window}
             except (OSError, sqlite3.Error):

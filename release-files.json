@@ -29,6 +29,9 @@
     "*.sh"
   ],
   "documents": [
+    "docs/GROK-INTEGRATION-PLAN-20260914.md",
+    "docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md",
+    "docs/BETA-5-ACCEPTANCE.md",
     "docs/AGENT-CAPABILITY-PLAN.md",
     "docs/AGENT-CAPABILITY-RESULTS.md",
     "docs/AGENT-CHARACTER-ANIMATION-RESULTS.md",

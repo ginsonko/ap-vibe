@@ -254,6 +254,8 @@ class StudioEpisodeService:
         self.organization = Organization(self)
         from .codex_messages import CodexMessages
         self.codex_messages = CodexMessages(self)
+        from .grok_messages import GrokMessages
+        self.grok_messages = GrokMessages(self)
         default_root = Path(project_root or logic_root or Path.cwd()).resolve()
         # The AP-Vibe project id is the durable daemon identity.  A previous
         # auto-onboard pass may have registered the same source directory as a
@@ -368,6 +370,8 @@ class StudioEpisodeService:
             self.organization.shutdown()
         if getattr(self, "codex_messages", None) is not None:
             self.codex_messages.shutdown()
+        if getattr(self, "grok_messages", None) is not None:
+            self.grok_messages.shutdown()
         if getattr(self, "agent_studio", None) is not None:
             self.agent_studio.shutdown()
 
@@ -3436,6 +3440,9 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/codex/messages":
                 self._write_json(HTTPStatus.OK, self.service.codex_messages.list(self._query_value(split, "session_id") or ""))
                 return
+            if path == "/v1/ap-vibe/grok/messages":
+                self._write_json(HTTPStatus.OK, self.service.grok_messages.list(self._query_value(split, "session_id") or ""))
+                return
             if path == "/v1/ap-vibe/logic/status":
                 self._write_json(HTTPStatus.OK, self.service.logic_status(project_id))
                 return
@@ -3591,6 +3598,8 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "/v1/ap-vibe/collaboration/message", "/v1/ap-vibe/collaboration/broadcast", "/v1/ap-vibe/collaboration/claim",
             "/v1/ap-vibe/collaboration/handoff", "/v1/ap-vibe/collaboration/dependency",
             "/v1/ap-vibe/codex/messages",
+            "/v1/ap-vibe/grok/messages",
+            "/v1/ap-vibe/grok/messages/cancel",
             "/v1/ap-vibe/codex/messages/cancel",
             "/v1/demo/episodes",
             "/v1/ap-vibe/activities",
@@ -3644,6 +3653,12 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 raise ContractError("cross_origin_write_forbidden")
             if path == "/v1/ap-vibe/codex/messages":
                 self._write_json(HTTPStatus.OK, self.service.codex_messages.enqueue(raw))
+                return
+            if path == "/v1/ap-vibe/grok/messages":
+                self._write_json(HTTPStatus.OK, self.service.grok_messages.enqueue(raw))
+                return
+            if path == "/v1/ap-vibe/grok/messages/cancel":
+                self._write_json(HTTPStatus.OK, self.service.grok_messages.cancel(raw))
                 return
             if path == "/v1/ap-vibe/codex/messages/cancel":
                 self._write_json(HTTPStatus.OK, self.service.codex_messages.cancel(raw))

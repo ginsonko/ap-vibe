@@ -17,6 +17,12 @@ Read `references/installation.json` beside this Skill. It contains `config_path`
 `product_root`, `python`, `harness` when application-specific, and `reference_root`.
 Shared `.agents` installations leave `harness` unset: use the actual current
 application, never the model family. OpenCode running Grok is still `opencode`.
+The Grok Desktop / native Grok CLI application is `grok`, independently of its
+selected model. Desktop session listings expose both `session_id` (desktop ID)
+and `agent_session_id` (underlying CLI ID). Use the matching desktop ID for
+ordinary desktop context/inbox; managed runs use `ap-vibe-run.json`. Do not
+start a second CLI process to resume an active desktop conversation. The
+desktop has a separate agent home; its installed Skill descriptor is authoritative.
 
 For a Studio run, read `ap-vibe-run.json` and use its current native session ID,
 harness and project root. For an ordinary client, use the session identity

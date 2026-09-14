@@ -25,6 +25,9 @@ class SessionDirectory:
     def observation(self, source_id):
         if not source_id.startswith(('codex-', 'claude-')):
             window = self.service.external_sessions.read(source_id, limit=1)
+            if window.get('harness') == 'grok':
+                external = self.service.external_sessions
+                return external._grok.observation(external._files[source_id][1])
             events = window.get('events', [])
             return {'state': 'unknown', 'status_basis': 'public_transcript_only',
                     'event_at': events[-1].get('timestamp') if events else None,

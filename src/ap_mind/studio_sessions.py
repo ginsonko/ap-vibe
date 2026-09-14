@@ -217,10 +217,11 @@ class StudioSessions:
             if state=='unknown':room,label,animation='waiting','已发现 · 状态待确认','idle'
             actors.append({**item,'state':state,'active':state=='running',
                 'name':item.get('title') or (item['harness']+' 会话 · '+item['session_id'][:8]),
-                'executor_kind':item['harness'],'appearance_id':item.get('appearance_id') or ('gpt-v3' if item['harness']=='codex' else 'claude-v3'),
+                'executor_kind':item['harness'],'appearance_id':item.get('appearance_id') or ('gpt-v3' if item['harness']=='codex' else 'grok-v3' if item['harness']=='grok' else 'claude-v3'),
                 'collaboration':self.effective(item['harness'],item['session_id'],item.get('project_id')),
                 'room':room,'animation':animation,'activity_label':label,
-                'capabilities':{'read':True,'inbox':True,'stop':False,'direct_steer':False}})
+                'capabilities':{'read':True,'inbox':True,'stop':False,
+                    'direct_steer':item['harness']=='grok' and item.get('native_surface')=='desktop'}})
         actors.sort(key=lambda a:(a['active'],a.get('updated_at') or a.get('modified_at') or ''),reverse=True)
         result = {'ok':True,'actors':actors,'settings':self.settings(),'catalog_total':catalog['total'],
                   'more_history_tool':'ap_vibe_sessions','observed_at':utc_now()}

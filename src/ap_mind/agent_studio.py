@@ -196,7 +196,7 @@ class AgentStudio:
         if url.scheme == 'http' and url.hostname not in {'localhost', '127.0.0.1', '::1'}:
             raise ContractError('agent_remote_https_required')
         protocol = 'responses' if local_login else raw.get('protocol', 'anthropic')
-        if protocol not in ({'responses'} if executor_kind == 'codex' else {'anthropic', 'openai'} if executor_kind == 'claude' else {'openai'}):
+        if protocol not in ({'responses'} if executor_kind == 'codex' else {'anthropic', 'openai', 'responses'} if executor_kind == 'grok' else {'anthropic', 'openai'} if executor_kind == 'claude' else {'openai'}):
             raise ContractError('agent_protocol_not_implemented')
         role = raw.get('role', '')
         request_timeout = raw.get('request_timeout_seconds', 300)
@@ -770,7 +770,7 @@ class AgentStudio:
         return workspace
 
     def _execute(self, run_id, value, profile, key, project):
-        if value.get('executor_kind') in {'opencode', 'openclaw', 'mimocode','hermes'}:
+        if value.get('executor_kind') in {'opencode', 'openclaw', 'mimocode','hermes', 'grok'}:
             from .native_runner import execute
             return execute(self, run_id, value, profile, key, project)
         if value.get('executor_kind') == 'codex':
