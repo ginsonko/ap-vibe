@@ -172,7 +172,7 @@ def call(route: str, payload: dict | None = None) -> dict:
     installed = _installed_config()
     # Collaboration is a sibling API to task context; keep the same bounded
     # client/startup/retry semantics while routing it to its own namespace.
-    prefix = "/v1/ap-vibe/" if route.split('?')[0] in {"collaboration", "agents", "studio/tasks", "sessions", "sessions/read"} or route.startswith(("collaboration/", "studio/", "agents/")) else "/v1/ap-vibe/tasks/"
+    prefix = "/v1/ap-vibe/" if route.split('?')[0] in {"collaboration", "agents", "studio/tasks", "sessions", "sessions/read"} or route.startswith(("collaboration/", "studio/", "agents/", "organization/")) else "/v1/ap-vibe/tasks/"
     url = _service_url(installed).rstrip("/") + prefix + route
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8") if payload is not None else None
     opener = request.build_opener(request.ProxyHandler({}))

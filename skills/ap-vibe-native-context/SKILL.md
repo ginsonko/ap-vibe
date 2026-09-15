@@ -70,6 +70,19 @@ paths; do not search the user's credential files to establish the connection.
 Read/status/session queries remain usable without a receipt or classification.
 When bootstrap starts the service, show its returned actual frontend URL.
 
+## Organize sessions from any connected application
+
+When the user asks to organize historical sessions or refresh project dossiers,
+use the shared organization tools described in
+`reference_root/organization.md#跨客户端接单`. No Codex installation is required.
+Use `ap_vibe_organization_list` to choose real sources (harness filters the
+source application), `ap_vibe_organization_prepare` to freeze the authorized
+scope, `ap_vibe_organization_read` to read its bundle, then submit a saved JSON
+proposal with `ap_vibe_organization_submit`. A workbench handoff already has a
+task_id: read that task directly rather than creating another. Use native_client
+tool fallback if MCP is not exposed. Preserve prior chapters and human edits;
+read back the saved task/revision before reporting completion.
+
 ## Optional collaboration
 
 Use this session's returned `studio_context.policy`, not global defaults.

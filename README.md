@@ -6,9 +6,9 @@
 
 > 个人非商用内测版。基础项目记忆无需额外配置 API Key；Codex、Claude Code 和外部模型仍遵循各自费用规则。
 
-[安装](#把这段话发给-codex) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-6-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
+[安装](#把这段话发给你常用的编程助手) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-6-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.4.0-beta.2。** 本次修复 GitHub API 限流后的更新发现，增加备用查询、缓存、重试时间提示与固定版本安装指引。 Grok Desktop / CLI 现已加入共同工作台：读取公开会话、复用项目档案、参与像素工作室，在原生会话中执行与接续任务，并向正在运行的 Grok 桌面窗口留言。完整安装包见 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.2)，上手方法见 [Grok 接入指南](docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md)。
+**当前内测版本：v0.4.0-beta.3。** 本次把项目整理扩展到所有已接入软件的会话：可按应用筛选，选择本机 Codex、Claude Code、已配置伙伴，或把任务交给当前软件的 MCP / Skill。DSH Desktop 可自动登记原生 MCP。保留上一版更新限流恢复、缓存与固定版本下载能力。 Grok Desktop / CLI 现已加入共同工作台：读取公开会话、复用项目档案、参与像素工作室，在原生会话中执行与接续任务，并向正在运行的 Grok 桌面窗口留言。完整安装包见 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.3)，上手方法见 [Grok 接入指南](docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md)。
 
 任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力继续保留；多模型工作室提供管理分工、依赖接力、独立检查、四层像素地图与故事回放。本版沿用既有安装和数据目录，新安装与升级会自动检查已存在的 Grok 桌面端及 CLI。
 
@@ -29,16 +29,16 @@
 
 AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接入客户端工作；它提供共同的项目资料、可追踪的任务记录和协作入口。
 
-## 把这段话发给 Codex
+## 把这段话发给你常用的编程助手
 
 ~~~text
-请帮我安装或更新 AP-Vibe 个人内测版 v0.4.0-beta.2：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.2
+请帮我安装或更新 AP-Vibe 个人内测版 v0.4.0-beta.3：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.3
 先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，
 下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
 已有安装时保留原项目、历史和配置，按说明无损更新，不另建空工作台。
-若已安装 Grok Desktop / CLI，也接入它的 Skill、MCP 和会话目录，保留原有模型与其它工具配置。
+自动接入本机已安装、已支持的客户端（包括 DSH、Grok 等），保留原有模型与其它工具配置。
 我同意整理最近 7 天活跃的未归类任务；只把长期维护的工作归入项目，
 保留旧决定和人工修改。AP 外部认知先保持关闭，不替我配置付费模型。
 装好后用简单三步告诉我如何看进度、换会话继续项目和按需开启伙伴协作。
@@ -46,15 +46,15 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.2
 不要因此阻止项目记忆和会话监看。
 ~~~
 
-安装需要 Codex 能访问 GitHub、执行本地命令，以及电脑已有或可以安装 Python 3.11+。完整包自带前端，通常不需要 Node。网络或本机策略阻止安装时，Codex 会说明实际失败环节和下一步；不要把只下载源码当成安装完成。
+安装需要你的编程助手能访问 GitHub、执行本地命令，以及电脑已有或可以安装 Python 3.11+。完整包自带前端，通常不需要 Node。网络或本机策略阻止安装时，编程助手会说明实际失败环节和下一步；不要把只下载源码当成安装完成。
 
 **安装好后，只需要三步：**
 
-1. 在 Codex 里照常说需求，或继续原来的项目。
+1. 在已接入的软件里照常说需求，或继续原来的项目。
 2. 在工作台首页看任务；点标题看完整消息和进展。
 3. 到“项目与记忆”看看决定与下一步，再新开一个任务继续同一项目，体验资料复用。
 
-首次整理历史任务会让 Codex 实际阅读和总结，可能使用你的 Codex 额度。你可以删掉口令中的整理授权，先安装，再从工作台手动整理。
+首次整理历史任务会由所选执行端实际阅读和总结，使用该模型的额度。没有 Codex 也可选择 Claude Code，或复制接单说明给 DSH 等已接入软件。你可以删掉口令中的整理授权，先安装，再从工作台手动整理。
 
 ## 工作台能做什么
 
@@ -71,6 +71,8 @@ https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.2
 ### 多应用接力
 
 会话页支持按应用筛选，来源目录可配置。OpenCode、OpenClaw、MiMo Code、Hermes、PI Desktop、DSH、GenericAgent Admin 和 ZCode 已有真实记录读取证据；其中四种新增 CLI 支持工作室托管接续。WorkBuddy 内置 CLI 另有真实记录和 Skill 工具桥验收，暂不提供其 GUI 唤醒或工作室托管。不同客户端支持程度有区别，见[能力与实测范围](docs/CROSS-APP-SUPPORT.md)。普通外部终端在下次 Skill / 工具调用读取返回消息。
+
+整理方法见[跨客户端整理指南](docs/CROSS-CLIENT-CURATION.md)。会话来源与整理执行端独立：例如让 DSH 整理 Claude 会话，或让已配置的 Grok 伙伴整理多个软件的同一项目。
 
 ### 多个会话，共用一份项目档案
 

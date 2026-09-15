@@ -3449,10 +3449,18 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             if path == "/v1/ap-vibe/organization/tasks":
                 self._write_json(HTTPStatus.OK, self.service.organization.tasks())
                 return
+            if path == "/v1/ap-vibe/organization/executors":
+                from .organization_execution import choices
+                self._write_json(HTTPStatus.OK, choices(self.service.organization))
+                return
+            if path == "/v1/ap-vibe/organization/bundle":
+                self._write_json(HTTPStatus.OK, self.service.organization.external_bundle(self._query_value(split, "task_id")))
+                return
             if path == "/v1/ap-vibe/organization/sessions":
                 self._write_json(HTTPStatus.OK, self.service.organization.catalog(
                     self._query_value(split, "scope") or "recent_unclassified",
-                    offset=int(self._query_value(split, "offset") or 0), limit=self._query_limit(split, 64)))
+                    offset=int(self._query_value(split, "offset") or 0), limit=self._query_limit(split, 64),
+                    harness=self._query_value(split, "harness")))
                 return
             if path == "/v1/ap-vibe/organization/context":
                 self._write_json(HTTPStatus.OK, self.service.organization.context(self._query_value(split, "source_key")))
@@ -3617,6 +3625,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
             "/v1/ap-vibe/projects",
             "/v1/ap-vibe/organization/prepare",
             "/v1/ap-vibe/organization/dispatch",
+            "/v1/ap-vibe/organization/submit",
             "/v1/ap-vibe/organization/assign",
             "/v1/ap-vibe/organization/projects/create",
             "/v1/ap-vibe/organization/projects/update",
@@ -3669,6 +3678,7 @@ class StudioRequestHandler(BaseHTTPRequestHandler):
                 "/v1/ap-vibe/logic/configure": self.service.configure_project_logic,
                 "/v1/ap-vibe/logic/analyze": self.service.organization.prepare_logic,
                 "/v1/ap-vibe/organization/apply": lambda r: self.service.organization.apply_result(r.get("task_id"), r.get("result")),
+                "/v1/ap-vibe/organization/submit": self.service.organization.submit_external,
                 "/v1/ap-vibe/organization/prepare": self.service.organization.prepare,
                 "/v1/ap-vibe/organization/assign": self.service.organization.assign,
                 "/v1/ap-vibe/organization/projects/create": self.service.organization.create_project,

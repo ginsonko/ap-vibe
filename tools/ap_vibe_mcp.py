@@ -35,6 +35,29 @@ def invoke(name, args):
                          ('缺少必填字段 ' + ', '.join(missing) + '。' if missing else '') +
                          ('不支持字段 ' + ', '.join(extra) + '。' if extra else '') +
                          ('goal 应填写当前任务目标。' if 'goal' in missing else ''))
+    if name == 'ap_vibe_organization_list':
+        result = task_client.call('organization/sessions?' + urlencode(args))
+        result['executors'] = task_client.call('organization/executors')
+        return result
+    if name == 'ap_vibe_organization_prepare':
+        payload = {k:v for k,v in args.items() if k != 'executor'}
+        result = task_client.call('organization/prepare', payload)
+        return task_client.call('organization/dispatch', {'task_id':result['task']['task_id'],
+                                                         'executor':args.get('executor', 'external')})
+    if name == 'ap_vibe_organization_read':
+        task = task_client.call('organization/task?' + urlencode(args))
+        if task.get('status') == 'awaiting_client':
+            return {**task_client.call('organization/bundle?' + urlencode(args)), 'task':task}
+        return task
+    if name == 'ap_vibe_organization_submit':
+        path = Path(args['file_path']).expanduser().resolve()
+        if not path.is_file() or path.stat().st_size > 16 * 1024 * 1024:
+            raise ValueError('请选择存在且不超过16MiB的整理JSON提案')
+        result = json.loads(path.read_text(encoding='utf-8-sig'))
+        if not isinstance(result, dict):
+            raise ValueError('整理提案必须为JSON对象')
+        return task_client.call('organization/submit', {'task_id':args['task_id'],
+            'handoff_id':args['handoff_id'], 'result':result})
     if name == 'ap_vibe_run_review':
         if 'accepted' not in args:
             if set(args)!={'run_id'}:raise ValueError('只读验收记录时仅填写run_id；提交时需要accepted和实际验收依据')

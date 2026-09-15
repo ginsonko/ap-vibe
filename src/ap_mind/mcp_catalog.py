@@ -9,6 +9,15 @@ USER_TURN_LIMIT = {'type':'integer','minimum':1,'description':'默认省略：�
 IDENTITY = {'receipt_id':TEXT,'session_id':TEXT}
 AUTOMATIC = {'automatic':{'type':'boolean'},'collaboration_origin':schema({'harness':{'type':'string','pattern':'^[a-z][a-z0-9_-]{0,63}$'},'session_id':TEXT},['harness','session_id'])}
 TOOLS = [
+    {'name':'ap_vibe_organization_list','description':'查看已接入软件的历史整理候选和可用整理执行端。harness只筛选来源软件，默认全部；分页后再选真实source_key。只读，不调用模型。',
+     'inputSchema':schema({'scope':{'type':'string','enum':['recent_unclassified','all_unclassified','rebuild_all']},'harness':TEXT,'offset':{'type':'integer','minimum':0}},[])},
+    {'name':'ap_vibe_organization_prepare','description':'按用户要求准备并派发项目整理。scope为project_refresh时填写已登记project_ids；其它范围填写选中的source_keys。默认交给当前客户端，不需要Codex。显式executor可选list返回的本机或伙伴ID；会使用相应模型用量。稳定request_id避免重复任务。',
+     'inputSchema':schema({'request_id':TEXT,'scope':{'type':'string','enum':['recent_unclassified','all_unclassified','rebuild_all','project_refresh']},
+         'source_keys':{'type':'array','items':TEXT},'project_ids':{'type':'array','items':TEXT},'executor':TEXT},['request_id','scope'])},
+    {'name':'ap_vibe_organization_read','description':'读取整理任务进度；等待当前客户端时返回冻结清单路径、JSON输出合同和handoff_id。按需读取真实文件，只生成提案，不修改来源。所有已接入客户端共用此合同。',
+     'inputSchema':schema({'task_id':TEXT},['task_id'])},
+    {'name':'ap_vibe_organization_submit','description':'将当前客户端生成的本地JSON提案交给服务校验并保存。包含完整11章、十维、旧历史和版本；保留人工编辑。file_path是提案文件，不是来源。handoff_id来自read；迟到或已换执行端的提案拒绝写入。保存后回读任务与revision。',
+     'inputSchema':schema({'task_id':TEXT,'handoff_id':TEXT,'file_path':TEXT},['task_id','handoff_id','file_path'])},
     {'name':'ap_vibe_plan_list','description':'读取通用工作计划、管理员实际安排、每项依赖进度和整批回传。manager_acknowledged只有真实管理文件被采用才为true。',
      'inputSchema':schema({'plan_id':TEXT,'project_id':TEXT,'offset':{'type':'integer','minimum':0},'limit':{'type':'integer','minimum':1,'maximum':100}},[])},
     {'name':'ap_vibe_plan_submit','description':'将授权的复杂任务一次登记为持久工作计划。tasks节点用key相互声明dependencies；管理员选择已配置伙伴；有下游的工作必须独立验收。只保存一个父return_to，整批就绪或无法继续后返回，不为每项唤醒。提交成功不代表管理员已回复，回读plan_list确认。',

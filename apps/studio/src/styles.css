@@ -725,3 +725,9 @@ svg { flex: 0 0 auto; }
 .composer-receipt { display:flex; flex-wrap:wrap; gap:7px; align-items:baseline; color:var(--muted); font-size:11px; line-height:1.7; }
 .composer-receipt b { color:var(--teal); }
 .composer-error { color:#a53434; font-size:12px; line-height:1.6; }
+
+/* Curation: source applications and execution choices are independent. */
+.organization-page select { max-width: 100%; min-height: 40px; border: 1px solid var(--border, #cfdfde); border-radius: 9px; padding: 8px 12px; color: inherit; background: var(--surface, #fff); font: inherit; }
+.organization-page label:has(select) { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.curation-handoff textarea { display: block; box-sizing: border-box; width: 100%; min-height: 128px; margin: 14px 0; padding: 14px; resize: vertical; border: 1px solid var(--border, #cfdfde); border-radius: 10px; background: #f6faf9; color: inherit; font: inherit; line-height: 1.7; }
+@media (max-width: 640px) { .organization-page select { width: 100%; } .curation-handoff textarea { min-height: 190px; } }
