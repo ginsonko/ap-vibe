@@ -8,20 +8,20 @@
 
 仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
 
-本次固定版本：`v0.4.0-beta.2`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.2/docs/INSTALL-CODEX.md` 读取。
+本次固定版本：`v0.4.0-beta.3`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.3/docs/INSTALL-CODEX.md` 读取。
 
-下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.3/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
 
-首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.4.0-beta.2`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.4.0-beta.3`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
 
 ### GitHub 查询限流或下载中断
 
 用户指定了版本时，直接使用同一标签的链接，无需先调用 GitHub Releases API，也无需使用 `gh api` 枚举发行版：
 
-- 说明：`https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.2/docs/INSTALL-CODEX.md`
-- 应用包：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/ap-vibe-app.zip`
-- 清单：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/ap-vibe-manifest.json`
-- 校验表：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/SHA256SUMS`
+- 说明：`https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.3/docs/INSTALL-CODEX.md`
+- 应用包：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.3/ap-vibe-app.zip`
+- 清单：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.3/ap-vibe-manifest.json`
+- 校验表：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.3/SHA256SUMS`
 
 `api.github.com` 未登录查询通常按出口 IP 共享每小时 60 次额度；API 限流不等于 Release 包损坏。固定下载链接与 raw 文档不使用该 API 额度。无需为安装收集用户 GitHub Token，也不要反复点击检查或绕过校验。若完整包已经下载并通过校验，复用该文件继续备份和安装。
 
@@ -133,3 +133,9 @@ python .\tools\install_mcp.py
 # macOS 与 Linux
 
 当前源码提供 `sh start.sh install` 入口，系统目录、凭据加密及无图形环境的用法见 [PLATFORM-SUPPORT.md](PLATFORM-SUPPORT.md)。先检查用户下载的版本是否含 `start.sh`；旧的 Windows 发布包不能使用此入口。缺少某个客户端时只跳过对应接入，已可用的工作台和其它客户端仍保留。本文中的 PowerShell 命令用于 Windows。
+
+## 不使用 Codex 的安装与整理
+
+安装入口同样可以交给具有本机命令能力的 Claude Code、DSH 或其它编程助手；文件名 INSTALL-CODEX.md 保留以兼容旧链接。安装后从“项目与记忆”选择整理范围，再选择执行端。只使用桌面客户端时，选择“交给当前软件（MCP / Skill）”，复制说明到原客户端即可。
+
+DSH 接入会增量更新已有 profiles/*/cordis.patch.yml，保留 settings.yaml、模型、其它插件和自定义 YAML 标签。没有建立 profile 时仍提供准确插件材料；先打开一次 DSH 后再运行安装修复即可。若正在运行的窗口没有热加载新工具，重开客户端。自定义 DSH_HOME 可执行 tools/install_native_extras.py --client dsh --home <DSH_HOME> --config <原config.json>。

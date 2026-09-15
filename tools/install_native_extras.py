@@ -13,6 +13,7 @@ import sys
 import uuid
 
 ROOT=Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT/'src'))
 from ap_mind.platform_paths import config_dir
 
@@ -46,10 +47,9 @@ def install(kind, home, config_path, *, shared_agents=None, product_root=ROOT):
           'description':'Shared local projects and public sessions','transport':'stdio',**command},indent=2).encode()
         mcp_status='native_config_written'
     elif kind=='dsh':
-        # A plugin overlay is exact install material, not a guessed settings.yaml
-        # mutation. DSH supports custom JS YAML tags, so do not reserialize it.
-        overlay=[{'id':'mcp-ap-vibe','name':'@deepseek-ai/dsh-mcp-client','config':{
-            'serverName':'ap-vibe','transport':'stdio',**command}}]
+        plugin={'id':'mcp-ap-vibe','name':'@deepseek-ai/dsh-mcp-client','config':{
+            'serverName':'ap-vibe','transport':'stdio',**command}}
+        overlay=[{'insert':[plugin]}]
         planned[skill/'references/mcp-overlay.json']=json.dumps(overlay,indent=2).encode()
         mcp_status='plugin_overlay_available'
     owner_id=hashlib.sha256((kind+':'+str(root)).encode()).hexdigest()[:16]
@@ -77,7 +77,15 @@ def install(kind, home, config_path, *, shared_agents=None, product_root=ROOT):
         if old is not None:
             atomic(state_path.parent/'backups'/(uuid.uuid4().hex+'-'+p.name),old)
         atomic(p,data);changed.append(str(p))
-    return {'harness':kind,'status':'installed','skill':str(skill),'mcp':mcp_status,'changed':changed}
+    details={}
+    if kind=='dsh':
+        from tools.dsh_mcp_install import install_profiles
+        details=install_profiles(home,config_path,plugin,atomic)
+        changed.extend(details['changed'])
+        if details['registered']:mcp_status='native_config_written'
+    return {'harness':kind,'status':'configuration_partial' if details.get('issues') else 'installed',
+            'skill':str(skill),'mcp':mcp_status,'changed':changed,
+            **({'profiles':details['profiles']} if details else {})}
 
 
 def defaults():

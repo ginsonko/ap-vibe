@@ -67,7 +67,10 @@ class Organization:
                 connection.execute("UPDATE organization_tasks SET status='interrupted',updated_at=? WHERE status IN ('running','applying')", (utc_now(),))
                 connection.commit()
 
-    def catalog(self, scope="recent_unclassified", *, selected=None, offset=0, limit=64):
+    def catalog(self, scope="recent_unclassified", *, selected=None, offset=0, limit=64, harness=None):
+        from .harness_registry import valid_kind
+        if harness and not valid_kind(harness):
+            raise ContractError("session_harness_invalid")
         if scope not in ORGANIZATION_TASK_SCOPES - {"logic_analysis"} or not isinstance(offset, int) or offset < 0 or not 1 <= limit <= 128:
             raise ContractError("organization_scope_invalid")
         overview = self.service.codex_overview(include_archived=True, limit=128)
@@ -93,7 +96,7 @@ class Organization:
             stamp = record.get("last_activity_at") or source.modified_at
             seconds = self.service._codex_iso_seconds(stamp)
             recent = seconds is not None and 0 <= now - seconds <= 7 * 86400
-            item = {"source_key": source.source_key, "session_id": source.session_id, "title": title,
+            item = {"source_key": source.source_key, "harness": "codex", "session_id": source.session_id, "title": title,
                     "project_id": project.project_id, "project_name": project.display_name,
                     "classified": classified, "recent": recent, "last_activity_at": stamp,
                     "activity_basis": "visible_message" if record.get("last_activity_at") else "source_modified_pending_check",
@@ -101,7 +104,7 @@ class Organization:
                     "preview": str(record.get("last_activity_text") or "")[:500],
                     "read_url": "/v1/ap-vibe/organization/context?source_key=" + quote(source.source_key)}
             reason = None
-            if Path(source.session_cwd).parent == self.service.data_dir / "curation-jobs":
+            if self._internal_source(source.session_cwd):
                 reason = "AP-Vibe 内部整理或逻辑观察任务"
             elif selected is not None and source.source_key not in selected:
                 reason = "本次未勾选"
@@ -118,14 +121,17 @@ class Organization:
             else:
                 items.append(item)
         directory = getattr(self.service, 'session_directory', None)
+        snapshot = {}
         if directory:
-            for source in directory.catalog(include_all=True)['sessions']:
+            snapshot = directory.catalog(include_all=True)
+            for source in snapshot['sessions']:
                 if source['harness'] == 'codex' or source.get('managed'):
                     continue
                 key = source['source_id']
                 seen.add((source['harness'], source['session_id']))
                 project = projects.get(source.get('project_id'))
-                classified = bool(project and project.status == 'active' and profiles[project.project_id]['registration_state'] == 'registered')
+                classified = bool(project and project.status == 'active' and
+                    (source.get('membership_basis') == 'explicit_session' or profiles[project.project_id]['registration_state'] == 'registered'))
                 seconds = self.service._codex_iso_seconds(source.get('modified_at'))
                 recent = seconds is not None and 0 <= now - seconds <= 7 * 86400
                 item = {'source_key': key, 'source_id': key, 'harness': source['harness'],
@@ -135,20 +141,52 @@ class Organization:
                         'classified': classified, 'recent': recent, 'last_activity_at': source.get('modified_at'),
                         'activity_basis': 'native_source_modified', 'message_count': None, 'preview': '',
                         'read_url': '/v1/ap-vibe/organization/context?source_key=' + quote(key)}
-                reason = ('本次未勾选' if selected is not None and key not in selected else
+                reason = ('AP-Vibe 内部整理或逻辑观察任务' if self._internal_source(source.get('cwd')) else
+                          '本次未勾选' if selected is not None and key not in selected else
                           '已经归类' if scope != 'rebuild_all' and classified else
                           '最近 7 天没有活动' if scope == 'recent_unclassified' and not recent else None)
                 if reason:
                     excluded.append({**item, 'reason': reason})
                 else:
                     items.append(item)
+        applications = {}
+        for item in items:
+            kind = item.get('harness', 'codex')
+            applications[kind] = applications.get(kind, 0) + 1
+        if harness:
+            items = [item for item in items if item.get('harness', 'codex') == harness]
+            excluded = [item for item in excluded if item.get('harness', 'codex') == harness]
         items.sort(key=lambda item: item.get('last_activity_at') or '', reverse=True)
         return {"ok": True, "scope": scope, "days": 7, "items": items[offset:offset + limit],
+                "applications": applications, "harnesses": snapshot.get("harnesses", []),
+                "coverage": snapshot.get("coverage", {}), "warnings": snapshot.get("warnings", []),
                 "total": len(items), "offset": offset, "limit": limit,
                 "next_offset": offset + limit if offset + limit < len(items) else None,
                 "excluded": excluded[:64], "excluded_count": len(excluded),
                 "known_session_count": len(seen), "history_scope": "discovered_native_sources",
                 "guidance": "先核对标题与可见内容；无有效信息的任务保留为未归类。文件更新时间只作候选线索。"}
+
+    def _internal_source(self, cwd):
+        if not cwd:
+            return False
+        return Path(cwd).resolve().is_relative_to((self.service.data_dir / "curation-jobs").resolve())
+
+    def project_sources(self, project_id):
+        """Use the same namespaced directory as monitoring for every project."""
+        directory = getattr(self.service, "session_directory", None)
+        if not directory:
+            return [{"source_key": s.source_key, "session_id": s.session_id, "harness": "codex",
+                     "project_id": project_id, "title": "标题待核对"} for s in self.registry.sources(project_id, limit=128)]
+        snapshot = directory.catalog(project_id=project_id, include_all=True)
+        items = []
+        for source in snapshot["sessions"]:
+            if source.get("managed") or self._internal_source(source.get("cwd")):
+                continue
+            key = source["source_id"]
+            if source["harness"] == "codex":
+                key = key.removeprefix("codex-")
+            items.append({**source, "source_key": key})
+        return items
 
     def context(self, source_key):
         if isinstance(source_key, str) and '-' in source_key:
@@ -433,25 +471,56 @@ class Organization:
             connection.commit()
 
     def dispatch(self, raw, base_url):
-        from .organization_runner import codex_command, run
-        codex_command()  # Fail before marking as running.
+        from .organization_runner import run
+        from .organization_execution import resolve
         task_id = raw.get("task_id")
         with self._runner_lock, self.registry.transaction(), closing(self.registry._connect()) as connection:
             task = self.task(task_id)
             if task["status"] in {"completed", "running", "applying"}:
                 return {"ok": True, "task": task, "replayed": True}
-            if task["status"] not in {"ready_for_codex", "failed", "interrupted"}:
+            if task["status"] not in {"ready_for_codex", "failed", "interrupted", "awaiting_client"}:
                 raise ContractError("organization_task_not_dispatchable")
+            prior = task.get("result") or {}
+            requested = raw.get("executor") or prior.get("executor", {}).get("id")
+            executor = resolve(self, requested)
+            if task["status"] == "awaiting_client" and executor["id"] == "external":
+                return {"ok": True, "task": task, "replayed": True}
             active = connection.execute("SELECT COUNT(*) FROM organization_tasks WHERE status IN ('running','applying')").fetchone()[0]
             if active:
                 raise ContractError("organization_task_already_running")
-            prior = task.get("result") or {}
             retry_count = int(prior.get("retry_count", 0) or 0) + (1 if task["status"] != "ready_for_codex" else 0)
-            result = {**prior, "retry_count": retry_count, "dispatch_started_at": utc_now(), "last_error": None, "error": None, "detail": None, "failed_projects": []}
-            connection.execute("UPDATE organization_tasks SET status='running',result_json=?,updated_at=? WHERE task_id=?", (encoded(result), utc_now(), task_id))
+            import uuid
+            result = {**prior, "executor": executor, "handoff_id": uuid.uuid4().hex,
+                "retry_count": retry_count, "dispatch_started_at": utc_now(), "last_error": None, "error": None, "detail": None, "failed_projects": []}
+            status = "awaiting_client" if executor["id"] == "external" else "running"
+            result["phase"] = "把接单说明复制到当前软件，开始读取与整理。" if status == "awaiting_client" else "正在启动 " + executor["name"]
+            connection.execute("UPDATE organization_tasks SET status=?,result_json=?,updated_at=? WHERE task_id=?", (status, encoded(result), utc_now(), task_id))
             connection.commit()
+        if status == "awaiting_client":
+            return {"ok": True, "task": self.task(task_id), "replayed": False}
         threading.Thread(target=run, args=(self, task_id, base_url), daemon=True, name="ap-vibe-curation").start()
         return {"ok": True, "task": self.task(task_id), "replayed": task["status"] != "ready_for_codex"}
+
+    def external_bundle(self, task_id):
+        from .organization_runner import prepare_bundle, _read_json
+        with self._runner_lock:
+            task = self.task(task_id)
+            if task["status"] != "awaiting_client" or task.get("result", {}).get("executor", {}).get("id") != "external":
+                raise ContractError("organization_external_task_not_waiting")
+            folder = prepare_bundle(self, task_id)
+            return {"ok": True, "task_id": task_id, "handoff_id": task["result"]["handoff_id"],
+                    "folder": str(folder), "index": _read_json(folder / "index.json"), "prompt": task["prompt"],
+                    "submit_tool": "ap_vibe_organization_submit",
+                    "instructions": "按index读取真实context_file和document_file。只生成JSON提案；不要改来源。保存提案到新JSON文件，用submit工具提交，回读任务和revision。"}
+
+    def submit_external(self, raw):
+        with self._runner_lock:
+            task = self.task(raw.get("task_id"))
+            if (task.get("result", {}).get("executor", {}).get("id") != "external"
+                    or task["result"].get("handoff_id") != raw.get("handoff_id")
+                    or task["status"] not in {"awaiting_client", "failed", "completed"}):
+                raise ContractError("organization_external_handoff_changed")
+            return self.apply_result(task["task_id"], raw.get("result"))
 
     def apply_result(self, task_id, result):
         # API submissions and the CLI runner use the same durable failure path.
@@ -765,14 +834,15 @@ class Organization:
                 created = self.create_project({"request_id": task_id + "-project-" + str(i), "display_name": group.get("name")})
                 project_id = created["project"]["project_id"]
             for key in group["source_keys"]:
-                current = self.registry.source(key)
-                if current.project_id != allowed[key]["project_id"]:
+                current_project = (self.context(key).get("project_id") if "-" in key
+                                   else self.registry.source(key).project_id)
+                if current_project != allowed[key]["project_id"]:
                     raise ContractError("organization_membership_changed")
                 self.assign({"request_id": task_id + "-assign-" + key, "source_key": key,
                     "session_id": allowed[key]["session_id"], "project_id": project_id,
-                    "rationale": group["rationale"], "evidence_refs": group["evidence_refs"], "actor": "codex"})
+                    "rationale": group["rationale"], "evidence_refs": group["evidence_refs"], "actor": "curation"})
             if group.get("sections"):
-                self.service.task_context.documents.update(project_id, self.task(task_id).get("result", {}).get("session_id") or "codex-curation",
+                self.service.task_context.documents.update(project_id, self.task(task_id).get("result", {}).get("session_id") or "client-curation",
                     task_id, {"request_id": task_id + "-doc-" + str(i), "expected_revision": group.get("expected_revision", 0), "sections": group["sections"]})
             completed.append(project_id)
             self.job_state(task_id, "applying", {"completed_projects": completed})

@@ -160,6 +160,12 @@ changing membership. A read-only identity warning must not stop the task.
 
 For source logic analysis, use [logic observation](references/logic-observation.md).
 
+For user-requested historical organization or project refresh, use the shared
+[cross-client curation tools](references/organization.md#跨客户端接单).
+The source application and the chosen curation executor are independent.
+Codex is optional: connected clients may read a frozen task and submit a JSON
+proposal through MCP or the documented local tool fallback.
+
 When continuing another Codex or Claude task, use
 [cross-session continuation](references/session-continuation.md): query the small
 session directory and read latest public messages, then inspect actual files.
