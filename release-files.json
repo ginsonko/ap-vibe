@@ -29,6 +29,7 @@
     "*.sh"
   ],
   "documents": [
+    "docs/BETA-6-ACCEPTANCE.md",
     "docs/GROK-INTEGRATION-PLAN-20260914.md",
     "docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md",
     "docs/BETA-5-ACCEPTANCE.md",

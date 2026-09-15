@@ -8,11 +8,26 @@
 
 仓库入口：https://github.com/ginsonko/ap-vibe 。用户也可以把完整 ZIP 包交给 Codex：解压到稳定目录，按相同步骤安装。安装脚本默认用自己的仓库目录作为初始项目；从别的工作目录调用不会自动把那个目录当成 AP-Vibe。
 
-本次固定版本：`v0.3.1-beta.1`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.3.1-beta.1/docs/INSTALL-CODEX.md` 读取。
+本次固定版本：`v0.4.0-beta.2`。优先从该标签的 Release 下载 `ap-vibe-app.zip`、`ap-vibe-manifest.json` 与 `SHA256SUMS`，不要使用 GitHub 的 `/releases/latest`（它可能不包含预发布）。说明文件可从 `https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.2/docs/INSTALL-CODEX.md` 读取。
 
-下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.3.1-beta.1/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
+下载地址前缀为 `https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/`。下载完整包后，核对 manifest 的 version、repository 与 archive SHA256，再安全解压并核对文件清单。原生 PowerShell 的 `Get-FileHash -Algorithm SHA256` 可检查包；解压后执行 `python tools/update_client.py verify --root <解压目录> --manifest <下载的ap-vibe-manifest.json>` 检查逐文件清单，无需自行创建 release.json。manifest和包必须来自同一标签，失败时保留原安装，不拿其它版本的文件拼接。
 
-首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.3.1-beta.1`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+首次安装建议把应用放在当前用户稳定目录，例如 `%LOCALAPPDATA%/AP-Vibe/app-v0.4.0-beta.2`；配置继续使用 `%LOCALAPPDATA%/AP-Vibe/config.json`。已经存在安装配置时先读下面的升级流程，不改变其项目根、数据目录或用户Key。不要把新版本号相同但尚未读取实际服务的情况直接说成已升级。
+
+### GitHub 查询限流或下载中断
+
+用户指定了版本时，直接使用同一标签的链接，无需先调用 GitHub Releases API，也无需使用 `gh api` 枚举发行版：
+
+- 说明：`https://raw.githubusercontent.com/ginsonko/ap-vibe/v0.4.0-beta.2/docs/INSTALL-CODEX.md`
+- 应用包：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/ap-vibe-app.zip`
+- 清单：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/ap-vibe-manifest.json`
+- 校验表：`https://github.com/ginsonko/ap-vibe/releases/download/v0.4.0-beta.2/SHA256SUMS`
+
+`api.github.com` 未登录查询通常按出口 IP 共享每小时 60 次额度；API 限流不等于 Release 包损坏。固定下载链接与 raw 文档不使用该 API 额度。无需为安装收集用户 GitHub Token，也不要反复点击检查或绕过校验。若完整包已经下载并通过校验，复用该文件继续备份和安装。
+
+源码中的更新器支持条件缓存和限流等待，并在 API 查询失败时尝试公开版本文件；这个文件仅用于发现版本，同标签发布清单和包校验仍须通过。选择“仅正式版”时不会用内测版替代。旧版更新器尚没有此恢复逻辑时，使用上方固定链接即可继续安装。
+
+若固定下载链接也超时或被重置，这是需要单独检查的 GitHub 文件下载连接问题。保留已完成步骤和旧安装，报告具体域名、HTTP 状态或超时步骤；不要把模型显示等待、备份进行中或单次下载中断都统称为更新失败。
 
 ### 安装任务的最短完整路径
 

@@ -19,6 +19,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT));sys.path.insert(0,str(ROOT/'src'))
 from tools.installation import default_config_path
 from ap_mind.studio_processes import process_absent
+from tools.update_sources import DiscoveryError, discover
 
 REPO='ginsonko/ap-vibe'
 CONTRACT='ap-vibe-additive-v1'
@@ -38,6 +39,8 @@ def validate_manifest(manifest):
     if manifest.get('schema')!='ap-vibe.release.v1' or manifest.get('repository')!=REPO:
         raise ValueError('release_source_mismatch')
     if manifest.get('storage_contract')!=CONTRACT:raise ValueError('storage_compatibility_unknown')
+    if not re.fullmatch(r'[0-9a-f]{64}',str(manifest.get('sha256',''))):
+        raise ValueError('release_archive_digest_invalid')
     if not re.fullmatch(r'v\d+\.\d+\.\d+(?:-[A-Za-z0-9.]+)?',str(manifest.get('version',''))):
         raise ValueError('release_version_invalid')
     if not isinstance(manifest.get('files'),dict) or not manifest['files']:raise ValueError('release_manifest_empty')
@@ -154,13 +157,19 @@ def check(config_path,force=False):
         state={'ok':True,'state':'checking','checked_at':time.time(),'next_check_at':time.time()+3600,
                'repository':REPO,'current_version':config.get('installed_version')}
         atomic(status_path,state)
+        cache_path=config_path.parent/'update-source-cache.json'
+        try:cache=read(cache_path) if cache_path.exists() else {}
+        except (OSError,ValueError):cache={}
+        if not isinstance(cache,dict):cache={}
+        phase='discovery'
         try:
-            releases=json.loads(fetch('https://api.github.com/repos/'+REPO+'/releases?per_page=10',2*1024*1024))
-            release=next((r for r in releases if not r.get('draft') and (options.get('channel','beta')=='beta' or not r.get('prerelease'))),None)
+            release,discovery=discover(REPO,options.get('channel','beta'),cache)
+            state.update(discovery)
             if not release:state.update(state='no_release');return state
             state['available_version']=release['tag_name']
             installed_order,available_order=version_order(config.get('installed_version')),version_order(release['tag_name'])
-            if release['tag_name']==config.get('installed_version') or installed_order and available_order and available_order<=installed_order:
+            is_current=release['tag_name']==config.get('installed_version') or installed_order and available_order and available_order<=installed_order
+            if is_current and state['discovery_source']=='github_api':
                 state.update(state='current');return state
             assets={a['name']:a for a in release.get('assets',[])}
             if not {'ap-vibe-manifest.json','ap-vibe-app.zip'} <= set(assets):
@@ -170,20 +179,33 @@ def check(config_path,force=False):
                 if not url.startswith('https://github.com/'+REPO+'/releases/download/'+release['tag_name']+'/'):
                     raise ValueError('release_asset_source_mismatch')
                 return url
+            phase='manifest'
             manifest=json.loads(fetch(asset_url('ap-vibe-manifest.json'),4*1024*1024))
             validate_manifest(manifest)
             if manifest['version']!=release['tag_name']:raise ValueError('release_tag_mismatch')
-            archive=config_path.parent/('download-'+manifest['version']+'.zip')
-            try:
-                archive.write_bytes(fetch(asset_url('ap-vibe-app.zip'),256*1024*1024))
-                target=stage(config_path,archive,manifest)
-            finally:archive.unlink(missing_ok=True)
+            # main can contain a version not yet published. A raw marker alone
+            # must not turn a missing Release into "current" or "ready".
+            if is_current:
+                state.update(state='current');return state
+            target=config_path.parent/'versions'/(manifest['version']+'-'+manifest['sha256'][:12])
+            if target.exists():
+                phase='verify'
+                verify(target,manifest)
+            else:
+                archive=config_path.parent/('download-'+manifest['version']+'.zip')
+                try:
+                    phase='download'
+                    archive.write_bytes(fetch(asset_url('ap-vibe-app.zip'),256*1024*1024))
+                    phase='verify'
+                    target=stage(config_path,archive,manifest)
+                finally:archive.unlink(missing_ok=True)
             state.update(state='ready',candidate_root=str(target))
             if dirty(config['product_root']):
                 state.update(state='development_changes',message='开发目录有本地改动；新版已独立准备，保留当前调试环境。');return state
             if options.get('auto_install',True) is False:return state
             shell=shutil.which('pwsh.exe') or shutil.which('powershell.exe')
             if not shell:state.update(state='ready',message='当前平台暂不支持自动切换。');return state
+            phase='install'
             result=subprocess.run([shell,'-NoProfile','-ExecutionPolicy','Bypass','-File',str(Path(config['product_root'])/'scripts/ap-vibe.ps1'),
                 '-Action','apply-update','-ConfigDir',str(config_path.parent),'-CandidateRoot',str(target),'-SkipOpen'],
                 capture_output=True,text=True,encoding='utf8',timeout=180,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
@@ -191,8 +213,12 @@ def check(config_path,force=False):
             state.update(state='installed' if applied.get('updated') else applied.get('status','pending'),result=applied)
             if state['state']=='busy':state['next_check_at']=time.time()+60
         except Exception as exc:
-            state.update(ok=False,state='check_failed',message=str(exc)[:250])
-        finally:atomic(status_path,state)
+            if isinstance(exc,DiscoveryError):state.update(exc.details)
+            state.update(ok=False,state='check_failed',failed_phase=phase,message=str(exc)[:250])
+            state['next_check_at']=max(time.time()+300,state.get('api_retry_at',0))
+        finally:
+            atomic(cache_path,cache)
+            atomic(status_path,state)
         return state
 
 
