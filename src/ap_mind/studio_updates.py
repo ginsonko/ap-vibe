@@ -23,8 +23,10 @@ class StudioUpdates:
             return
         self.next_poll = time.monotonic() + 30
         status = self.status()
-        if (status.get('mode') == 'automatic' and status.get('state') in {'busy','ready','pending'}
-                and status.get('next_check_at',0) <= time.time()):
+        if (status.get('mode') != 'off' and status.get('state') in {'check_failed','rate_limited'}
+                or status.get('mode') == 'automatic' and status.get('state') in {'busy','ready','pending'}):
+            if status.get('next_check_at',0) > time.time():
+                return
             try:
                 self.action({'action':'check'})
             except (OSError, ContractError):
@@ -57,7 +59,8 @@ class StudioUpdates:
         return {'ok':True, 'available':True, 'mode':mode, 'channel':options.get('channel','beta'),
                 'current_version':config.get('installed_version'),
                 'state':'disabled' if mode == 'off' else status.get('state','not_checked'),
-                **{k:status[k] for k in ('available_version','checked_at','next_check_at','message') if k in status},
+                **{k:status[k] for k in ('available_version','checked_at','next_check_at','message',
+                    'discovery_source','discovery_error','api_retry_at','fallback_error','failed_phase') if k in status},
                 'integration_issues':(status.get('result') or {}).get('integration_issues', [])}
 
     def action(self, raw):

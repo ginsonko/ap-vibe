@@ -75,10 +75,10 @@ def test_background_check_is_coalesced_and_never_downgrades(tmp_path,monkeypatch
     cfg=tmp_path/'config.json'
     cfg.write_text(json.dumps({'product_root':str(tmp_path),'installed_version':'v0.2.0-beta.1'}))
     calls=[]
-    def fetch(*a):
+    def discover(*a):
         calls.append(a)
-        return json.dumps([{'tag_name':'v0.1.0-beta.1','assets':[]}]).encode()
-    monkeypatch.setattr(update_client,'fetch',fetch)
+        return {'tag_name':'v0.1.0-beta.1','assets':[]}, {'discovery_source':'github_api'}
+    monkeypatch.setattr(update_client,'discover',discover)
     assert update_client.check(cfg)['state']=='current'
     assert update_client.check(cfg)['state']=='current' and len(calls)==1
 
