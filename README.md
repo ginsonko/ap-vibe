@@ -8,7 +8,7 @@
 
 [安装](#把这段话发给你常用的编程助手) · [第一次体验](docs/TRY-IT.md) · [完整手册](docs/USER-GUIDE.md) · [工作室入门](docs/AGENT-STUDIO-GUIDE.md) · [跨应用支持范围](docs/CROSS-APP-SUPPORT.md) · [安装与恢复](docs/INSTALL-CODEX.md) · [版本与验收](docs/BETA-6-ACCEPTANCE.md) · [反馈问题](https://github.com/ginsonko/ap-vibe/issues)
 
-**当前内测版本：v0.4.0-beta.3。** 本次把项目整理扩展到所有已接入软件的会话：可按应用筛选，选择本机 Codex、Claude Code、已配置伙伴，或把任务交给当前软件的 MCP / Skill。DSH Desktop 可自动登记原生 MCP。保留上一版更新限流恢复、缓存与固定版本下载能力。 Grok Desktop / CLI 现已加入共同工作台：读取公开会话、复用项目档案、参与像素工作室，在原生会话中执行与接续任务，并向正在运行的 Grok 桌面窗口留言。完整安装包见 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.3)，上手方法见 [Grok 接入指南](docs/GROK-INTEGRATION-ACCEPTANCE-20260914.md)。
+**当前内测版本：v0.4.0-beta.4。** 本次修复 Claude 执行器连接 Grok、Gemini 等第三方模型时的本地模型标识兼容：旧配置自动兼容，上游真实模型与计费归属保持不变，无需重填 Key。保留跨客户端会话整理、DSH 原生 MCP、Grok Desktop / CLI 接入及更新限流恢复等已有能力。完整安装包见 [本次 Release](https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.4)，详见 [模型兼容说明](docs/CLAUDE-MODEL-COMPATIBILITY.md)。
 
 任务监看、项目档案与记忆、逻辑观察、可选 AP 认知四项基础能力继续保留；多模型工作室提供管理分工、依赖接力、独立检查、四层像素地图与故事回放。本版沿用既有安装和数据目录，新安装与升级会自动检查已存在的 Grok 桌面端及 CLI。
 
@@ -32,8 +32,8 @@ AP-Vibe 把零散信息放到一个本地工作台。你继续用熟悉的已接
 ## 把这段话发给你常用的编程助手
 
 ~~~text
-请帮我安装或更新 AP-Vibe 个人内测版 v0.4.0-beta.3：
-https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.3
+请帮我安装或更新 AP-Vibe 个人内测版 v0.4.0-beta.4：
+https://github.com/ginsonko/ap-vibe/releases/tag/v0.4.0-beta.4
 先识别我的操作系统，阅读该版本的 README.md 和 docs/INSTALL-CODEX.md，
 下载完整应用包及清单，Windows 按 PowerShell 说明安装，macOS/Linux 按 start.sh 说明安装，
 校验后完成本机服务、Skill、MCP 和自动接入，打开并告诉我实际工作台地址。
