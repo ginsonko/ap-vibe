@@ -22,7 +22,7 @@ def bundle(studio):
     appearance = studio.appearances.save(raw(manifest={'frame_width':2,'frame_height':2,
         'animations':{'idle':{'frames':[0]},'walk':{'frames':[0,1],'fps':6}}}))['appearances'][0]
     a = profile(studio, name='Designer', appearance_id=appearance['appearance_id'],
-                persona='Patient designer', role='Frontend', protocol='openai')
+                persona='Patient designer', role='Frontend', protocol='openai', cli_model='opus')
     b = profile(studio, name='Reviewer', appearance_id='gpt-v3')
     studio.budget.save({'request_id':'source-budget','agent_id':a['agent_id'],'expected_revision':0,
         'token_limit':120000,'amount_limit':20,'price_basis':'blended','prices':{'input':3,'output':3},'price_source':'Sample'})
@@ -51,6 +51,7 @@ def test_two_partners_roundtrip_no_credentials_usage_or_history(studio, destinat
     assert not {a['agent_id'] for a in agents}.intersection(a['source_id'] for a in pack['agents'])
     designer = next(a for a in agents if a['name']=='Designer')
     assert designer['persona']=='Patient designer' and designer['budget']['token_limit']==120000
+    assert designer['cli_model']=='opus'
     assert designer['budget']['tokens_used']==0 and designer['budget']['request_count']==0
     assert destination.sharing.import_bundle(request)['replayed']
     repeat = destination.sharing.import_bundle({**request,'request_id':'again'})
