@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 
 from .contracts import ContractError
+from .claude_model import claude_cli_model, claude_model_environment
 
 
 def choices(organization):
@@ -112,11 +113,10 @@ def claude_launch(organization, task_id, executor, cwd, resume_id=None):
                 timeout=timeout, protocol=profile["protocol"], upstream_mode=profile.get("upstream_mode", "stream"),
                 max_request_retries=retries, before_request=lambda: studio.budget.check(profile["agent_id"])).start()
             env.update(CLAUDE_CONFIG_DIR=str(config_dir), ANTHROPIC_BASE_URL=gateway.url,
-                       ANTHROPIC_API_KEY=gateway.token, ANTHROPIC_MODEL=profile["model"],
-                       ANTHROPIC_DEFAULT_OPUS_MODEL=profile["model"], ANTHROPIC_DEFAULT_SONNET_MODEL=profile["model"],
-                       ANTHROPIC_DEFAULT_HAIKU_MODEL=profile["model"], CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1",
+                       ANTHROPIC_API_KEY=gateway.token, CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC="1",
                        API_TIMEOUT_MS=str(((timeout + 30) * (retries + 1) + 60) * 1000))
-            args += ["--setting-sources", "", "--model", profile["model"]]
+            env.update(claude_model_environment(profile))
+            args += ["--setting-sources", "", "--model", claude_cli_model(profile)]
         else:
             args += ["--setting-sources", "user"]
         if resume_id:

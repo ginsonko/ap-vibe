@@ -140,8 +140,11 @@ def test_process_contract_result_and_redaction(studio, monkeypatch):
     public = json.dumps(snapshot)
     assert 'private-reasoning' not in public and 'private-input' not in public
     assert 'fixture-secret-only' not in public
-    assert seen['env']['ANTHROPIC_MODEL'] == a['model']
-    assert seen['env']['ANTHROPIC_DEFAULT_HAIKU_MODEL'] == a['model']
+    assert seen['env']['ANTHROPIC_MODEL'] == 'sonnet'
+    assert seen['env']['ANTHROPIC_DEFAULT_HAIKU_MODEL'] == 'sonnet'
+    assert seen['args'][seen['args'].index('--model') + 1] == 'sonnet'
+    assert snapshot['runs'][0]['model'] == a['model']
+    assert snapshot['runs'][0]['cli_model'] == 'sonnet'
     # CC's own deadline must cover six upstream attempts plus backoff,
     # otherwise its SDK can abandon the gateway while recovery is working.
     assert int(seen['env']['API_TIMEOUT_MS']) > 6 * 300 * 1000 + 31000

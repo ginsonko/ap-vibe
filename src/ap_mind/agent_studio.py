@@ -20,6 +20,7 @@ from urllib.parse import urlsplit
 from .contracts import ContractError, utc_now
 from .teacher_settings import protect
 from .claude_gateway import ClaudeGateway
+from .claude_model import claude_cli_model, claude_model_environment, normalize_cli_model
 from .claude_context import prepare_plugin, observe_document_result
 from .codex_cli import codex_command
 from .harness_registry import HARNESS, executable as native_executable
@@ -250,12 +251,14 @@ class AgentStudio:
                     raise ContractError('agent_'+field+'_invalid')
                 connection_fields[field]=text
             upstream_mode = raw.get('upstream_mode', inherited.get('upstream_mode', 'stream'))
+            cli_model = normalize_cli_model(raw.get('cli_model', inherited.get('cli_model', '')))
             if upstream_mode not in {'stream', 'buffered'}:
                 raise ContractError('agent_upstream_mode_invalid')
             request_retries=raw.get('max_request_retries',inherited.get('max_request_retries',5))
             if type(request_retries) is not int or request_retries<0:
                 raise ContractError('agent_request_retries_invalid')
             public = {'agent_id': agent_id, 'name': name, 'base_url': base, 'model': model,
+                      'cli_model': cli_model,
                       'role': role, 'avatar': avatar, 'protocol': protocol, 'revision': revision + 1,
                       'appearance_id': appearance,
                       'persona': persona,
@@ -271,7 +274,8 @@ class AgentStudio:
             # Cosmetic edits must not erase learning. Model, transport and actual
             # credential changes create a new experience cohort without exposing Key.
             connection_changed = bool(prior and (key != old_key or any(public.get(k) != inherited.get(k)
-                for k in ('model', 'base_url', 'protocol', 'executor_kind', 'auth_mode', 'upstream_mode'))))
+                for k in ('model', 'base_url', 'protocol', 'executor_kind', 'auth_mode', 'upstream_mode'))
+                or claude_cli_model(public) != claude_cli_model(inherited)))
             public['capability_revision'] = revision + 1 if connection_changed or not prior else inherited.get('capability_revision', revision)
             public['capability_legacy_revision'] = None if connection_changed else inherited.get('capability_legacy_revision', revision if prior else None)
             for field in ('template_id', 'template_version', 'template_evidence'):
@@ -353,7 +357,7 @@ class AgentStudio:
         for profile in profiles['agents']:
             if agent_id and profile['agent_id'] != agent_id:
                 continue
-            public = {key: profile.get(key) for key in ('agent_id','name','role','persona','budget','model','executor_kind','archived','revision',
+            public = {key: profile.get(key) for key in ('agent_id','name','role','persona','budget','model','cli_model','executor_kind','archived','revision',
                 'activated','configuration_state','missing_configuration','template_id','template_evidence',
                 'connection_label','capability_notes','routing_profile','capability_revision')}
             public['runs'] = [run for run in presence['runs'] if run['agent_id'] == profile['agent_id']]
@@ -555,6 +559,8 @@ class AgentStudio:
                      'created_at': utc_now(), 'updated_at': utc_now(), 'cost': None,
                      'executor': exe, 'verification': 'awaiting_result'}
             value['executor_kind'] = executor_kind
+            if executor_kind == 'claude':
+                value['cli_model'] = claude_cli_model(profile)
             if identity.get('coordination_only'):
                 if executor_kind!='claude':raise ContractError('manager_claude_executor_required')
                 value['coordination_only']=True
@@ -798,9 +804,8 @@ class AgentStudio:
             env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'CLAUDE_', 'CODEX_'))}
             env.update(CLAUDE_CONFIG_DIR=str(config_dir), ANTHROPIC_API_KEY=key,
                        ANTHROPIC_BASE_URL=profile['base_url'].removesuffix('/v1'),
-                       ANTHROPIC_MODEL=profile['model'], ANTHROPIC_DEFAULT_OPUS_MODEL=profile['model'],
-                       ANTHROPIC_DEFAULT_SONNET_MODEL=profile['model'], ANTHROPIC_DEFAULT_HAIKU_MODEL=profile['model'],
                        CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC='1', PYTHONUTF8='1')
+            env.update(claude_model_environment(profile))
             # The local gateway owns the upstream timeout. Let it report the
             # original error before Claude's SDK/watchdog attempts a retry.
             request_retries=profile.get('max_request_retries',5)
@@ -897,7 +902,7 @@ class AgentStudio:
             context += extension['instructions']
             args = [value['executor'], '-p', '--output-format', 'stream-json', '--verbose',
                     '--resume' if value.get('parent_run_id') else '--session-id', value['session_id'],
-                    '--name', profile['name'], '--model', profile['model'],
+                    '--name', profile['name'], '--model', claude_cli_model(profile),
                     '--setting-sources', '', '--settings', '{}', '--permission-mode', 'dontAsk',
                     '--tools', ','.join(native_tools),
                     '--allowedTools', ','.join(permitted_tools),

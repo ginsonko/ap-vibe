@@ -24,7 +24,7 @@ SCHEMA = 'ap-vibe.agents.v1'
 MAX_BUNDLE_BYTES = 32 * 1024 * 1024
 HIDDEN = '[凭据已隐藏]'
 PROFILE_KEYS = (
-    'name', 'base_url', 'model', 'protocol', 'auth_mode', 'role', 'persona',
+    'name', 'base_url', 'model', 'cli_model', 'protocol', 'auth_mode', 'role', 'persona',
     'avatar', 'appearance_id', 'connection_label', 'capability_notes',
     'max_request_retries', 'request_timeout_seconds', 'upstream_mode',
     'routing_profile', 'executor_kind',
@@ -264,10 +264,12 @@ class StudioAgentSharing:
         warnings = []
         raw = {key: public[key] for key in PROFILE_KEYS if key in public}
         cleaned = sanitize(raw, 'profile', warnings)
-        defaults = {'executor_kind':'claude','auth_mode':'api_key','model':'','base_url':'','protocol':'anthropic',
+        defaults = {'executor_kind':'claude','auth_mode':'api_key','model':'','cli_model':'','base_url':'','protocol':'anthropic',
                     'role':'','persona':'','avatar':'fish','appearance_id':'','connection_label':'',
                     'capability_notes':'','max_request_retries':5,'request_timeout_seconds':300,'upstream_mode':'stream'}
         cleaned = {**defaults, **cleaned}
+        from .claude_model import normalize_cli_model
+        cleaned['cli_model'] = normalize_cli_model(cleaned['cli_model'])
         from .studio_routing import default_routing
         cleaned['routing_profile'] = normalize_routing(cleaned.get('routing_profile', default_routing(cleaned)))
         if cleaned.get('auth_mode') == 'local_login':
@@ -411,6 +413,7 @@ class StudioAgentSharing:
             'executor_kind': profile.get('executor_kind', 'claude'),
             'auth_mode': profile.get('auth_mode', 'api_key'),
             'model': profile.get('model', ''),
+            'cli_model': profile.get('cli_model', ''),
             'base_url': profile.get('base_url', ''),
             'protocol': profile.get('protocol', 'anthropic'),
             'role': profile.get('role', ''),
